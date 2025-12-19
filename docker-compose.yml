@@ -1,4 +1,3 @@
-version: "3.9"
 
 # ──────────────────────────────────────────────
 # NETWORKS
@@ -6,28 +5,19 @@ version: "3.9"
 networks:
   ingress:     # Público → NGINX
     driver: bridge
-  gateway:     # NGINX → API Gateway
+  backend:     # NGINX → Microservicios
     driver: bridge
-  backend:     # API Gateway → Microservicios
-    driver: bridge
-  internal:    # Infra invisible (Vault, ELK, Prometheus)
+  internal:    # Infra invisible (Prometheus, Grafana, exporters)
     driver: bridge
 
 # ──────────────────────────────────────────────
-# VOLUMES (SQLite + Infra)
+# VOLUMES
 # ──────────────────────────────────────────────
 volumes:
   sqlite_auth:
-  sqlite_profile:
-  sqlite_stats:
-  sqlite_tournament:
-  certs:
-  vault_data:
-  es_data:
-  logstash_data:
-  kibana_data:
   prometheus_data:
   grafana_data:
+  certs:
   frontend_static:
 
 # ──────────────────────────────────────────────
@@ -41,29 +31,14 @@ nginx-gateway:
     - "443:443"        # HTTPS público
   depends_on:
     - frontend
-    - api-gateway
+    - auth-service
+    - game-service
   networks:
     - ingress
-    - gateway
+    - backend
   volumes:
     - ./nginx-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
-    - ./nginx-gateway/modsecurity.conf:/etc/nginx/modsecurity.conf:ro
     - certs:/etc/nginx/certs
-
-# ──────────────────────────────────────────────
-# API GATEWAY — (SEPARADO DE NGINX)
-# ──────────────────────────────────────────────
-
-api-gateway:
-  container_name: api-gateway
-  build: ./api-gateway
-  networks:
-    - gateway     # recibe tráfico desde nginx
-    - backend     # habla con microservicios
-  environment:
-    - NODE_ENV=production
-  volumes:
-    - ./api-gateway:/app
 
 # ──────────────────────────────────────────────
 # FRONTEND SPA
@@ -73,13 +48,13 @@ frontend:
   container_name: frontend
   build: ./frontend
   networks:
-    - gateway
+    - ingress
   volumes:
     - frontend_static:/usr/share/nginx/html
-  # no exponer puertos → solo accesible por NGINX
+  # No se expone puerto: solo accesible vía NGINX
 
 # ──────────────────────────────────────────────
-# MICROSERVICIOS (AUTH, PROFILE, TOURNAMENT, GAME, STATS, CHAT)
+# MICROSERVICIOS
 # ──────────────────────────────────────────────
 
 auth-service:
@@ -87,118 +62,49 @@ auth-service:
   build: ./auth-service
   networks:
     - backend
-    - internal     # acceso a Vault
+    - internal
   volumes:
     - sqlite_auth:/app/data
   environment:
     - SERVICE_NAME=auth-service
-
-profile-service:
-  container_name: profile-service
-  build: ./profile-service
-  networks:
-    - backend
-  volumes:
-    - sqlite_profile:/app/data
-
-tournament-service:
-  container_name: tournament-service
-  build: ./tournament-service
-  networks:
-    - backend
-  volumes:
-    - sqlite_tournament:/app/data
+    - NODE_ENV=production
 
 game-service:
   container_name: game-service
   build: ./game-service
   networks:
     - backend
+    - internal
   environment:
     - SERVICE_NAME=game-service
-
-stats-service:
-  container_name: stats-service
-  build: ./stats-service
-  networks:
-    - backend
-  volumes:
-    - sqlite_stats:/app/data
-
-chat-service:
-  container_name: chat-service
-  build: ./chat-service
-  networks:
-    - backend
+    - NODE_ENV=production
 
 # ──────────────────────────────────────────────
-# VAULT — SECRETS
+# MONITORING — PROMETHEUS + EXPORTERS + GRAFANA
 # ──────────────────────────────────────────────
 
-vault:
-  container_name: vault
-  image: hashicorp/vault:latest
-  networks:
-    - internal
-  environment:
-    - VAULT_DEV_ROOT_TOKEN_ID=root
-    - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
-  volumes:
-    - vault_data:/vault/file
-  ports:
-    - "8200:8200"  # REMOVE IN PRODUCTION
-
-# ──────────────────────────────────────────────
-# ELK STACK — LOGGING
-# ──────────────────────────────────────────────
-
-elasticsearch:
-  container_name: elasticsearch
-  image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
-  networks:
-    - internal
-  environment:
-    - discovery.type=single-node
-    - xpack.security.enabled=false
-  volumes:
-    - es_data:/usr/share/elasticsearch/data
-
-logstash:
-  container_name: logstash
-  image: docker.elastic.co/logstash/logstash:8.15.0
-  networks:
-    - internal
+nginx-exporter:
+  container_name: nginx-exporter
+  image: nginx/nginx-prometheus-exporter
+  command:
+    - -nginx.scrape-uri=http://nginx-gateway/nginx_status
   depends_on:
-    - elasticsearch
-  volumes:
-    - ./ELK/logstash:/usr/share/logstash/pipeline
-    - logstash_data:/var/log
-
-kibana:
-  container_name: kibana
-  image: docker.elastic.co/kibana/kibana:8.15.0
+    - nginx-gateway
   networks:
     - internal
-  depends_on:
-    - elasticsearch
-  volumes:
-    - kibana_data:/usr/share/kibana/data
-  environment:
-    - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-
-# ──────────────────────────────────────────────
-# MONITORING — PROMETHEUS + GRAFANA
-# ──────────────────────────────────────────────
+    - backend
 
 prometheus:
   container_name: prometheus
   image: prom/prometheus
   networks:
     - internal
-    - backend  # para scrapear microservicios
+    - backend
   volumes:
-    - ./Prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     - prometheus_data:/prometheus
+  command:
+    - "--config.file=/etc/prometheus/prometheus.yml"
 
 grafana:
   container_name: grafana
@@ -207,3 +113,8 @@ grafana:
     - internal
   volumes:
     - grafana_data:/var/lib/grafana
+    - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+  environment:
+    - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+
