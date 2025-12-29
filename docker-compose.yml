@@ -3,8 +3,6 @@
 # NETWORKS
 # ──────────────────────────────────────────────
 networks:
-  ingress:     # Público → NGINX
-    driver: bridge
   backend:     # NGINX → Microservicios
     driver: bridge
   internal:    # Infra invisible (Prometheus, Grafana, exporters)
@@ -28,13 +26,12 @@ nginx-gateway:
   container_name: nginx-gateway
   build: ./nginx-gateway
   ports:
-    - "443:443"        # HTTPS público
+    - "443:443"
   depends_on:
     - frontend
     - auth-service
     - game-service
   networks:
-    - ingress
     - backend
   volumes:
     - ./nginx-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -47,8 +44,6 @@ nginx-gateway:
 frontend:
   container_name: frontend
   build: ./frontend
-  networks:
-    - ingress
   volumes:
     - frontend_static:/usr/share/nginx/html
   # No se expone puerto: solo accesible vía NGINX
@@ -87,7 +82,7 @@ nginx-exporter:
   container_name: nginx-exporter
   image: nginx/nginx-prometheus-exporter
   command:
-    - -nginx.scrape-uri=http://nginx-gateway/nginx_status
+    - -nginx.scrape-uri=http://nginx-gateway:8080/nginx_status
   depends_on:
     - nginx-gateway
   networks:
@@ -99,7 +94,6 @@ prometheus:
   image: prom/prometheus
   networks:
     - internal
-    - backend
   volumes:
     - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     - prometheus_data:/prometheus
