@@ -1,0 +1,17 @@
+{
+    "name": "auth-service",
+    "version": "0.1.0",
+    "type": "commonjs",
+    "main": "src/index.js",
+    "scripts": {
+      "start": "node src/index.js"
+    },
+    "dependencies": {
+      "bcryptjs": "^2.4.3",
+      "fastify": "^4.28.1",
+      "fastify-metrics": "^10.0.0",
+      "jsonwebtoken": "^9.0.2",
+      "sqlite3": "^5.1.7"
+    }
+  }
+  

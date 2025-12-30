@@ -1,0 +1,33 @@
+groups:
+  - name: core-alerts
+    rules:
+      # 1) Un target está caído
+      - alert: TargetDown
+        expr: up == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target caído: {{ $labels.job }} ({{ $labels.instance }})"
+          description: "Prometheus no puede scrapear {{ $labels.job }} en {{ $labels.instance }}."
+
+      # 2) Nginx devolviendo 5xx (si usas nginx exporter con métricas de requests)
+      - alert: HighNginx5xxRate
+        expr: rate(nginx_http_requests_total{status=~"5.."}[1m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Errores 5xx en Nginx"
+          description: "Se detectan respuestas 5xx en el gateway (rate > 0 durante 1m)."
+
+      # 3) CPU alta en contenedores (cAdvisor)
+      # Nota: este umbral es ejemplo, ajustadlo si queréis.
+      - alert: HighContainerCPU
+        expr: rate(container_cpu_usage_seconds_total{image!=""}[1m]) > 0.8
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "CPU alta en contenedores"
+          description: "Al menos un contenedor supera CPU > 0.8 cores de forma sostenida."

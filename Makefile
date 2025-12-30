@@ -1,0 +1,91 @@
+SHELL := /bin/bash
+
+# Usa docker compose (plugin). Si tú usas docker-compose legacy, cambia a "docker-compose"
+DC := docker compose
+COMPOSE_FILE := docker-compose.yml
+
+# Nombre del proyecto (para agrupar recursos). Opcional.
+PROJECT ?= transcendence
+
+# Common flags
+DCFLAGS := -p $(PROJECT) -f $(COMPOSE_FILE)
+
+.PHONY: help up down restart ps logs build rebuild pull \
+        clean clean-hard prune-volumes prune-images prune-all \
+        exec-nginx exec-auth exec-game
+
+help:
+	@echo ""
+	@echo "Targets:"
+	@echo "  make up             -> Levanta stack (detached)"
+	@echo "  make down           -> Baja stack"
+	@echo "  make restart        -> Reinicia stack"
+	@echo "  make ps             -> Estado de contenedores"
+	@echo "  make logs           -> Logs follow de todo"
+	@echo "  make build          -> Build de imágenes"
+	@echo "  make rebuild        -> Build sin cache y up"
+	@echo "  make pull           -> Pull de imágenes (si aplica)"
+	@echo ""
+	@echo "Limpieza:"
+	@echo "  make clean          -> down + remove orphans (NO borra volúmenes)"
+	@echo "  make clean-hard     -> down -v + remove orphans (BORRA volúmenes: datos)"
+	@echo "  make prune-images   -> limpia imágenes dangling/unused"
+	@echo "  make prune-volumes  -> limpia volúmenes sin uso (peligroso)"
+	@echo "  make prune-all      -> system prune (peligroso)"
+	@echo ""
+	@echo "Exec:"
+	@echo "  make exec-nginx     -> shell dentro de nginx-gateway"
+	@echo "  make exec-auth      -> shell dentro de auth-service"
+	@echo "  make exec-game      -> shell dentro de game-service"
+	@echo ""
+
+up:
+	$(DC) $(DCFLAGS) up -d --remove-orphans
+
+down:
+	$(DC) $(DCFLAGS) down
+
+restart: down up
+
+ps:
+	$(DC) $(DCFLAGS) ps
+
+logs:
+	$(DC) $(DCFLAGS) logs -f --tail=200
+
+build:
+	$(DC) $(DCFLAGS) build
+
+rebuild:
+	$(DC) $(DCFLAGS) build --no-cache
+	$(DC) $(DCFLAGS) up -d --remove-orphans
+
+pull:
+	$(DC) $(DCFLAGS) pull
+
+# Limpio "normal": no te borra datos persistidos
+clean:
+	$(DC) $(DCFLAGS) down --remove-orphans
+
+# Limpio "hard": borra volúmenes (pierdes SQLite, Prometheus, Grafana, etc.)
+clean-hard:
+	$(DC) $(DCFLAGS) down -v --remove-orphans
+
+# Prunes (ojo: globales, no solo tu proyecto)
+prune-images:
+	docker image prune -f
+
+prune-volumes:
+	docker volume prune -f
+
+prune-all:
+	docker system prune -af --volumes
+
+exec-nginx:
+	$(DC) $(DCFLAGS) exec nginx-gateway sh
+
+exec-auth:
+	$(DC) $(DCFLAGS) exec auth-service sh
+
+exec-game:
+	$(DC) $(DCFLAGS) exec game-service sh
