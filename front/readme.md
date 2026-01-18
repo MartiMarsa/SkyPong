@@ -7,3 +7,16 @@ npm install tailwindcss @tailwindcss/postcss postcss
 npm i --save @fortawesome/react-fontawesome@latest
 npm i --save @fortawesome/fontawesome-svg-core
 ```
+
+# TailwindCSS Docs
+> [Installation for Next.js](https://tailwindcss.com/docs/installation/framework-guides/nextjs)
+ <br>
+> [Inline Classes Documentation](https://tailwindcss.com/docs/aspect-ratio)
+
+# Next.js Docs
+
+> [Starter Documentation](https://nextjs.org/docs)
+ <br>
+> [React Foundations Course (Before Next.js)](https://nextjs.org/learn/react-foundations)
+<br>
+> [Next.js Foundation Course](https://nextjs.org/learn/dashboard-app)

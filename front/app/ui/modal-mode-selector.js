@@ -25,8 +25,8 @@ export default function ModalModeSelector( { close, isModalOpen } )
         }, 300); 
     };
     return (
-        <aside className={`modal-mode-selector-container flex flex-col justify-center items-center basis-0 ${isClosing ? 'closed' : 'opened'}`}>
-            <form className="modal-mode-selector-form" onClick={ () => clickHandler(event) }>
+        <aside className={`modal-mode-selector-container relative flex flex-col justify-center items-center bg-gray-900 basis-0 p-4 ${isClosing ? 'closed' : 'opened'}`}>
+            <form className="modal-mode-selector-form">
                 <h2>{ l('gameMode.chooseMode') }</h2>
                 <div className="mode-options">
                     <label>
@@ -47,7 +47,7 @@ export default function ModalModeSelector( { close, isModalOpen } )
                     <li><a href="/signup">{l('signUpPage.title')}</a></li>
                 </ul>
             </div>
-            <div className="modal-mode-selector-close-button" onClick={ () => close(true) }> &#10005;</div>
+            <div className="modal-mode-selector-close-button absolute top-10 left-10 bg-gray-800 text-white p-2 aspect-square rounded-[50%]" onClick={ () => close(true) }> &#10005;</div>
         </aside>
 
     );

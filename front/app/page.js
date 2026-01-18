@@ -26,8 +26,8 @@ export default function HomePage()
   return (
     <>
         <NavigationSignUI />
-        <main className='flex p-2 justify-center items-stretch min-h-screen align-stretch bg-gradient-to-b from-blue-100 to-blue-300'>
-            <div className="main-content flex column justify-center align-center basis-full md:basis-3/4 lg:basis-1/2 flex flex-col">
+        <main className='flex justify-center items-stretch min-h-screen align-stretch bg-gradient-to-b from-blue-100 to-blue-300'>
+            <div className="main-content flex column justify-center align-center md:basis-3/4 lg:basis-1/2 flex flex-col">
 
                 <HeroUI title={l('homePage.title')} subtitle={l('homePage.description')} imageUrl="/images/pongo-porco.png" isModalOpen={isModalOpen} />
                 <div className="play-button-container flex justify-center">
