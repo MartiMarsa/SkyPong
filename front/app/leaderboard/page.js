@@ -4,11 +4,11 @@ import  { useState } from 'react';
 import  l from '../lib/i18n/localizer';
 
 
-export default function RemoteRoomLobbyPage()
+export default function LeaderboardPage()
 {
     return (
         <main>
-            <h1>{l('remoteRoomLobbyPage.title')}</h1>
+            <h1>{l('leaderboardPage.title')}</h1>
         </main>
     );
 }

@@ -1,5 +1,4 @@
 import { title } from "node:process";
-import { l } from "../localizer";
 
 const es = {
     homePage: {
@@ -164,6 +163,43 @@ const es = {
         passwordsDoNotMatch: "Las contraseñas no coinciden.",
         goBackHome: "Volver a Inicio",
         goBack: "Volver",
+    },
+    leaderboard: {
+        title: "Tabla de clasificación",
+        rank: "Rango",
+        player: "Jugador",
+    },
+    achievements: {
+        title: "Logros",
+        winAchievements: {
+            title: "Logros de Victoria",
+            firstWin: "Primera Victoria",
+            firstWinDesc: "Gana tu primer juego.",
+            win10Games: "Competidor Consistente",
+            win10GamesDesc: "Gana 10 juegos.",
+            win100Games: "Maestro del Pong",
+            win100GamesDesc: "Gana 100 juegos.",
+        },
+        logAchievements: {
+            title: "Logros de Inicio de Sesión",
+            firstLogin: "Nuevo Recluta",
+            firstLoginDesc: "Inicia sesión por primera vez.",
+            login7Days: "Asiduo",
+            login7DaysDesc: "Inicia sesión durante 7 días consecutivos.",
+            login30Days: "Veterano",
+            login30DaysDesc: "Inicia sesión durante 30 días consecutivos.",
+        },
+        wonGamesAchievements: {
+            title: "Logros de Juegos Ganados",
+            firsgame: "Novato",
+            firsgameDesc: "Gana tu primer juego.",
+            win5Games: "Principiante",
+            win5GamesDesc: "Gana 5 juegos.",
+            win50Games: "Intermedio",
+            win50GamesDesc: "Gana 50 juegos.",
+            win500Games: "Experto",
+            win500GamesDesc: "Gana 500 juegos.",
+        },
     },
 };
 

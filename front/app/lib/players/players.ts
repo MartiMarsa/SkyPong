@@ -1,5 +1,7 @@
 // There are this 3 locales available: 'en', 'es', 'it'
 
+import achivements from "../achivements/achivements";
+
 export const players = [
     {
         id: 1,
@@ -14,6 +16,7 @@ export const players = [
             losses: 5,
         },
         locale: 'en-US',
+        achievements: [achivements[0], achivements[3], achivements[6]],
     },
     {
         id: 2,
@@ -28,6 +31,7 @@ export const players = [
             losses: 10,
         },
         locale: 'es-ES',
+        achievements: [achivements[1], achivements[4], achivements[7]],
     },
     {
         id: 3,
@@ -42,5 +46,6 @@ export const players = [
             losses: 20,
         },
         locale: 'it-IT',
+        achievements: [achivements[2], achivements[5]],
     },
 ];
