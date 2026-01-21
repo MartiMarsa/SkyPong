@@ -20,3 +20,15 @@ npm i --save @fortawesome/fontawesome-svg-core
 > [React Foundations Course (Before Next.js)](https://nextjs.org/learn/react-foundations)
 <br>
 > [Next.js Foundation Course](https://nextjs.org/learn/dashboard-app)
+
+
+# DOCKER
+
+```
+docker build -t frontend .  # Build de container, just once after doing git pull
+docker run -p 3000:3000 frontend   # Runs the container, npm is in the background as pid 1
+```
+
+```
+Browser -> http://localhos:3000/
+```
