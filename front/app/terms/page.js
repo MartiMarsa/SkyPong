@@ -1,6 +1,6 @@
 'use client';
 
-import { l } from '../lib/i18n/localizer';
+import l  from '../lib/i18n/localizer';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 

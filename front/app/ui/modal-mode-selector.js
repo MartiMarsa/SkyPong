@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { l } from '../lib/i18n/localizer';
+import l from '../lib/i18n/localizer';
 import { format } from "path";
 
 function clickHandler(event)

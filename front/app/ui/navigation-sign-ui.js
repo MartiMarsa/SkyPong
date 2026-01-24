@@ -1,4 +1,4 @@
-import { l } from '../lib/i18n/localizer';
+import l from '../lib/i18n/localizer';
 
 export default function NavigationSignUI() 
 {
