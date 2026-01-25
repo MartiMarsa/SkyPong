@@ -58,6 +58,7 @@ It supports JWT-based access tokens, refresh tokens, CSRF protection, and option
 - POST /auth/login — Login user
 - POST /auth/password — Change password (authenticated)
 - POST /auth/logout — Logout user
+- DELETE /auth/logout - Delete user
 - POST /auth/refresh — Refresh access token
 - POST /auth/2fa/setup — Generate 2FA secret + QR code
 - POST /auth/2fa/enable — Enable 2FA for user
