@@ -68,9 +68,15 @@ services:
       - internal
     volumes:
       - sqlite_auth:/app/data
+      # Optional: mount JWT keys from host secrets
+      # - ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
+      # - ./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=auth-service
+      # Optional: point to mounted JWT keys
+      # - JWT_PRIVATE_KEY_PATH=/run/secrets/jwt-private.pem
+      # - JWT_PUBLIC_KEY_PATH=/run/secrets/jwt-public.pem
       # añade aquí secretos vía .env (no hardcode)
       # - JWT_SECRET=${JWT_SECRET}
       # - TWOFA_ENCRYPTION_KEY=${TWOFA_ENCRYPTION_KEY}

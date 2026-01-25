@@ -38,8 +38,15 @@ It supports JWT-based access tokens, refresh tokens, CSRF protection, and option
 ## Keys & Security
 
 - JWT keys (jwt-private.pem and jwt-public.pem) are required for token signing
-- Keys are mounted into Docker container from host for persistence
+- Key paths are configurable via environment variables:
+  - JWT_PRIVATE_KEY_PATH (default: /app/jwt-private.pem)
+  - JWT_PUBLIC_KEY_PATH (default: /app/jwt-public.pem)
+- See .env.example for a starter template.
 - Do not commit private keys in production; for local development, they can be stored in the repo
+- Generate keys locally with:
+  ```bash
+  npm run generate-keys
+  ```
 - CSRF tokens are automatically issued per session
 
 ---
@@ -48,7 +55,17 @@ It supports JWT-based access tokens, refresh tokens, CSRF protection, and option
 
 - Container exposes port 8081
 - Volume ./data persists SQLite databases
-- Keys are mounted into /app/ for access by the service
+- Keys can be baked into the image if present in the build context (jwt-*.pem)
+- Or mount them as secrets/volumes and set the env vars, for example:
+  ```bash
+  JWT_PRIVATE_KEY_PATH=/run/secrets/jwt-private.pem
+  JWT_PUBLIC_KEY_PATH=/run/secrets/jwt-public.pem
+  ```
+  and mount:
+  ```bash
+  ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
+  ./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro
+  ```
 
 ---
 
@@ -80,6 +97,7 @@ Use a single script to fully setup and run the service:
 git clone <repo-url>
 cd auth-service
 ./setup-and-run.sh
+```
 
 ---
 
@@ -89,4 +107,4 @@ Use a single script to clean up:
 
 ```bash
 ./clean-up.sh
-
+```

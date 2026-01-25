@@ -1,8 +1,5 @@
-import fs from 'fs';
-import path from 'path';
 import jwt from 'jsonwebtoken';
-
-const privateKey = fs.readFileSync(path.resolve(__dirname, '../jwt-private.pem'), 'utf-8');
+import { privateKey } from './keys';
 
 export function generateToken(user: {
 	id: string;
