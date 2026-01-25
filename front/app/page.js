@@ -2,7 +2,7 @@
 
 
 import { useState } from 'react';
-import { l } from './lib/i18n/localizer';
+import l from './lib/i18n/localizer';
 import HeroUI from './ui/hero-ui';
 import NavigationSignUI from './ui/navigation-sign-ui';
 import PlayButtonUI from './ui/play-button-ui';

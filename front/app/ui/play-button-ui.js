@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { l } from '../lib/i18n/localizer';
+import l  from '../lib/i18n/localizer';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 // Importas SOLO el icono que vas a usar
 import { faGamepad } from '@fortawesome/free-solid-svg-icons';
