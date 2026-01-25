@@ -1,12 +1,12 @@
 import Fastify from 'fastify';
 import jwt from 'jsonwebtoken';
-import fs from 'fs';
 import cookie from '@fastify/cookie';
 import chalk from 'chalk';
 import { randomUUID } from 'crypto';
 import { signup, login } from './auth';
 import { initDB, getDB } from './db';
 import { initTokenDB, getTokenDB } from './dbTokens';
+import { publicKey } from './keys';
 import { generateToken, generate2FAToken } from './token';
 import { generate2FA, verify2FA } from './twofa';
 import { createRefreshToken, verifyRefreshToken, revokeRefreshToken, revokeRefreshTokenById, isTokenRevoked } from './refresh';
@@ -15,9 +15,6 @@ import { hashPassword, verifyPassword } from './password';
 const fastify = Fastify({ logger: true });
 
 fastify.register(cookie, { secret: 'cookie-secret' });
-
-const privateKey = fs.readFileSync('./jwt-private.pem');
-const publicKey = fs.readFileSync('./jwt-public.pem');
 
 const cookieOpts = {
     httpOnly: true,
@@ -550,4 +547,3 @@ const start = async () => {
 };
 
 start();
-
