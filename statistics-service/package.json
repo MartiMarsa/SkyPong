@@ -1,0 +1,13 @@
+{
+  "name": "statistics-service",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "fastify": "^4.29.1",
+    "fastify-metrics": "^11.0.0"
+  }
+}
