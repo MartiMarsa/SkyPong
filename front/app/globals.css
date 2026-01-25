@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  /* Definimos los keyframes */
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes disapear {
+    from { opacity: 1; }
+    to { opacity: 0; }
+  }
+  @keyframes scale-to-right {
+    from { width: 100%; transform-origin: right; }
+    to { width: 0; transform-origin: right; }
+  }
+  @keyframes scale-from-right {
+    from { width: 0; transform-origin: right; }
+    to { width: 100%; transform-origin: right; }
+  }
+  /* Creamos las clases de utilidad */
+  --animate-fade-in: fade-in 0.5s ease-out forwards;
+  --animate-scale-to-right-0: scale-to-right 0.3s ease-in forwards;
+  --animate-scale-from-right-0: scale-from-right 0.3s ease-out forwards;
+  --animate-disapear: disapear 0.5s ease-in forwards;
+}
+
+/* Ahora sí puedes usarlas con @apply */
+.appear
+{
+    display: block;
+    @apply animate-fade-in;
+}
+
+.disapear 
+{
+    @apply animate-disapear;
+    display: none;
+}
+
+.opened
+{
+    @apply animate-scale-from-right-0;
+    flex-basis: 50%
+}
+
+.closed
+{
+    @apply animate-scale-to-right-0;
+}
+
+/* Estilos adicionales */
+.modal-mode-selector-container 
+{
+    width: 0   /* Inicialmente cerrado */;
+}
