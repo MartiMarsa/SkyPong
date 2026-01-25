@@ -22,7 +22,9 @@ export function initDB(): Promise<void> {
 			       password_version INTEGER DEFAULT 1,
 			       twofa_enabled INTEGER DEFAULT 0,
 			       twofa_secret TEXT,
-			       created_at TEXT DEFAULT CURRENT_TIMESTAMP
+			       token_version INTEGER DEFAULT 0,
+			       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+			       deleted_at TEXT
 		       )`,
 		       err => {
 			       if (err) reject(err);

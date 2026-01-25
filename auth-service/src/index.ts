@@ -60,8 +60,8 @@ interface ChangePassword {
 }
 
 interface DBUser {
-    password_hashed: string;
-    password_version: number;
+    	password_hashed: string;
+    	password_version: number;
 }
 
 // --- CSRF protection ---
@@ -89,8 +89,45 @@ async function requireAuth(req: any, reply: any) {
 		  	issuer: 'auth-service',
 		  	audience: 'transcendence',
 	    	});
-      	} catch {
-	    	return reply.status(401).send();
+
+		const db = getDB();
+
+		const user = await new Promise<any>((res, rej) => {
+		  	db.get(`
+		       	       SELECT id, password_version, token_version, deleted_at
+		       	       FROM users
+		       	       WHERE user_email = ?
+			       	       `,
+		       	       [req.user.sub],
+		       	       (err, row) => err ? rej(err) : res(row)
+			      );
+      		});
+
+		// user removed
+		if (!user || user.deleted_at) {
+		  	throw new Error('User deleted');
+	    	}
+
+		// password was changed
+	    	if (req.user.pv !== user.password_version) {
+			throw new Error('Password was changed');
+		}
+
+		// token revoked
+		if (req.user.tv !== user.token_version) {
+		  	throw new Error('Token revoked');
+	    	}
+
+		// attach user
+		req.user = {
+		  	id: user.id,
+		  	password_version: user.password_version,
+		  	token_version: user.token_version,
+	    	};
+
+	} catch {
+		reply.clearCookie('access_token', { path: '/' });
+	    	return reply.status(401).send({ error: 'Unauthorized' });
       	}
 }
 
@@ -123,7 +160,8 @@ fastify.post('/auth/signup', async (req: any, reply) => {
 
 	const token = generateToken({ 
 		id: user.id, 
-		password_version: user.password_version || 1 
+		password_version: user.password_version || 1,
+		token_version: user.token_version || 0
 	});
 	const refreshToken = createRefreshToken(user.id);
 	const csrfToken = randomUUID();
@@ -175,7 +213,8 @@ fastify.post('/auth/login', async (req: any, reply) => {
 
         const token = generateToken({ 
 		id: user.id, 
-		password_version: user.password_version 
+		password_version: user.password_version,
+		token_version: user.token_version
 	});
         const refreshToken = createRefreshToken(user.id);
         const csrfToken = randomUUID();
@@ -258,7 +297,7 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
 	await new Promise<void>((resolve, reject) => {
 	  	db.run(
 			`UPDATE users
-	       		SET password_hash = ?, password_version = password_version + 1
+	       		SET password_hash = ?, password_version = password_version + 1, token_version + 1,
 	       		WHERE id = ?`,
 				[newHash, userId],
 			err => (err ? reject(err) : resolve())
@@ -271,20 +310,97 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
 });
 
 // --- LOGOUT ---
-fastify.post('/auth/logout', async (_, reply) => {
-	const refreshToken = _.cookies?.refresh_token;
+fastify.post('/auth/logout', {preHandler: requireAuth }, async (req: any, reply) => {
+	const refreshToken = req.cookies?.refresh_token;
+
     	if (refreshToken) {
 		const payload = await verifyRefreshToken(refreshToken);
 		if (payload) {
 	    		await revokeRefreshToken(payload.tokenId);
 		}
     	}
+
+	const db = getDB();
+
+	await new Promise<void>((resolve, reject) => {
+		db.run(`
+		       UPDATE users
+		       SET token_version = token_version + 1
+		       WHERE id = ?
+		       `,
+		       [req.user.id],
+		       err => err ? reject(err) : resolve()
+		      );
+	});
 	
 	reply
         .clearCookie('access_token', { path: '/' })
         .clearCookie('refresh_token', { path: '/auth/refresh' })
         .clearCookie('csrf_token', { path: '/' })
         .send({ status: 'logged_out' });
+});
+
+fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, reply) => {
+  const userId = req.user.sub;
+  const db = getDB();
+  const dbToken = getTokenDB();
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      db.serialize(() => {
+        db.run('BEGIN TRANSACTION');
+
+        // 1. Revoke refresh tokens
+        dbToken.run(
+          `UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?`,
+          [userId],
+          err => {
+            if (err) {
+              db.run('ROLLBACK');
+              return reject(err);
+            }
+
+            // 2. Invalidate JWT
+            db.run(
+              `UPDATE users SET token_version = token_version + 1 WHERE id = ?`,
+              [userId],
+              function (err) {
+                if (err || this.changes === 0) {
+                  db.run('ROLLBACK');
+                  return reject(err || new Error('User not found'));
+                }
+
+                // 3. Delete user
+                db.run(
+                  `DELETE FROM users WHERE id = ?`,
+                  [userId],
+                  function (err) {
+                    if (err) {
+                      db.run('ROLLBACK');
+                      return reject(err);
+                    }
+
+                    db.run('COMMIT');
+                    resolve();
+                  }
+                );
+              }
+            );
+          }
+        );
+      });
+    });
+
+    reply
+      .clearCookie('access_token', { path: '/' })
+      .clearCookie('refresh_token', { path: '/auth/refresh' })
+      .clearCookie('csrf_token', { path: '/' })
+      .send({ status: 'account_deleted' });
+
+  } catch (err) {
+    req.log.error(err);
+    reply.status(500).send({ error: 'ACCOUNT_DELETE_FAILED' });
+  }
 });
 
 // --- REFRESH ---
@@ -313,6 +429,7 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
     	const newAccess = generateToken({
 		id: user.id,
 		password_version: user.password_version,
+		token_version: user.token_version,
     	});
 
     	const newRefresh = createRefreshToken(user.id);
@@ -396,6 +513,7 @@ fastify.post('/auth/2fa/verify', async (req, reply) => {
     	const accessToken = generateToken({
 		id: user.id,
 		password_version: user.password_version,
+		token_version: user.token_version,
     	});
 
     	const refreshToken = createRefreshToken(user.id);
