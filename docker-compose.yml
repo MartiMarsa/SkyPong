@@ -47,6 +47,10 @@ services:
         condition: service_healthy
       game-service:
         condition: service_healthy
+      profile-service:
+        condition: service_healthy
+      statistics-service:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/nginx_status >/dev/null 2>&1 || exit 1"]
       interval: 10s
@@ -87,6 +91,36 @@ services:
       - SERVICE_NAME=game-service
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:4000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  profile-service:
+    container_name: profile-service
+    build: ./profile-service
+    networks:
+      - backend
+      - internal
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=profile-service
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:5000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  statistics-service:
+    container_name: statistics-service
+    build: ./statistics-service
+    networks:
+      - backend
+      - internal
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=statistics-service
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:6000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
       interval: 10s
       timeout: 3s
       retries: 10
