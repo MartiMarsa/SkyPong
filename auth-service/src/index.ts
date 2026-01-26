@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import cookie from '@fastify/cookie';
+import fetch from 'node-fetch';
 import chalk from 'chalk';
 import { randomUUID } from 'crypto';
 import { signup, login } from './auth';
@@ -18,6 +19,11 @@ fastify.register(cookie, { secret: 'cookie-secret' });
 
 const privateKey = fs.readFileSync('./jwt-private.pem');
 const publicKey = fs.readFileSync('./jwt-public.pem');
+
+// Better move to env
+PROFILE_SERVICE_URL='http://profile-service:8082';
+SERVICE_TOKEN='secret';
+
 
 const cookieOpts = {
     httpOnly: true,
@@ -39,7 +45,7 @@ interface TwoFAVerifyBody {
       	code: string;
 }
 
-interface TwoFAEnableBody {
+interface TwoFABody {
 	id: string;
 	code: string;
 }
@@ -341,66 +347,103 @@ fastify.post('/auth/logout', {preHandler: requireAuth }, async (req: any, reply)
 });
 
 fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, reply) => {
-  const userId = req.user.sub;
-  const db = getDB();
-  const dbToken = getTokenDB();
+      	const userId = req.user.sub;
+      	const db = getDB();
+      	const dbToken = getTokenDB();
 
-  try {
-    await new Promise<void>((resolve, reject) => {
-      db.serialize(() => {
-        db.run('BEGIN TRANSACTION');
+      	try {
+	    	await new Promise<void>((resolve, reject) => {
+		  	db.serialize(() => {
+				db.run('BEGIN TRANSACTION');
 
-        // 1. Revoke refresh tokens
-        dbToken.run(
-          `UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?`,
-          [userId],
-          err => {
-            if (err) {
-              db.run('ROLLBACK');
-              return reject(err);
-            }
+				// 1. Revoke refresh tokens
+			        dbToken.run(
+			      		`UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?`,
+					[userId],
+					err => {
+				    		if (err) {
+					  		db.run('ROLLBACK');
+				  			return reject(err);
+			    		}
 
-            // 2. Invalidate JWT
-            db.run(
-              `UPDATE users SET token_version = token_version + 1 WHERE id = ?`,
-              [userId],
-              function (err) {
-                if (err || this.changes === 0) {
-                  db.run('ROLLBACK');
-                  return reject(err || new Error('User not found'));
-                }
+			    	// 2. Invalidate JW
+				db.run(
+			  		`UPDATE users SET token_version = token_version + 1 WHERE id = ?`,
+					[userId],
+			  		function (err) {
+						if (err || this.changes === 0) {
+				      			db.run('ROLLBACK');
+				      			return reject(err || new Error('User not found'));
+						}
 
-                // 3. Delete user
-                db.run(
-                  `DELETE FROM users WHERE id = ?`,
-                  [userId],
-                  function (err) {
-                    if (err) {
-                      db.run('ROLLBACK');
-                      return reject(err);
-                    }
+				// 3. Delete user
+				db.run(
+		      			`DELETE FROM users WHERE id = ?`,
+			      		[userId],
+		      			function (err) {
+			    			if (err) {
+				  			db.run('ROLLBACK');
+				  			return reject(err);
+			    			}
 
-                    db.run('COMMIT');
-                    resolve();
-                  }
-                );
-              }
-            );
-          }
-        );
-      });
-    });
+					    	db.run('COMMIT');
+	    					resolve();
+		      			}
+				);
+			  		}
+		    		);
+			      		}
+				);
+		  	});
+	    	});
+/*
+		// 4. Notify profile service
+		try {
+			const res = await fetch(
+				`${process.env.PROFILE_SERVICE_URL}/internal/profile/deleteme`,
+				{
+					method: 'POST',
+				  	headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${process.env.SERVICE_TOKEN}`,
+				  	},
+				  	body: JSON.stringify({ userId }),
+				  	timeout: 5000, // node-fetch supports this
+			    	}
+		      	);
 
-    reply
-      .clearCookie('access_token', { path: '/' })
-      .clearCookie('refresh_token', { path: '/auth/refresh' })
-      .clearCookie('csrf_token', { path: '/' })
-      .send({ status: 'account_deleted' });
+		      	if (!res.ok) {
+			    	const text = await res.text();
 
-  } catch (err) {
-    req.log.error(err);
-    reply.status(500).send({ error: 'ACCOUNT_DELETE_FAILED' });
-  }
+			    	req.log.error(
+				  	{
+						status: res.status,
+						body: text,
+						userId,
+				  	},
+				  	'Profile deletion failed'
+			    	);
+		      	}
+
+		} catch (err) {
+
+		      	req.log.error(
+			    	{ err, userId },
+			    	'Profile service unreachable'
+		      	);
+		}
+*/
+		// 5. Clear cookies
+	    	reply
+	  	.clearCookie('access_token', { path: '/' })
+	  	.clearCookie('refresh_token', { path: '/auth/refresh' })
+	  	.clearCookie('csrf_token', { path: '/' })
+	  	.send({ status: 'account_deleted' });
+
+      	} catch (err) {
+	    	req.log.error(err);
+	    	reply.status(500).send({ error: 'ACCOUNT_DELETE_FAILED' });
+	}
 });
 
 // --- REFRESH ---
@@ -449,15 +492,17 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
 
 // --- 2FA ---
 fastify.post('/auth/2fa/setup', async (req, reply) => {
-    	const { id } = req.body as TwoFAEnableBody; 
+    	const { id } = req.body as TwoFABody; 
     	const result = await generate2FA(id);
     	reply.send(result);
 });
 
 fastify.post('/auth/2fa/enable', async (req, reply) => {
-    	const { id, code } = req.body as TwoFAEnableBody;
-    	const db = getDB();
-    	const row = await new Promise<any>((res, rej) => {
+    	const { id, code } = req.body as TwoFABody;
+    	
+	const db = getDB();
+    	
+	const row = await new Promise<any>((res, rej) => {
 		db.get(`SELECT twofa_secret FROM users WHERE id = ?`, [id], (err, row) => (err ? rej(err) : res(row)));
     	});
 
@@ -465,6 +510,32 @@ fastify.post('/auth/2fa/enable', async (req, reply) => {
 
     	db.run(`UPDATE users SET twofa_enabled = 1 WHERE id = ?`, [id]);
     	reply.send({ status: '2FA enabled' });
+});
+
+fastify.post('/auth/2fa/disable', async (req, reply) => {
+	const { id, code } = req.body as TwoFABody;
+	
+	const db = getDB();
+
+	const user = await new Promise,any>((res, rej) => {
+		db.get(`SELECT twofa_secret FROM users WHERE id = ?`,
+		      [id],
+		      (err, row) => (err ? rej(err) : res(row)));
+	});
+
+	if (!user || !verify2FA(user.twofa_secret, code)) {
+		return reply.status(401).send({ error: 'Invalid 2FA code' });
+    	}
+
+	await new Promise((res, rej) => {
+		db.run(`UPDATE users SET twofa_enabled = 0, twofa_secret = NULL WHERE id = ?`,
+	   	[id],
+    		(err) => (err ? rej(err) : res(true))
+		      );
+    	});
+
+
+    	reply.send({ status: '2FA disabled' });
 });
 
 fastify.get('/auth/verify', async (req: any, reply) => {
