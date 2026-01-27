@@ -20,7 +20,7 @@ export default function PlayPage()
   return (
     <>
         <main className={ styles.main }>
-            <NavigationAppUI />
+            <NavigationAppUI home="/" />
             <h1 className={ styles.h1 }>{l('gameMode.title')}</h1>
         </main>
     </>

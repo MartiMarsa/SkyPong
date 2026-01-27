@@ -3,18 +3,13 @@ import  l from '../lib/i18n/localizer';
 import Link from 'next/link';
 import HomeButtonUi from './home-button-ui.js'
 import SelectStyles from '../js/detectMobile.js';
+import UserMenuUI from './user-menu-ui.js';
 
 
-const mobileStyles = { nav: '' }
+const mobileStyles = { nav: 'flex justify-between p-2 text-3xl' }
 const desktopStyles = { nav: '' }
 
-function getHomeURL()
-{
-    //Create Logic
-    return "/user-home"
-}
-
-export default function NavigationAppUI()
+export default function NavigationAppUI({ home, userURL })
 {
     const [styles, setStyles ] = useState(mobileStyles);
     useEffect(() => {
@@ -22,8 +17,10 @@ export default function NavigationAppUI()
         setStyles(SelectStyles(mobileStyles, desktopStyles));
     }, []);
     return (
-        <nav className= { mobileStyles.nav }>
-            <HomeButtonUi url={ getHomeURL() } />
+        <nav className= { styles.nav }>
+            { !home && <Link href="/logout" className=''>Log out</Link> }
+            { home && <HomeButtonUi url={ home } /> }
+            { userURL && <UserMenuUI userURL={ userURL } />}
         </nav>
     );
 }
