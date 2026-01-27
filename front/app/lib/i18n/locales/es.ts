@@ -2,11 +2,13 @@ import { title } from "node:process";
 
 const es = {
     homePage: {
-    title: "Pongo Porco",
-    welcome: "Bienvenido a Transcendence",
-    description: "Una experiencia trascendental de Pong",
+    title: "SkyPong",
+    welcome: "Bienvenido al cielo del Pong",
+    description: "Una experiencia celestial de Pong",
+    lable: "Ir a la Home",
     },
     gameMode: {
+        title: "Modo de Juego",
         cta: "¿Quieres jugar en remoto? Inicia sesión para acceder al modo multijugador en línea.",
         chooseMode: "Elige tu modo de juego",
         local: {

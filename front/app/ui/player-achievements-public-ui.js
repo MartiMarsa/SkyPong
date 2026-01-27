@@ -13,6 +13,11 @@ Achievement object structure:
     requirement: 10,
   },
 */
+
+function activateAchievements(achievements, wins, loses)
+{
+
+}
 export default function PlayerAchievementsPublicUI( { achievements })
 {
     const locs = locales();
@@ -20,10 +25,12 @@ export default function PlayerAchievementsPublicUI( { achievements })
         <article className="player-achievements-public-ui">
             <h3>{ l('achievements.title')}</h3>
             {console.log(achievements)}
+            <div className="achievments-wrapper">
+
             {
                 achievements.map(element => {
                     console.log("Achievement:", element);
-                  return( <div className='achievement'>
+                    return( <div className='achievement'>
                         <h4 className='achievement-title'>{l(`${element.nameKey}`)}</h4>
                         <p className='achievement-description'>{l(`${element.descriptionKey}`)}</p>
                         <div className='achievement-icon'>
@@ -33,6 +40,7 @@ export default function PlayerAchievementsPublicUI( { achievements })
                   );
                 })
             }
+            </div>
         </article>
     );
 }

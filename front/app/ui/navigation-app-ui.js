@@ -1,16 +1,29 @@
-import  { useState } from 'react';
+import  { useState, useEffect } from 'react';
 import  l from '../lib/i18n/localizer';
+import Link from 'next/link';
+import HomeButtonUi from './home-button-ui.js'
+import SelectStyles from '../js/detectMobile.js';
+
+
+const mobileStyles = { nav: '' }
+const desktopStyles = { nav: '' }
+
+function getHomeURL()
+{
+    //Create Logic
+    return "/user-home"
+}
 
 export default function NavigationAppUI()
 {
+    const [styles, setStyles ] = useState(mobileStyles);
+    useEffect(() => {
+        // Esto solo corre en el cliente, después del montaje
+        setStyles(SelectStyles(mobileStyles, desktopStyles));
+    }, []);
     return (
-        <nav className="navigation-app-ui">
-            <div className="nav-logo">{l('homePage.title')}</div>
-            <ul className="nav-links">
-                <li><a href="/home">{l('navigation.home')}</a></li>
-                <li><a href="/profile">{l('navigation.profile')}</a></li>
-                <li><a href="/logout">{l('navigation.logout')}</a></li>
-            </ul>
+        <nav className= { mobileStyles.nav }>
+            <HomeButtonUi url={ getHomeURL() } />
         </nav>
     );
 }
