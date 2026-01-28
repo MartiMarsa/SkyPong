@@ -57,7 +57,12 @@ nickname TEXT NOT NULL
 avatarUrl TEXT  
 winPhrase TEXT  
 localization TEXT  
-created_at TEXT  
+created_at TEXT 
+
+### player_stats
+user_id TEXT PRIMARY KEY
+wins INTEGER DEFAULT 0
+losses INTEGER DEFAULT 0
 
 ### friends
 
