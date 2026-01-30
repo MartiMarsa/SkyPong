@@ -1,7 +1,11 @@
+import fs from 'fs';
 import sqlite3 from 'sqlite3';
 import path from 'path';
 
-const tokenDbPath = path.resolve(__dirname, '../tokens.db');
+const dataDir = process.env.AUTH_DATA_DIR?.trim() || path.resolve(process.cwd(), 'data');
+const tokenDbPath = process.env.AUTH_TOKENS_DB_PATH?.trim() || path.join(dataDir, 'tokens.db');
+
+fs.mkdirSync(path.dirname(tokenDbPath), { recursive: true });
 
 const tokenDb = new sqlite3.Database(tokenDbPath, err => {
       	if (err) {
@@ -29,4 +33,3 @@ export function initTokenDB(): Promise<void> {
 export function getTokenDB() {
       	return tokenDb;
 }
-
