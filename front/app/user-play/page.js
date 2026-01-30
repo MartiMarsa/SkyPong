@@ -2,7 +2,7 @@
 
 import SelectStyles from '../js/detectMobile'; 
 import { useEffect, useState } from 'react';
-import l  from '../lib/i18n/localizer';
+import { useTranslation } from '../hooks/use-translation';
 import Link from 'next/link';
 
 
@@ -20,6 +20,7 @@ const desktopStyles = {
 
 export default function UserPlayPage()
 {
+    const { t } = useTranslation();
     const [styles, setStyles ] = useState(mobileStyles);
     useEffect(() => {
         // Esto solo corre en el cliente, después del montaje
@@ -29,7 +30,7 @@ export default function UserPlayPage()
     <>
         <main className={ styles.main }>
             {/* GAME CANVA */}
-            <h1 className={ styles.h1 }>{ l('homePage.title') }</h1>
+            <h1 className={ styles.h1 }>{ t.userPlayPage.title }</h1>
         </main>
     </>
   );

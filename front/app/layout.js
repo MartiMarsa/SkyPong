@@ -3,6 +3,7 @@ import { config } from '@fortawesome/fontawesome-svg-core';
 import '@fortawesome/fontawesome-svg-core/styles.css';
 config.autoAddCss = false;
 
+import { LanguageProvider } from './context/language-context';
 import { getCurrentLocale } from "./lib/i18n/locale-manager";
 
 export const metadata = {
@@ -22,8 +23,10 @@ export const metadata = {
  
 export default function RootLayout({ children }) {
   return (
-    <html lang={getCurrentLocale()}>
-      <body>{children}</body>
-    </html>
+    <LanguageProvider>
+      <html lang={getCurrentLocale()}>
+        <body>{children}</body>
+      </html>
+    </LanguageProvider>
   );
 }

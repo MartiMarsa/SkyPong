@@ -24,6 +24,19 @@ const es = {
             description: "Compite contra jugadores de todo el mundo.",
         },
     },
+    language: {
+        selectLanguage: "Seleccionar idioma",
+        english: "Inglés",
+        en: "en",
+        spanish: "Español",
+        es: "es",
+        italian: "Italiano",
+        it: "it",
+    },
+    footer: {
+        terms: "Términos de servicio",
+        privacy: "Política de privacidad",
+    },
     game: {
         score: "Puntuación",
         pause: "Pausa",
@@ -148,6 +161,7 @@ const es = {
         home: "Inicio",
         profile: "Perfil",
         logout: "Cerrar sesión",
+        goBack: "Volver",
     },
     player: {
         wins: "Victorias",

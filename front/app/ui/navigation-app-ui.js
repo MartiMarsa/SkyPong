@@ -1,5 +1,5 @@
 import  { useState, useEffect } from 'react';
-import  l from '../lib/i18n/localizer';
+import { useTranslation } from '../hooks/use-translation';
 import Link from 'next/link';
 import HomeButtonUi from './home-button-ui.js'
 import SelectStyles from '../js/detectMobile.js';
@@ -16,9 +16,10 @@ export default function NavigationAppUI({ home, userURL })
         // Esto solo corre en el cliente, después del montaje
         setStyles(SelectStyles(mobileStyles, desktopStyles));
     }, []);
+    const { t } = useTranslation();
     return (
         <nav className= { styles.nav }>
-            { !home && <Link href="/logout" className=''>Log out</Link> }
+            { !home && <Link href="/logout" className=''>{t.navigation.logout}</Link> }
             { home && <HomeButtonUi url={ home } /> }
             { userURL && <UserMenuUI userURL={ userURL } />}
         </nav>
