@@ -1,6 +1,5 @@
 import Fastify from 'fastify';
 import jwt from 'jsonwebtoken';
-import fs from 'fs';
 import cookie from '@fastify/cookie';
 import fetch from 'node-fetch';
 import chalk from 'chalk';
@@ -8,6 +7,7 @@ import { randomUUID } from 'crypto';
 import { signup, login } from './auth';
 import { initDB, getDB } from './db';
 import { initTokenDB, getTokenDB } from './dbTokens';
+import { publicKey } from './keys';
 import { generateToken, generate2FAToken } from './token';
 import { generate2FA, verify2FA } from './twofa';
 import { createRefreshToken, verifyRefreshToken, revokeRefreshToken, revokeRefreshTokenById, isTokenRevoked } from './refresh';
@@ -461,7 +461,7 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
     	const db = getDB();
     	const user = await new Promise<any>((res, rej) => {
 		db.get(
-	    		`SELECT id, username, password_version FROM users WHERE id = ?`,
+	    		`SELECT id, username, password_version, token_version FROM users WHERE id = ?`,
 			[payload.userId],
 			(err, row) => (err ? rej(err) : res(row))
 		);
@@ -571,7 +571,7 @@ fastify.post('/auth/2fa/verify', async (req, reply) => {
     	const db = getDB();
     	const user = await new Promise<any>((res, rej) => {
 		db.get(
-	    		`SELECT id, username, password_version, twofa_secret FROM users WHERE id = ?`,
+	    		`SELECT id, username, password_version, token_version, twofa_secret FROM users WHERE id = ?`,
 	    		[payload.sub],
 	    		(err, row) => (err ? rej(err) : res(row))
 		);
@@ -621,4 +621,3 @@ const start = async () => {
 };
 
 start();
-
