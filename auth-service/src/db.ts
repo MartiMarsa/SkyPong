@@ -1,7 +1,11 @@
+import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
 
-const dbPath = path.resolve(__dirname, '../auth.db');
+const dataDir = process.env.AUTH_DATA_DIR?.trim() || path.resolve(process.cwd(), 'data');
+const dbPath = process.env.AUTH_DB_PATH?.trim() || path.join(dataDir, 'auth.db');
+
+fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 const db = new sqlite3.Database(dbPath, err => {
 	if (err) {

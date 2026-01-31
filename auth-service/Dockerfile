@@ -10,6 +10,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
+RUN npm run generate-keys
 RUN npm run build
 RUN mkdir -p /app/keys \
   && if ls /app/jwt-*.pem >/dev/null 2>&1; then cp /app/jwt-*.pem /app/keys/; fi
