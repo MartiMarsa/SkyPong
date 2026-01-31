@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto';
 import { signup, login } from './auth';
 import { initDB, getDB } from './db';
 import { initTokenDB, getTokenDB } from './dbTokens';
-import { publicKey } from './keys';
+import { privateKey, publicKey } from './keys';
 import { generateToken, generate2FAToken } from './token';
 import { generate2FA, verify2FA } from './twofa';
 import { createRefreshToken, verifyRefreshToken, revokeRefreshToken, revokeRefreshTokenById, isTokenRevoked } from './refresh';
@@ -17,12 +17,8 @@ const fastify = Fastify({ logger: true });
 
 fastify.register(cookie, { secret: 'cookie-secret' });
 
-const privateKey = fs.readFileSync('./jwt-private.pem');
-const publicKey = fs.readFileSync('./jwt-public.pem');
-
-// Better move to env
-PROFILE_SERVICE_URL='http://profile-service:8082';
-SERVICE_TOKEN='secret';
+const PROFILE_SERVICE_URL = process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:8082';
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN ?? 'secret';
 
 
 const cookieOpts = {
@@ -517,7 +513,7 @@ fastify.post('/auth/2fa/disable', async (req, reply) => {
 	
 	const db = getDB();
 
-	const user = await new Promise,any>((res, rej) => {
+	const user = await new Promise<any>((res, rej) => {
 		db.get(`SELECT twofa_secret FROM users WHERE id = ?`,
 		      [id],
 		      (err, row) => (err ? rej(err) : res(row)));
