@@ -26,6 +26,7 @@ export function initProfileDB(): Promise<void> {
 				}
 		  	};
 
+			db.run('PRAGMA journal_mode = WAL');
 			db.run('PRAGMA foreign_keys = ON');
 			db.run('BEGIN');
 
@@ -35,7 +36,9 @@ export function initProfileDB(): Promise<void> {
  				avatarUrl TEXT,
  				winPhrase TEXT,
  				localization TEXT DEFAULT 'es',
-				created_at TEXT DEFAULT CURRENT_TIMESTAMP
+				created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+				deleted INTEGER NOT NULL DEFAULT 0,
+				deleted_at TEXT
  			)`, onError);
 
 			db.run(`CREATE UNIQUE INDEX IF NOT EXISTS players_nickname_unique
@@ -44,9 +47,21 @@ export function initProfileDB(): Promise<void> {
 			      
 			db.run(`CREATE TABLE IF NOT EXISTS player_stats (
 				user_id TEXT PRIMARY KEY,
+				played INTEGER DEFAULT 0,
 		      		wins INTEGER DEFAULT 0,
 		      		losses INTEGER DEFAULT 0,
+				winrate REAL DEFAULT 0,
+				rate INTEGER DEFAULT 0,
+				updated_at TEXT,
 		      		FOREIGN KEY(user_id) REFERENCES players(user_id) ON DELETE CASCADE
+			)`, onError);
+
+			db.run(`CREATE TABLE IF NOT EXISTS processed_games (
+				game_id TEXT PRIMARY KEY,
+				user_id TEXT,
+				processed_at TEXT,
+
+				PRIMARY KEY (game_id, user_id)
 			)`, onError);
 
 
@@ -74,6 +89,10 @@ export function initProfileDB(): Promise<void> {
 
 			      	UNIQUE(user1_id, user2_id)
 			)`, onError);
+
+			db,run(`CREATE INDEX IF NOT EXISTS idx_players_stats_updated
+			       ON player_stats(updated_at)`, 
+			       onError);
 
 			db.run(`CREATE INDEX IF NOT EXISTS friends_request_time
 			       ON friends(created_at)

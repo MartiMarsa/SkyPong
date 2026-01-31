@@ -4,6 +4,7 @@ import fastifyStatic from '@fastify/static';
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
+import { access, unlink } from 'fs/promises';
 import chalk from 'chalk';
 import { initProfileDB, getProfileDB } from './dbPlayers';
 import { 
@@ -11,6 +12,8 @@ import {
   createPlayer, 
   updatePlayerInfo, 
   updatePlayerAvatar, 
+  updatePlayerStats,
+  softdeletePlayer,
   getUserPublicProfile 
 } from './player';
 import * as friendService from './friendService';
@@ -112,35 +115,39 @@ fastify.patch('/me', async (req, reply) => {
 	} 
 });
 
+// --- UPDATE USER STATS ---
+fastify.post('internal/profile/stats', { preHandler: requireServiceAuth }, async (req: any, reply) => {
+	const { userId, gameId, result, opponentRate }  = req.body;
+
+	if (!userId || !gameId || !result || !opponentRate) {
+		return reply.status(400).send({ errsr: 'incomplete request'});
+	}
+
+	try {
+		await updatePlayerStats(userId, gameId, result, opponentRate);
+		reply.send({ status: 'player_stats_updated'});
+	} catch (err) {
+		req.log.error(err);
+		reply.status(500).send({ error: 'PROFILE_STATS_UPDATE_FAILED'});
+	}
+});
+
 // --- DELETE PROFILE ---
 fastify.post('/internal/profile/delete', { preHandler: requireServiceAuth }, async (req: any, reply) => {
 
-    	const { userId } = req.body;
+    	const { userId  } = req.body;
 
     	if (!userId) {
 	  	return reply.status(400).send({ error: 'userId required' });
     	}
 
-    	const db = getProfileDB();
+	const avatarUrl = `/static/avatars/${userId}.webp`;
 
     	try {
-	  	await new Promise<void>((resolve, reject) => {
+		await softdeletePlayer(userId);
 
-			db.run(
-		      		`DELETE FROM players WHERE user_id = ?`,
-		      		[userId],
-		      		function (err) {
-
-			    		if (err) return reject(err);
-
-			    		if (this.changes === 0) {
-				  		return reject(new Error('User not found'));
-			    		}
-
-			    		resolve();
-		      		}
-			);
-	  	});
+		await access(avatarUrl, constants.F_OK);
+		await unlink(avatarUrl);
 
 	  	reply.send({ status: 'profile_deleted' });
 
