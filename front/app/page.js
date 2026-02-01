@@ -20,12 +20,7 @@ const desktopStyles = {
 
 export default function HomePage()
 {
-    const [styles, setStyles ] = useState(mobileStyles);
-    useEffect(() => {
-        // Esto solo corre en el cliente, después del montaje
-        setStyles(useStyles(mobileStyles, desktopStyles));
-        setCurrentLocale(getCurrentLocale());
-    }, []);
+    const { styles } = useStyles(mobileStyles, desktopStyles);
     const { t } = useTranslation();
   return (
     <>
