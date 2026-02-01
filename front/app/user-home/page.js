@@ -2,7 +2,7 @@
 
 
 import { useState, useEffect } from 'react';
-import SelectStyles from '../js/detectMobile';
+import SelectStyles from '../lib/mobiledetection/detectMobile';
 import { useTranslation } from '../hooks/use-translation';
 import HeroUI from '../ui/hero-ui';
 import NavigationAppUI from '../ui/navigation-sign-ui';

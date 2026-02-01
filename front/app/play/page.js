@@ -1,6 +1,6 @@
 'use client';
 
-import SelectStyles from '../js/detectMobile';
+import SelectStyles from '../lib/mobiledetection/detectMobile';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslation } from '../hooks/use-translation';

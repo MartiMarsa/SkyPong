@@ -140,13 +140,16 @@ const it = {
     signInPage: {
         title: "Accedi",
         noAccountText: "Non hai un account?",
+        
         submitButton: "Accedi",
         passwordForgottenLinkText: "Password dimenticata?",
     },
     signUpPage: {
         title: "Registrati",
         hasAccount: "Hai già un account?",
+        createAccount: "Crea nuovo account",
         passwordLabel: "Password",
+        newPasswordLabel: "Nuova password",
         confirmPasswordLabel: "Conferma password",
         submitButton: "Registrati",
     },
@@ -168,6 +171,7 @@ const it = {
     },
     form: {
         emailLabel: "Email",
+        emailPlaceholder: "tu@email.com",
         passwordLabel: "Password",
         confirmPasswordLabel: "Conferma password",
         usernameLabel: "Nome utente",
@@ -177,6 +181,16 @@ const it = {
         passwordsDoNotMatch: "Le password non coincidono.",
         goBackHome: "Torna alla Home",
         goBack: "Indietro",
+    },
+    formErrors: {
+        required: "Este campo es obligatorio.",
+        invalidFormat: "Formato inválido.",
+        tooLong: "¡Demasiado larga!",
+        tooShort: "Demasiado corta.",
+        minLength: (min: number) => `Debe tener al menos ${min} caracteres.`,
+        containsLetter: "Debe contener al menos una letra.",
+        containsNumber: "Debe contener al menos un número.",
+        containsSpecialCharacter: "Debe contener al menos un carácter especial.",
     },
     leaderboard: {
         title: "Classifica",

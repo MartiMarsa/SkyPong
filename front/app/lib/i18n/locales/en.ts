@@ -145,8 +145,10 @@ const en = {
     },
     signUpPage: {
         title: "Sign Up",
-        hasAccount: "Already have an account?",
+        hasAccount: "Already have an account", 
+        createAccount: "Create new account",
         passwordLabel: "Password",
+        newPasswordLabel: "New Password",
         confirmPasswordLabel: "Confirm password",
         submitButton: "Sign Up",
     },
@@ -169,6 +171,7 @@ const en = {
     form: {
         emailLabel: "Email",
         passwordLabel: "Password",
+        emailPlaceholder: "your@email.com",
         confirmPasswordLabel: "Confirm password",
         usernameLabel: "Username",
         nickNameLabel: "Nickname",
@@ -177,6 +180,16 @@ const en = {
         passwordsDoNotMatch: "Passwords do not match.",
         goBackHome: "Back to Home",
         goBack: "Go back",
+    },
+    formErrors: {
+        required: "This field is required.",
+        invalidFormat: "Invalid format.",
+        tooLong: "Too long.",
+        tooShort: "Too short.",
+        minLength: (min: number) => `Must be at least ${min} characters long.`,
+        containsLetter: "Must contain at least one letter.",
+        containsNumber: "Must contain at least one number.",
+        containsSpecialCharacter: "Must contain at least one special character.",
     },
     leaderboard: {
         title: "Leaderboard",

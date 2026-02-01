@@ -2,21 +2,16 @@
 import  { useState, useEffect } from 'react';
 import { useTranslation } from '../context/language-context';
 import Link from 'next/link';
-import SelectStyles from '../js/detectMobile.js';
-
+import { useStyles } from '../hooks/use-styles';
 
 const mobileStyles = { nav: 'flex justify-between p-2 text-3xl', langlink: '' }
 const desktopStyles = { nav: '', langlink: '' }
 
 export default function NavigationLanguageUI({ })
 {
-    const [styles, setStyles ] = useState(mobileStyles);
+    const { styles } = useStyles(mobileStyles, desktopStyles);
     const { t, changeLanguage } = useTranslation();
 
-    useEffect(() => {
-        // Esto solo corre en el cliente, después del montaje
-        setStyles(SelectStyles(mobileStyles, desktopStyles));
-    }, []);
     return (
         <nav className={styles.nav}>
                 <Link 

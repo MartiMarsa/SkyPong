@@ -1,3 +1,4 @@
+import { create } from "node:domain";
 import { title } from "node:process";
 
 const es = {
@@ -147,8 +148,10 @@ const es = {
     },
     signUpPage: {
         title: "Registrarse",
-        hasAccount: "¿Ya tienes una cuenta?",
+        hasAccount: "Ya tengo cuenta",
+        createAccount: "Crear nueva cuenta",
         passwordLabel: "Contraseña",
+        newPasswordLabel: "Nueva contraseña",
         confirmPasswordLabel: "Confirmar contraseña",
         submitButton: "Registrarse",
     },
@@ -170,6 +173,7 @@ const es = {
     },
     form: {
         emailLabel: "Correo electrónico",
+        emailPlaceholder: "tu@email.com",
         passwordLabel: "Contraseña",
         confirmPasswordLabel: "Confirmar contraseña",
         usernameLabel: "Nombre de usuario",
@@ -179,6 +183,16 @@ const es = {
         passwordsDoNotMatch: "Las contraseñas no coinciden.",
         goBackHome: "Volver a Inicio",
         goBack: "Volver",
+    },
+    formErrors: {
+        required: "Este campo es obligatorio.",
+        invalidFormat: "Formato inválido.",
+        tooLong: "¡Demasiado larga!",
+        tooShort: "Demasiado corta.",
+        minLength: (min: number) => `Debe tener al menos ${min} caracteres.`,
+        containsLetter: "Debe contener al menos una letra.",
+        containsNumber: "Debe contener al menos un número.",
+        containsSpecialCharacter: "Debe contener al menos un carácter especial.",
     },
     leaderboard: {
         title: "Tabla de clasificación",

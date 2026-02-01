@@ -2,7 +2,7 @@
 
 
 import { useState, useEffect } from 'react';
-import SelectStyles from './js/detectMobile';
+import { useStyles } from './hooks/use-styles';
 import { useTranslation } from './hooks/use-translation';
 import { setCurrentLocale, getCurrentLocale } from './lib/i18n/locale-manager';
 import HeroUI from './ui/hero-ui';
@@ -23,7 +23,7 @@ export default function HomePage()
     const [styles, setStyles ] = useState(mobileStyles);
     useEffect(() => {
         // Esto solo corre en el cliente, después del montaje
-        setStyles(SelectStyles(mobileStyles, desktopStyles));
+        setStyles(useStyles(mobileStyles, desktopStyles));
         setCurrentLocale(getCurrentLocale());
     }, []);
     const { t } = useTranslation();

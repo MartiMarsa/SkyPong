@@ -2,7 +2,7 @@
 
 import { useTranslation } from '../hooks/use-translation';
 import Link from 'next/link';
-import SelectStyles from '../js/detectMobile';
+import { useStyles } from '../hooks/use-styles';
 import { useEffect, useState } from 'react';
 import NavigationAppUI from '../ui/navigation-app-ui';
 
@@ -11,11 +11,7 @@ const desktopStyles = { main: '', h1:'text-xl'}
 
 export default function PlayPage()
 {
-    const [styles, setStyles ] = useState(mobileStyles);
-    useEffect(() => {
-        // Esto solo corre en el cliente, después del montaje
-        setStyles(SelectStyles(mobileStyles, desktopStyles));
-    }, []);
+    const { styles } = useStyles(mobileStyles, desktopStyles);
     const { t } = useTranslation();
   return (
     <>
