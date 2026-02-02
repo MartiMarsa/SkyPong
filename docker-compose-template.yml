@@ -3,7 +3,8 @@
 # NETWORKS
 # ──────────────────────────────────────────────
 networks:
-  frontend: bridge
+  frontend:
+    driver: bridge
   backend:   # Edge (NGINX) <-> Microservicios
     driver: bridge
   internal:  # Observabilidad (Prometheus/Grafana/exporters)
@@ -109,6 +110,7 @@ services:
       - internal
     volumes:
       - sqlite_auth:/app/data
+    user: "${UIDC}:${GIDC}" 
       # Optional: mount JWT keys from host secrets
       # - ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
       # - ./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro

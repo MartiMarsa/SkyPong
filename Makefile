@@ -72,6 +72,7 @@ pull:
 # Limpio "normal": no te borra datos persistidos
 clean:
 	$(DC) $(DCFLAGS) down --remove-orphans
+	rm -v $(COMPOSE_FILE)
 
 # Limpio "hard": borra volúmenes (pierdes SQLite, Prometheus, Grafana, etc.)
 clean-hard:
