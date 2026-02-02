@@ -1,4 +1,3 @@
-
 # ──────────────────────────────────────────────
 # NETWORKS
 # ──────────────────────────────────────────────
@@ -95,6 +94,8 @@ services:
   frontend:
     container_name: frontend
     build: ./front
+    ports:
+      - "3000:3000"  # solo para desarrollo
     networks:
      - frontend
     volumes:
@@ -110,11 +111,13 @@ services:
       - internal
     volumes:
       - sqlite_auth:/app/data
-    user: "${UIDC}:${GIDC}" 
+    user: "${UID}:${GID}" 
       # Optional: mount JWT keys from host secrets
       # - ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
       # - ./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro
     environment:
+      - UID=${UID}
+      - GID=${GID}
       - NODE_ENV=production
       - SERVICE_NAME=auth-service
       # Optional: point to mounted JWT keys

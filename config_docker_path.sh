@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export UIDC=$(id -u)
-export GIDC=$(id -g)
-echo $UIDC
-echo $GIDC
+cat > .env <<EOF
+UID=$(id -u)
+GID=$(id -g)
+EOF
 DOCKCOMPS="docker-compose.yml"
 
 # CAMBIAR BASE DEPENDIENDO DEL HOST (42 O TU CASA)
-BASE="/sgoinfre/students/${USER}/transcendence-dev/volumes/"
-#BASE="TUCASA"
+#BASE="/sgoinfre/students/${USER}/transcendence-dev/volumes/"
+BASE=$PWD/volumes/
 
 AUTH="sqlite_auth"
 FRONT="front-dev"
@@ -23,7 +23,7 @@ mkdir -p \
   "${BASE}${FRONT}" \
   "${BASE}${STATISTICS}" \
   "${BASE}${GAME_SERVICE}" \
-  "${BASE}${PROFILE}"
+  "${BASE}${PROFILE}" 2>/dev/null || true
 
 # Intentar chown (puede fallar en 42/rootless o ciertos FS) sin romper el script
 chown -R "$USER:$USER" \
@@ -39,7 +39,7 @@ chmod -R u+rwX \
   "${BASE}${FRONT}" \
   "${BASE}${STATISTICS}" \
   "${BASE}${GAME_SERVICE}" \
-  "${BASE}${PROFILE}"
+  "${BASE}${PROFILE}" 2>/dev/null || true
 
 echo "✅ Directorios OK:"
 ls -ld "${BASE}${AUTH}" "${BASE}${FRONT}" "${BASE}${STATISTICS}" "${BASE}${GAME_SERVICE}" "${BASE}${PROFILE}"
