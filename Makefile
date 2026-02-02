@@ -3,6 +3,8 @@ SHELL := /bin/bash
 # Usa docker compose (plugin). Si tú usas docker-compose legacy, cambia a "docker-compose"
 DC := docker compose
 COMPOSE_FILE := docker-compose.yml
+COMPOSE_TEMPLATE := docker-compose-template.yml
+CONFIG_PATH := config_docker_path.sh
 
 # Nombre del proyecto (para agrupar recursos). Opcional.
 PROJECT ?= transcendence
@@ -39,6 +41,10 @@ help:
 	@echo "  make exec-game      -> shell dentro de game-service"
 	@echo ""
 
+config:
+	cp -v $(COMPOSE_TEMPLATE) $(COMPOSE_FILE)
+	chmod 777 $(CONFIG_PATH)
+	./$(CONFIG_PATH)
 up:
 	$(DC) $(DCFLAGS) up -d --remove-orphans
 
