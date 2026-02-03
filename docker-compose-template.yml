@@ -13,31 +13,31 @@ networks:
 # VOLUMES
 # ──────────────────────────────────────────────
 volumes:
-  sqlite_auth:
+  sqlite_auth_vol:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: PLACEHOLDER_SQLITE_AUTH
-  front-dev:
+  front-dev_vol:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: PLACEHOLDER_FRONT
-  statistics-service:
+  statistics-service_vol:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: PLACEHOLDER_STATISTICS
-  game-service:
+  game-service_vol:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: PLACEHOLDER_GAME_SERVICE
-  profile-service:
+  profile-service_vol:
     driver: local
     driver_opts:
       type: none
@@ -99,7 +99,7 @@ services:
     networks:
      - frontend
     volumes:
-     - front-dev:/app/front
+     - front-dev_vol:/app/front
   # ────────────────────────────────────────────
   # MICROSERVICIOS
   # ────────────────────────────────────────────
@@ -110,8 +110,8 @@ services:
       - backend
       - internal
     volumes:
-      - sqlite_auth:/app/data
-    user: "${UID}:${GID}" 
+      - sqlite_auth_vol:/app/data
+    # user: "${UID}:${GID}" 
       # Optional: mount JWT keys from host secrets
       # - ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
       # - ./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro
@@ -141,6 +141,8 @@ services:
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=game-service
+    volumes:
+      - game-service_vol:/app/data
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:4000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
       interval: 10s
@@ -156,6 +158,8 @@ services:
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=profile-service
+    volumes:
+      - profile-service_vol:/app/data
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:5000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
       interval: 10s
@@ -171,6 +175,8 @@ services:
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=statistics-service
+    volumes:
+      - statistics-service_vol:/app/data
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:6000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
       interval: 10s
