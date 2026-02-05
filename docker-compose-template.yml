@@ -99,7 +99,12 @@ services:
     networks:
      - frontend
     volumes:
-     - front-dev_vol:/app/front
+    - ./front:/app
+    - /app/node_modules
+    - /app/.next
+    environment:
+    - NODE_ENV=development
+    - WATCHPACK_POLLING=true
   # ────────────────────────────────────────────
   # MICROSERVICIOS
   # ────────────────────────────────────────────
