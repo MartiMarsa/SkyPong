@@ -47,14 +47,14 @@ export default function SignUpPage() {
             console.log("Datos validados:", data);
             
             // Llamada a la API
-            const response = await fetch('/auth/signup', {
+            const response = await fetch('/api/auth/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
             });
-
+            console.log("Response ",  response );
             if (!response.ok) {
                 throw new Error('Signup failed');
             }
@@ -140,7 +140,7 @@ export default function SignUpPage() {
                 </form>
 
                 <div className={styles.registerWrapper}>
-                    <Link href="/signin">{t.signUpPage.hasAccount}</Link>
+                    <Link href="/login">{t.signUpPage.hasAccount}</Link>
                 </div>
             </article>
         </main>

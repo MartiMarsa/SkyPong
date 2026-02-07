@@ -51,7 +51,7 @@ export default function SignInPage() {
             
             console.log("Datos validados:", data);
             // Call API here
-            const apiURL = 'https://localhost:8443/api/auth/signin'; // Asegúrate de que esta ruta sea correcta
+            const apiURL = 'api/auth/login'; // Asegúrate de que esta ruta sea correcta
             const response = await fetch(apiURL, {
                 method: 'POST',
                 headers: {
