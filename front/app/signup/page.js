@@ -61,7 +61,9 @@ export default function SignUpPage() {
 
             const result = await response.json();
             console.log('Signup successful:', result);
-            // Redirigir o manejar éxito aquí
+            window.location.href = `/me?id=${result.id}`
+            //Redirect with credentials
+
         } catch (error) {
             console.error('Error:', error);
         }

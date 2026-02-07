@@ -13,12 +13,12 @@ networks:
 # VOLUMES
 # ──────────────────────────────────────────────
 volumes:
-  sqlite_auth_vol:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: PLACEHOLDER_SQLITE_AUTH
+  # sqlite_auth_vol:
+  #   driver: local
+  #   driver_opts:
+  #     type: none
+  #     o: bind
+  #     device: PLACEHOLDER_SQLITE_AUTH
   front-dev_vol:
     driver: local
     driver_opts:
@@ -110,12 +110,17 @@ services:
   # ────────────────────────────────────────────
   auth-service:
     container_name: auth-service
-    build: ./auth-service
+    build:
+      context: ./auth-service
+    user: "0:0"
+      # args:
+      #   UID: ${UID}
+      #   GID: ${GID}
     networks:
       - backend
       - internal
     volumes:
-      - sqlite_auth_vol:/app/data
+      - PLACEHOLDER_SQLITE_AUTH:/app/data
     # user: "${UID}:${GID}" 
       # Optional: mount JWT keys from host secrets
       # - ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
