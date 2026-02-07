@@ -56,12 +56,14 @@ export function initProfileDB(): Promise<void> {
 		      		FOREIGN KEY(user_id) REFERENCES players(user_id) ON DELETE CASCADE
 			)`, onError);
 
+			db.run(`CREATE INDEX IF NOT EXISTS idx_stats_user
+			       ON player_stats(user_id)
+			       `, onError);
+
 			db.run(`CREATE TABLE IF NOT EXISTS processed_games (
 				game_id TEXT PRIMARY KEY,
-				user_id TEXT,
-				processed_at TEXT,
+				processed_at TEXT
 
-				PRIMARY KEY (game_id, user_id)
 			)`, onError);
 
 
@@ -90,7 +92,7 @@ export function initProfileDB(): Promise<void> {
 			      	UNIQUE(user1_id, user2_id)
 			)`, onError);
 
-			db,run(`CREATE INDEX IF NOT EXISTS idx_players_stats_updated
+			db.run(`CREATE INDEX IF NOT EXISTS idx_players_stats_updated
 			       ON player_stats(updated_at)`, 
 			       onError);
 

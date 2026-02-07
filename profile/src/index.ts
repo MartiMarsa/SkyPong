@@ -4,7 +4,7 @@ import fastifyStatic from '@fastify/static';
 import sharp from 'sharp';
 import path from 'path';
 import fs from 'fs/promises';
-import { access, unlink } from 'fs/promises';
+import { access, unlink, constants } from 'fs/promises';
 import chalk from 'chalk';
 import { initProfileDB, getProfileDB } from './dbPlayers';
 import { 
@@ -13,12 +13,16 @@ import {
   updatePlayerInfo, 
   updatePlayerAvatar, 
   updatePlayerStats,
+  getLeaderboard,
   softdeletePlayer,
   getUserPublicProfile 
 } from './player';
 import * as friendService from './friendService';
 
 const fastify = Fastify({logger: true});
+
+/* TODO CHANGE SERVICE_TOKEN to env in prod*/
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN || 'secret';
 
 // --- DDOS PROTECTION VIA FILE SIZE <= 2 MB ---
 fastify.register(multipart, {
@@ -50,7 +54,10 @@ async function requireServiceAuth(req: any, reply: any) {
 
       	const token = auth.replace('Bearer ', '');
 
-      	if (token !== process.env.SERVICE_TOKEN) {
+	/* TODO uncomment process.env.SERVICE_OKEN in prod */
+
+	if (token !== SERVICE_TOKEN) {
+//      	if (token !== process.env.SERVICE_TOKEN) {
 	    	return reply.status(403).send({ error: 'Forbidden' });
       	}
 }
@@ -116,21 +123,56 @@ fastify.patch('/me', async (req, reply) => {
 });
 
 // --- UPDATE USER STATS ---
-fastify.post('internal/profile/stats', { preHandler: requireServiceAuth }, async (req: any, reply) => {
-	const { userId, gameId, result, opponentRate }  = req.body;
+fastify.post('/internal/profile/gameresult/update', { preHandler: requireServiceAuth }, async (req: any, reply) => {
 
-	if (!userId || !gameId || !result || !opponentRate) {
-		return reply.status(400).send({ errsr: 'incomplete request'});
-	}
+	const res = req.body as {
+	    	game_id: string;
+	    	players: {
+		  	user_id: string;
+		  	result: 'win' | 'loss';
+	    	}[];
+      	};
+
+      	if (!res.game_id || !res.players || res.players.length !== 2) {    return reply.status(400).send({ error: 'Invalid payload' });
+      	}
+
+	const [p1, p2] = res.players;
+
+	if (
+		!p1.user_id || !p2.user_id ||
+		!['win', 'loss'].includes(p1.result) ||
+		!['win', 'loss'].includes(p2.result)
+	) {
+		return reply.code(400).send({ error: 'Invalid players' });
+    	}
+
+	if (p1.result === p2.result) {
+	  	return reply.code(400).send({ error: 'Invalid match result' });
+    	}
 
 	try {
-		await updatePlayerStats(userId, gameId, result, opponentRate);
-		reply.send({ status: 'player_stats_updated'});
+		await updatePlayerStats(res.game_id, p1, p2);
+		reply.send({ status: 'ok'});
 	} catch (err) {
 		req.log.error(err);
 		reply.status(500).send({ error: 'PROFILE_STATS_UPDATE_FAILED'});
 	}
 });
+
+// --- GET UPDATED LEADERBOARD ---
+fastify.get('/internal/profile/leaderboard/updates', { preHandler: requireServiceAuth }, async (req: any, reply) => {
+
+    	const since = req.query.since || '2026-01-01';
+
+	try {
+		const leaderboard = await getLeaderboard(since);
+	      	reply.send(leaderboard);
+	} catch (err) {
+		req.log.error(err);
+		reply.status(500).send({ error: 'LEADERBOARD_UPDATE_FAILED'});
+	}
+});
+
 
 // --- DELETE PROFILE ---
 fastify.post('/internal/profile/delete', { preHandler: requireServiceAuth }, async (req: any, reply) => {
@@ -412,8 +454,8 @@ const start = async () => {
 	try {
 	      await initProfileDB();
 	      console.log(chalk.green.bold('Database initialized'));
-	      await fastify.listen({ port: 8082, host: '0.0.0.0' });
-	      console.log(chalk.green.bold('Player service is running on :8082'));
+	      await fastify.listen({ port: 5000, host: '0.0.0.0' });
+	      console.log(chalk.green.bold('Player service is running on :5000'));
 	} catch(err) {
 		fastify.log.error(err);
 		process.exit(1);

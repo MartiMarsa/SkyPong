@@ -1,290 +1,410 @@
 import { getProfileDB } from './dbPlayers';
-import sqlite3 from 'sqlite3';
+import { getDbHelpers } from './helpers';
 import crypto from 'crypto';
 
+// --- CONFIG ---
 const MAX_RETRIES = 5;
-
-/*TODO Make sure, that default avatar exist in uploads/avatars */
 const DEFAULT_AVATAR = '/static/avatars/default.webp';
 
-// --- UTILS ---
+// --- DB ---
+const db = getDbHelpers(getProfileDB());
+
+// --- TYPES ---
+
 interface UpdatePlayerInfo {
-	nickname?: string;
-	winPhrase?: string;
-	localization?: string;
+  nickname?: string;
+  winPhrase?: string;
+  localization?: string;
 }
 
-function generateNickname(isDeleted: boolean): string {
-	const ts = Date.now().toString(36);
-	const rand = crypto.randomBytes(4).toString("base64url");
-	const tail = (ts + rand).slice(0, 10);
+type PlayerResult = {
+  user_id: string;
+  result: 'win' | 'loss';
+};
 
-	if (isDeleted === 0) { return "u_" + tail; }
+type LeaderboardRow = {
+  user_id: string;
 
-	return "deleted_" + tail;
-}
+  played: number;
+  wins: number;
+  losses: number;
 
-function calculateRate(userRate: number, opponentRate: number, result: string): number {
-	const K = 42;
-	const expected = 1 / (1 + Math.pow(10, (opponentRate - userRate) / 400));
-    	const score = result === 'win' ? 1 : 0;
-	const finalRate = Math.round(userRate + K * (score - expected));
+  winrate: number;
+  rate: number;
 
-	return finalRate >= 0 ? finalRate : 0;
-}
-
-// --- WRAPPERS FOR DATABASE ---
-export function createDbHelpers(db: sqlite3.Database) {
-      	return {
-	    	run(sql: string, params: any[] = []) {
-		  	return new Promise<{ changes: number }>((resolve, reject) => {
-				db.run(sql, params, function(err) {
-			      		if (err) reject(err);
-			      		else resolve({ changes: this.changes });
-				});
-		  	});
-	    	},
-
-	    	get<T>(sql: string, params: any[] = []) {
-		  	return new Promise<T | undefined>((resolve, reject) => {
-				db.get(sql, params, (err, row) => {
-			      		if (err) reject(err);
-			      		else resolve(row);
-				});
-		  	});
-	    	},
-
-	    	all<T>(sql: string, params: any[] = []) {
-		  	return new Promise<T[]>((resolve, reject) => {
-				db.all(sql, params, (err, rows) => {
-			      		if (err) reject(err);
-			      		else resolve(rows);
-				});
-		  	});
-	    	}
-      	};
-}
+  updated_at: string;
+};
 
 type ApplyResult =
   | { applied: false }
   | { applied: true; rate: number };
 
-// --- MAIN FUNCTIONS ---
-export function getPlayerById(user_id: string): Promise<any> {
-	
-	const db = getProfileDB();
+// --- UTILS ---
 
-	return new Promise((resolve, reject) => {
-		db.get(
-			`SELECT * FROM players WHERE user_id = ?`,
-		       	[user_id],
-			(err, row) => {
-				if (err) return reject(err);
-				resolve(row ?? null);
-			}
-		);
-	});
+function generateNickname(isDeleted: boolean): string {
+  const ts = Date.now().toString(36);
+  const rand = crypto.randomBytes(4).toString('base64url');
 
+  const tail = (ts + rand).slice(0, 10);
+
+  return isDeleted ? `deleted_${tail}` : `u_${tail}`;
 }
 
-export async function createPlayer(user_id: string): Promise<any> {
-      	const db = getProfileDB();
+function calculateRate(
+  userRate: number,
+  opponentRate: number,
+  result: 'win' | 'loss'
+): number {
+  const K = 42;
 
-      	for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-	    	const nickname = generateNickname(false);
+  const expected =
+    1 / (1 + Math.pow(10, (opponentRate - userRate) / 400));
 
-	    	try {
-		  	await new Promise<void>((resolve, reject) => {
-				db.run(
-			      		`INSERT INTO players (user_id, nickname) VALUES (?, ?)`,
-			      		[user_id, nickname],
-			      		function (err) {
-				    		if (err) return reject(err);
-				    		resolve();
-			      		}
-				);
-		  	});
+  const score = result === 'win' ? 1 : 0;
 
-		  	const row = await new Promise<any>((resolve, reject) => {
-				db.get(
-			      		`SELECT * FROM players WHERE user_id = ?`,
-				      		[user_id],
-			      		(err, row) => {
-				    		if (err) reject(err);
-				    		else resolve(row);
-			      		}
-				);
-		  	});
+  const final = Math.round(userRate + K * (score - expected));
 
-		  	console.log(`Player created on attempt #${attempt}: ${nickname}`);
-		  	return row;
-
-	    	} catch (err: any) {
-		  	if (err.code === 'SQLITE_CONSTRAINT') {
-				console.warn(`Nickname collision on attempt #${attempt}, retrying...`);
-				if (attempt === MAX_RETRIES) {
-			      		throw new Error('Failed to generate unique nickname after max retries');
-				}
-				continue;
-		  	}
-		  	throw err;
-	    	}
-      	}
+  return Math.max(final, 0);
 }
 
-export function updatePlayerInfo(user_id: string, data: UpdatePlayerInfo): Promise<void> {
+// --------------------------------------------------
+// GET PLAYER
+// --------------------------------------------------
 
-	const db = getProfileDB();
-
-	const fields: string[] = [];
-	const values: any[] = []; /*TODO change to string, any is for testing only */
-
-	if (data.nickname !== undefined) {
-		fields.push('nickname = ?');
-		values.push(data.nickname);
-	}
-
-	if (data.winPhrase !== undefined) {
-		fields.push('winPhrase = ?');
-		values.push(data.winPhrase);
-	}
-
-	if (data.localization !== undefined) {
-		fields.push('localization = ?');
-		values.push(data.localization);
-	}
-
-	if (fields.length === 0) {
-		return Promise.resolve();
-	}
-
-	values.push(user_id); 
-
-	const sql = `UPDATE players SET ${fields.join(', ')} where user_id = ?`;
-
-	return new Promise((resolve, reject) => {
-	    	db.run(sql, values, err => {
-		  	if (err) reject(err);
-		  	else resolve();
-	    	});
-      	});	
+export async function getPlayerById(userId: string) {
+  return db.get(
+    `SELECT * FROM players WHERE user_id = ?`,
+    [userId]
+  );
 }
 
-export async function updatePlayerAvatar(userId: string, avatarUrl: string): Promise<void> {
-	const db = getProfileDB();
+// --------------------------------------------------
+// CREATE PLAYER
+// --------------------------------------------------
 
-	const finalAvatar = avatarUrl && avatarUrl.length > 0 ? avatarUrl : DEFAULT_AVATAR;
+export async function createPlayer(userId: string) {
 
-	await new Promise<void>((resolve, reject) => {
-		db.run(`UPDATE players SET avatarUrl = ? WHERE user_id = ?`,
-		[finalAvatar, userId],
-		err => (err ? reject(err) : resolve())
-		      );
-	});
+  for (let i = 1; i <= MAX_RETRIES; i++) {
+
+    const nickname = generateNickname(false);
+
+    try {
+
+      await db.run(
+        `INSERT INTO players (user_id, nickname)
+         VALUES (?, ?)`,
+        [userId, nickname]
+      );
+
+      await db.run(`
+		   INSERT OR IGNORE INTO player_stats
+		   (user_id, played, wins, losses, winrate, rate, updated_at)
+		   VALUES
+		   (?, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
+		   `, 
+		   [userId]
+		  );
+
+      const player = await getPlayerById(userId);
+
+      if (!player) {
+        throw new Error('Player not found after create');
+      }
+
+      console.log('[createPlayer]', userId, nickname);
+
+      return player;
+
+    } catch (err: any) {
+
+      if (err?.code === 'SQLITE_CONSTRAINT') {
+
+        if (i === MAX_RETRIES) {
+          throw new Error('Nickname collision limit');
+        }
+
+        continue;
+      }
+
+      throw err;
+    }
+  }
+
+  throw new Error('createPlayer failed');
 }
 
-export async function softdeletePlayer(userId: string): Promise<void> {
-	const db = getProfileDB();
+// --------------------------------------------------
+// UPDATE TEXT INFO
+// --------------------------------------------------
 
-	const new_nickname = generateNickname(true);
+export async function updatePlayerInfo(
+  userId: string,
+  data: UpdatePlayerInfo
+) {
 
-	await new Promise<void>((resolve, reject) => {
-		db.run(`UPDATE players SET nickname = ?, avatarUrl = DEFAULT_AVATAR, deleted = 1, deleted_at = CURRENT_TIMESTAMP`, 
-		[new_nickname],
-		err => (err ? reject(err) : resolve())
-		);
-	});
+  const fields: string[] = [];
+  const values: any[] = [];
+
+  if (data.nickname !== undefined) {
+    fields.push('nickname = ?');
+    values.push(data.nickname);
+  }
+
+  if (data.winPhrase !== undefined) {
+    fields.push('winPhrase = ?');
+    values.push(data.winPhrase);
+  }
+
+  if (data.localization !== undefined) {
+    fields.push('localization = ?');
+    values.push(data.localization);
+  }
+
+  if (!fields.length) return;
+
+  values.push(userId);
+
+  const sql = `
+    UPDATE players
+    SET ${fields.join(', ')}
+    WHERE user_id = ?
+  `;
+
+  await db.run(sql, values);
 }
 
-export async function updatePlayerStats(userId: string, gameId: string, result: 'win' | 'loss', opponentRate: number): Promise<ApplyResult> {
+// --------------------------------------------------
+// UPDATE AVATAR
+// --------------------------------------------------
 
-	const db = getProfileDB();
-	const { run, get, all } = createDbHelpers(db);
+export async function updatePlayerAvatar(
+  userId: string,
+  avatarUrl: string
+) {
 
-      	await run('BEGIN IMMEDIATE');
+  const final =
+    avatarUrl && avatarUrl.length
+      ? avatarUrl
+      : DEFAULT_AVATAR;
 
-      	try {
-	    	const reserve = await run(`INSERT OR IGNORE INTO processed_games(game_id, user_id) VALUES (?, ?)`, 
-					  [gameId, userId]);
-
-   
-		if (reserve.changes === 0) {
-		  	await run('ROLLBACK');
-		  	return { applied: false };
-	    	}
-
-	    	const player = await get<{ 
-			wins: number; 
-			losses: number; 
-			rate: number; }>
-			(`SELECT wins, losses, rate FROM player_stats WHERE user_id=?`, 
-      			 [userId]);
-
-	       	   if (!player) {
-		     	   throw new Error(`Player ${userId} not found`);
-	       	   }
-
-	       	   const wins = player.wins + (result === 'win' ? 1 : 0);
-	       	   const losses = player.losses + (result === 'loss' ? 1 : 0);
-	       	   const played = wins + losses;
-	       	   const winrate = played > 0 ? wins / played : 0;
-	       	   const newRate = calculateRate(player.rate, opponentRate, result);
-
-	       	   await run(`UPDATE player_stats SET wins=?, losses=?, played=?, winrate=?, rate=?, updated_at=CURRENT_TIMESTAMP WHERE user_id=?`, 
-			     [wins, losses, played, winrate, newRate, userId]);
-
-		    await run('COMMIT');
-
-		    return {
-		      	    applied: true,
-		      	    rate: newRate
-		    };
-
-      	} catch (e) {
-	    	await run('ROLLBACK');
-	    	throw e;
-      	}
+  await db.run(
+    `UPDATE players SET avatarUrl = ? WHERE user_id = ?`,
+    [final, userId]
+  );
 }
 
-export async function getUserPublicProfile(nickname: string): Promise<any | null> {
-	const db = getProfileDB();
-	
-	const user: any = await new Promise((resolve, reject) => {
-	    	db.get(`SELECT user_id, nickname, avatarUrl, winPhrase FROM players WHERE nickname = ?`,
-		[nickname],
-		(err, row) => {
-			if (err) return reject(err);
-			resolve(row);
-	  	}
-		      );
-      	});
+// --------------------------------------------------
+// SOFT DELETE
+// --------------------------------------------------
 
-      	if (!user) return null;
+export async function softdeletePlayer(userId: string) {
 
-      	const stat: any = await new Promise((resolve, reject) => {
-	    	db.get(`SELECT played, wins, losses, winrate, rate FROM player_stats WHERE user_id = ?`,
-		[user.user_id],
-      		(err, row) => {
-			if (err) return reject(err);
-			resolve(row || { wins: 0, losses: 0 });
-		}
-		      );
-	});
+  const nickname = generateNickname(true);
 
-//      	const played = stat.wins + stat.losses;
-//      	const winrate = played > 0 ? (stat.wins / played) * 100 : 0;
+  await db.run(
+    `
+    UPDATE players
+    SET
+      nickname = ?,
+      avatarUrl = ?,
+      deleted = 1,
+      deleted_at = CURRENT_TIMESTAMP
+    WHERE user_id = ?
+    `,
+    [nickname, DEFAULT_AVATAR, userId]
+  );
+}
 
-      	return {
-	    	nickname: user.nickname,
-	    	avatarUrl: user.avatarUrl,
-	    	winPhrase: user.winPhrase,
-	    	stats: {
-		  	played: stat.played,
-		  	wins: stat.wins,
-		  	losses: stat.losses,
-		  	winrate: parseFloat(stat.winrate.toFixed(2)),
-			rate: stat.rate,
-	    	},
-      	};
+// --------------------------------------------------
+// UPDATE STATS (TRANSACTION)
+// --------------------------------------------------
+
+export async function updatePlayerStats(
+  gameId: string,
+  p1: PlayerResult,
+  p2: PlayerResult
+): Promise<ApplyResult> {
+
+  await db.exec('BEGIN IMMEDIATE');
+
+  try {
+
+    // reserve game
+    const reserve = await db.run(
+      `
+      INSERT OR IGNORE INTO processed_games(game_id, processed_at)
+      VALUES (?, CURRENT_TIMESTAMP)
+      `,
+      [gameId]
+    );
+
+    if (reserve.changes === 0) {
+      await db.exec('ROLLBACK');
+      return { applied: false };
+    }
+
+    // load players
+    const players = await db.all<{
+      user_id: string;
+      wins: number;
+      losses: number;
+      rate: number;
+    }>(
+      `
+      SELECT user_id, wins, losses, rate
+      FROM player_stats
+      WHERE user_id IN (?, ?)
+      `,
+      [p1.user_id, p2.user_id]
+    );
+
+/*    console.log('-------------> gameid: ', gameId);
+    console.log('-------------> user_1: ', p1.user_id, p1.result);
+    console.log('------------->', p1.user_id, p2.user_id);
+    console.log('------------->', players.length)
+*/
+    if (players.length !== 2) {
+      throw new Error('Players not found');
+    }
+
+    const A = players.find(p => p.user_id === p1.user_id)!;
+    const B = players.find(p => p.user_id === p2.user_id)!;
+
+    const newA = calculateRate(A.rate, B.rate, p1.result);
+    const newB = calculateRate(B.rate, A.rate, p2.result);
+
+    async function apply(
+      userId: string,
+      result: 'win' | 'loss',
+      rate: number
+    ) {
+
+      await db.run(
+        `
+        UPDATE player_stats
+        SET
+          wins = wins + ?,
+          losses = losses + ?,
+          played = played + 1,
+          winrate = ((wins + ?) * 1.0 / (played + 1)),
+          rate = ?,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = ?
+        `,
+        [
+          result === 'win' ? 1 : 0,
+          result === 'loss' ? 1 : 0,
+          result === 'win' ? 1 : 0,
+          rate,
+          userId
+        ]
+      );
+    }
+
+    await apply(A.user_id, p1.result, newA);
+    await apply(B.user_id, p2.result, newB);
+
+    await db.exec('COMMIT');
+
+    return {
+      applied: true,
+      rate: newA
+    };
+
+  } catch (err) {
+
+    await db.exec('ROLLBACK');
+    throw err;
+  }
+}
+
+// --------------------------------------------------
+// LEADERBOARD
+// --------------------------------------------------
+
+export async function getLeaderboard(lastSync: string) {
+
+  const rows = await db.all<LeaderboardRow>(
+    `
+    SELECT
+      s.user_id,
+      s.played,
+      s.wins,
+      s.losses,
+      s.winrate,
+      s.rate,
+      s.updated_at
+
+    FROM player_stats s
+    JOIN players p ON p.user_id = s.user_id
+
+    WHERE
+      s.updated_at > ?
+      AND p.deleted = 0
+
+    ORDER BY s.updated_at
+    LIMIT 1000
+    `,
+    [lastSync]
+  );
+
+  return {
+    last: rows.at(-1)?.updated_at || lastSync,
+    players: rows
+  };
+}
+
+// --------------------------------------------------
+// PUBLIC PROFILE
+// --------------------------------------------------
+
+export async function getUserPublicProfile(
+  nickname: string
+) {
+
+  const user = await db.get<{
+    user_id: string;
+    nickname: string;
+    avatarUrl: string;
+    winPhrase: string;
+  }>(
+    `
+    SELECT user_id, nickname, avatarUrl, winPhrase
+    FROM players
+    WHERE nickname = ?
+    `,
+    [nickname]
+  );
+
+  if (!user) return null;
+
+  const stat = await db.get<{
+    played: number;
+    wins: number;
+    losses: number;
+    winrate: number;
+    rate: number;
+  }>(
+    `
+    SELECT played, wins, losses, winrate, rate
+    FROM player_stats
+    WHERE user_id = ?
+    `,
+    [user.user_id]
+  );
+
+  return {
+    nickname: user.nickname,
+    avatarUrl: user.avatarUrl,
+    winPhrase: user.winPhrase,
+
+    stats: stat ?? {
+      played: 0,
+      wins: 0,
+      losses: 0,
+      winrate: 0,
+      rate: 0
+    }
+  };
 }
 
