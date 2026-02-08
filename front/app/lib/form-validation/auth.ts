@@ -1,27 +1,55 @@
-// /app/libs/validations/auth.ts
+// /app/lib/form-validation/auth.ts
 import { z } from "zod";
 
+export const loginSchema = (t: any) => {
+  // Define errores con valores por defecto
+  const errors = {
+    emailRequired: t?.form?.errors?.emailRequired || 'Email is required',
+    emailInvalid: t?.form?.errors?.emailInvalid || 'Invalid email format',
+    emailMinLength: t?.form?.errors?.emailMinLength || 'Email must be at least 8 characters',
+    passwordMinLength: t?.form?.errors?.passwordMinLength || 'Password must be at least 8 characters',
+    passwordLetter: t?.form?.errors?.containsLetter || 'Must contain a letter',
+    passwordNumber: t?.form?.errors?.containsNumber || 'Must contain a number',
+    passwordSpecial: t?.form?.errors?.containsSpecialCharacter || 'Must contain a special character',
+  };
 
-export const loginSchema = (t) => z.object({
+  return z.object({
     email: z.string()
-        .min(8, t.form.errors.required) // Texto personalizado para campo vacío
-        .email(t.form.errors.invalidFormat), // Texto para formato email
-    password: z
-    .string()
-    .min(8, { message: t.form.errors.minLength(8) })
-    .regex(/[a-zA-Z]/, { message: t.form.errors.containsLetter })
-    .regex(/[0-9]/, { message: t.form.errors.containsNumber })
-    .regex(/[^a-zA-Z0-9]/, {
-      message: t.form.errors.containsSpecialCharacter
-    })
-    .trim()
-});
+      .min(1, { message: errors.emailRequired })
+      .min(8, { message: errors.emailMinLength })
+      .email({ message: errors.emailInvalid }),
+    
+    password: z.string()
+      .min(8, { message: errors.passwordMinLength })
+      .regex(/[a-zA-Z]/, { message: errors.passwordLetter })
+      .regex(/[0-9]/, { message: errors.passwordNumber })
+      .regex(/[^a-zA-Z0-9]/, { message: errors.passwordSpecial })
+  });
+};
 
-export const signUpSchema =  (t) => z.object({
-  email: z.string().email(t.form.invalidEmail),
-  password: z.string().min(8, t.form.passwordTooShort),
-  confirmPassword: z.string().min(8, t.form.confirmPasswordTooShort),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: t.form.passwordsDoNotMatch,
-  path: ["confirmPassword"],
-});
+export const signUpSchema = (t: any) => {
+  const errors = {
+    emailRequired: t?.form?.errors?.emailRequired || 'Email is required',
+    emailMinLength: t?.form?.errors?.emailMinLength || 'Email must be at least 8 characters',
+    emailInvalid: t?.form?.errors?.invalidEmail || 'Invalid email',
+    passwordTooShort: t?.form?.errors?.passwordTooShort || 'Password is too short',
+    confirmPasswordTooShort: t?.form?.errors?.confirmPasswordTooShort || 'Confirm password is too short',
+    passwordsDoNotMatch: t?.form?.errors?.passwordsDoNotMatch || 'Passwords do not match',
+  };
+
+  return z.object({
+    email: z.string()
+      .min(1, { message: errors.emailRequired })
+      .min(8, { message: errors.emailMinLength })
+      .email({ message: errors.emailInvalid }),
+    
+    password: z.string()
+      .min(8, { message: errors.passwordTooShort }),
+    
+    confirmPassword: z.string()
+      .min(8, { message: errors.confirmPasswordTooShort }),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: errors.passwordsDoNotMatch,
+    path: ["confirmPassword"],
+  });
+};

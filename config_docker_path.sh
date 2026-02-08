@@ -8,9 +8,9 @@ EOF
 DOCKCOMPS="docker-compose.yml"
 
 # CAMBIAR BASE DEPENDIENDO DEL HOST (42 O TU CASA)
-#BASE="/sgoinfre/students/${USER}/transcendence-dev/volumes/"
+# BASE="/sgoinfre/students/${USER}/transcendence-dev/volumes/"
 BASE=$PWD/volumes/
-
+echo $BASE
 AUTH="sqlite_auth"
 FRONT="front-dev"
 STATISTICS="statistics"
@@ -24,6 +24,14 @@ mkdir -p \
   "${BASE}${STATISTICS}" \
   "${BASE}${GAME_SERVICE}" \
   "${BASE}${PROFILE}" 2>/dev/null || true
+
+chmod 777 \
+  "${BASE}${AUTH}" \
+  "${BASE}${FRONT}" \
+  "${BASE}${STATISTICS}" \
+  "${BASE}${GAME_SERVICE}" \
+  "${BASE}${PROFILE}" 2>/dev/null || true
+
 
 # Intentar chown (puede fallar en 42/rootless o ciertos FS) sin romper el script
 chown -R "$USER:$USER" \

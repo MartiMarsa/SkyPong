@@ -19,12 +19,16 @@ RUN mkdir -p /app/keys \
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+ARG UID=1000
+ARG GID=1000
+# RUN addgroup -g ${GID} app && adduser -u ${UID} -G app -S app
 RUN addgroup -S app && adduser -S app -G app
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/keys/ ./
-RUN mkdir -p /app/data && chown app:app /app/data
+RUN mkdir -p /app/data
+# RUN mkdir -p /app/data && chown app:app /app/data
 
 USER app
 EXPOSE 8081

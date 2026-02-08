@@ -1,11 +1,12 @@
-import l from '../lib/i18n/localizer';
+import { useTranslation } from "../hooks/use-translation";
 
 export default function PlayerProfilePublicUI({ nickname, winphrase, avatarUrl, bio })
 {
+    const { t } = useTranslation();
     return (
         <article className="player-profile-public-ui">
             <div className='player-avatar'>
-                <img src={avatarUrl} alt={l('playerProfilePublicUI.avatarAltText')} />
+                <img src={avatarUrl} alt={bio} />
             </div>
             <div className='player-info'>
                 <h2 className='player-nickname'>{ nickname}</h2>
