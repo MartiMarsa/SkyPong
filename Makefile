@@ -73,6 +73,7 @@ pull:
 clean:
 	$(DC) $(DCFLAGS) down --remove-orphans
 	rm -v $(COMPOSE_FILE)
+	docker volume prune -f
 
 # Limpio "hard": borra volúmenes (pierdes SQLite, Prometheus, Grafana, etc.)
 clean-hard:

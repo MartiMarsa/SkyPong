@@ -25,7 +25,7 @@ export default function HomePage()
   return (
     <>
         <main className={ styles.main }>
-            <NavigationAppUI userURL="/signin" />
+            <NavigationAppUI userURL="/login" />
             <div className="main-content flex column justify-center align-center md:basis-3/4 lg:basis-1/2 flex flex-col">
                 <HeroUI />
             <NavigationLanguageUI />

@@ -68,7 +68,7 @@ interface DBUser {
 
 // --- CSRF protection ---
 fastify.addHook('preHandler', async (req: any, reply) => {
-	const authRoutes = ['/auth/signup', '/auth/login', '/auth/refresh'];
+	const authRoutes = ['/auth/signup', '/auth/login', '/auth/refresh', '/api/auth/signup'];
 
 //	console.log(chalk.yellow(req.url));
     	if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) && !authRoutes.includes(req.url)) {

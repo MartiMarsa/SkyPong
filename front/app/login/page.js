@@ -1,13 +1,15 @@
 'use client';
 
-import { useStyles } from '../hooks/use-styles';
+import { useState } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signUpSchema } from "../lib/form-validation/auth";
+import { loginSchema } from "../lib/form-validation/auth";
+import { useStyles } from '../hooks/use-styles';
 import { useTranslation } from '../hooks/use-translation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
+import  Cookies  from "js-cookie";
 
 const mobileStyles = {
     main: "flex flex-col justify-center items-center min-h-screen",
@@ -21,7 +23,7 @@ const mobileStyles = {
     form: 'flex flex-col p-4 gap-4 w-full',
     errorMessage: 'text-red-500 text-sm mt-1',
     inputWrapper: 'w-full',
-    registerWrapper: 'mt-4 text-center',
+    singUpButtonWrapper: 'mt-4 text-center',
 };
 
 const desktopStyles = {
@@ -29,43 +31,69 @@ const desktopStyles = {
     spanTitle: "text-center text-lg mb-2",
     h1: "text-xl",
     article: 'flex flex-col justify-center items-center max-w-md w-full',
-    textInput: 'w-full h-8 px-3 border border-gray-300 rounded',
-    textInputError: 'w-full h-8 px-3 border border-red-500 rounded',
 };
 
-export default function SignUpPage() {
+export default function SignInPage() {
     const { t } = useTranslation();
     const { styles } = useStyles(mobileStyles, desktopStyles);
+    const [serverError, setServerError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
-        resolver: zodResolver(signUpSchema(t)),
-        mode: 'onBlur', // Valida cuando el usuario sale del campo
+        resolver: zodResolver(loginSchema(t)),
+        mode: 'onBlur',
     });
 
     const onSubmit = async (data) => {
         try {
-            console.log("Datos validados:", data);
+            setIsLoading(true);
+            setServerError(''); // Limpia errores anteriores
             
-            // Llamada a la API
-            const response = await fetch('/api/auth/signup', {
+            console.log("Datos validados:", data);
+            // Call API here
+            const apiURL = 'api/auth/login'; // Asegúrate de que esta ruta sea correcta
+            const response = await fetch(apiURL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(data),
             });
-            console.log("Response ",  response );
-            if (!response.ok) {
-                throw new Error('Signup failed');
+
+            const contentType = response.headers.get('content-type');
+        
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Response is not JSON:', await response.text());
+                setServerError(`Error del servidor. La ruta ${apiURL} no existe o está mal configurada.`);
+                return;
             }
 
+            
             const result = await response.json();
-            console.log('Signup successful:', result);
-            window.location.href = `/me?id=${result.id}`
-            //Redirect with credentials
 
+            if (!response.ok) {
+                // ✅ Maneja diferentes tipos de errores
+                if (response.status === 404) {
+                    setServerError('Usuario no registrado');
+                } else if (response.status === 401) {
+                    setServerError('Credenciales incorrectas');
+                } else if (response.status === 403) {
+                    setServerError('Cuenta bloqueada. Contacta soporte.');
+                } else {
+                    setServerError(result.message || 'Error al iniciar sesión');
+                }
+                return;
+            }
+
+            // ✅ Login exitoso
+            console.log("Login exitoso:", result);
+            // Redirigir o guardar token
+            Cookies.set('token', result.token, { httpOnly: true, secure: true, sameSite: 'strict' });
+            window.location.href = '/me';
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error: ', error);
+        }finally {
+            setIsLoading(false);
         }
     };
 
@@ -76,20 +104,19 @@ export default function SignUpPage() {
                     <FontAwesomeIcon icon={faArrowLeft} /> {t.form.goBackHome}
                 </Link>
             </div>
-
+            
             <article className={styles.article}> 
-                <span className={styles.spanTitle}>{t.signUpPage.title}</span>
+                <span className={styles.spanTitle}>{t.signInPage.title}</span>  
                 <h1 className={styles.h1}>{t.homePage.title}</h1>
                 
-                {/* Use handleSubmit */}
                 <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
-
+                    
                     {/* Email Field */}
                     <div className={styles.inputWrapper}>
                         <input 
                             className={errors.email ? styles.textInputError : styles.textInput}
                             type="email" 
-                            placeholder={t.form.emailPlaceholder}
+                            placeholder={t.form.emailPlaceholder} 
                             autoComplete="email"
                             {...register('email')} 
                         />
@@ -105,9 +132,9 @@ export default function SignUpPage() {
                         <input 
                             className={errors.password ? styles.textInputError : styles.textInput}
                             type="password" 
-                            placeholder={t.signUpPage.newPasswordLabel}
-                            autoComplete="new-password"
-                            {...register('password')}  
+                            placeholder={t.form.passwordLabel} 
+                            autoComplete="current-password"
+                            {...register('password')}
                         />
                         {errors.password && (
                             <p className={styles.errorMessage}>
@@ -115,34 +142,21 @@ export default function SignUpPage() {
                             </p>
                         )}
                     </div>
-
-                    {/* Confirm Password Field */}
-                    <div className={styles.inputWrapper}>
-                        <input 
-                            className={errors.confirmPassword ? styles.textInputError : styles.textInput}
-                            type="password" 
-                            placeholder={t.signUpPage.confirmPasswordLabel}
-                            autoComplete="new-password"
-                            {...register('confirmPassword')} 
-                        />
-                        {errors.confirmPassword && (
-                            <p className={styles.errorMessage}>
-                                {errors.confirmPassword.message}
-                            </p>
-                        )}
-                    </div>
-
+                    { serverError && (
+                        <p className={styles.errorMessage}>
+                            {serverError}
+                        </p>
+                    )}
                     <button 
                         className={styles.submitButton} 
                         type="submit"
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? t.signUpPage.submitting : t.signUpPage.submitButton}
+                        {isSubmitting ? t.signInPage.loading : t.signInPage.submitButton}
                     </button>
                 </form>
-
-                <div className={styles.registerWrapper}>
-                    <Link href="/login">{t.signUpPage.hasAccount}</Link>
+                <div className={styles.singUpButtonWrapper}>
+                    <Link href="/signup">{t.signUpPage.createAccount}</Link>
                 </div>
             </article>
         </main>
