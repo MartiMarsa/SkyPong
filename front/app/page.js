@@ -2,11 +2,13 @@
 
 
 import { useState, useEffect } from 'react';
-import SelectStyles from './js/detectMobile';
-import l from './lib/i18n/localizer';
+import { useStyles } from './hooks/use-styles';
+import { useTranslation } from './hooks/use-translation';
+import { setCurrentLocale, getCurrentLocale } from './lib/i18n/locale-manager';
 import HeroUI from './ui/hero-ui';
 import NavigationAppUI from './ui/navigation-app-ui';
 import FooterTermsPolicy from './ui/footer-terms-policy';
+import NavigationLanguageUI from './ui/navigation-language-ui';
 
 const mobileStyles = {
     main: "h-screen",
@@ -18,18 +20,15 @@ const desktopStyles = {
 
 export default function HomePage()
 {
-    const [styles, setStyles ] = useState(mobileStyles);
-    useEffect(() => {
-        // Esto solo corre en el cliente, después del montaje
-        setStyles(SelectStyles(mobileStyles, desktopStyles));
-    }, []);
-
+    const { styles } = useStyles(mobileStyles, desktopStyles);
+    const { t } = useTranslation();
   return (
     <>
         <main className={ styles.main }>
             <NavigationAppUI userURL="/signin" />
             <div className="main-content flex column justify-center align-center md:basis-3/4 lg:basis-1/2 flex flex-col">
-                <HeroUI title={l('homePage.title')} subtitle={l('homePage.description')} />
+                <HeroUI />
+            <NavigationLanguageUI />
             </div>
             <FooterTermsPolicy />
         </main>

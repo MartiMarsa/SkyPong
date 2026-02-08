@@ -1,39 +1,72 @@
 'use client';
 
 import  { useState } from 'react';
-import  l from '../lib/i18n/localizer';
+import { useStyles } from '../hooks/use-styles';
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signUpSchema } from "../lib/form-validation/auth";
+import { useTranslation } from '../hooks/use-translation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 
+
+const mobileStyles = {
+    main: "flex flex-col justify-center items-center min-h-screen",
+    goBackWrapper: "absolute top-4 left-4",
+    spanTitle: "text-center text-sm mb-2",
+    h1: "text-lg text-center",
+    article: 'flex flex-col justify-center items-center max-w-2xs',
+    textInput: 'text-center h-10 border border-gray-300 rounded',
+    submitButton: 'p-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 w-full',
+}
+
+const desktopStyles = {
+    main: "flex flex-col justify-center items-center min-h-screen",
+    goBackWrapper: "absolute top-4 left-4",
+    spanTitle: "text-center text-lg mb-2",
+    h1: "text-xl",
+    article: 'flex flex-col justify-center items-center max-w-md',
+    textInput: 'text-center h-8 border border-gray-300 rounded',
+    submitButton: 'p-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 w-full',
+}
+
+
 export default function SignUpPage()
 {
+    const { t } = useTranslation();
+    const { styles } = useStyles(mobileStyles, desktopStyles);
+
+    const { register, handleSubmit, formState: { errors } } = useForm({
+        resolver: zodResolver(signUpSchema(t)),
+    });
+
+    const onSubmit = (data) => {
+        console.log("Datos validados:", data);
+        // Call API here
+    };
+
     return (
-        <main className='flex flex-col justify-center align-center min-h-screen'>
-            <article className='flex flex-col p-6 max-v-lg:w-632px m-auto gap-4 border border-gray-300 rounded-md shadow-md'> 
-                <h1>{l('signUpPage.title')}</h1>
+        <main className={styles.main}>
+                <div className={ styles.goBackWrapper }>
+                    <Link href="/"> <FontAwesomeIcon icon={faArrowLeft} /> {t.form.goBackHome}</Link>
+                </div>
+            <article className={styles.article}> 
+                <span className={styles.spanTitle}>{t.signUpPage.title}</span>
+                <h1 className={styles.h1}>{t.homePage.title}</h1>
                 <form className='flex flex-col pa-4 gap-4' action="/api/auth/signup" method="POST">
-                    <label htmlFor="nickname">{l('form.nickNameLabel')}</label>
-                    <input type="text" id="nickname" name="nickname" required />
 
-                    <label htmlFor="email">{l('form.emailLabel')}</label>
-                    <input type="email" id="email" name="email" required />
+                    <input className={styles.textInput} type="email" id="email" name="email" required placeholder={t.form.emailPlaceholder} />
                     
-                    <label htmlFor="password">{l('signUpPage.passwordLabel')}</label>
-                    <input type="password" id="password" name="password" required />
-                    <label htmlFor="confirmPassword">{l('signUpPage.confirmPasswordLabel')}</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" required />
+                    <input className={styles.textInput} type="password" id="password" name="password" required placeholder={t.signUpPage.newPasswordLabel} />
+                    <input className={styles.textInput} type="password" id="confirmPassword" name="confirmPassword" required placeholder={t.signUpPage.confirmPasswordLabel} />
 
-                    <button className='p-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 w-full' type="submit">{l('signUpPage.submitButton')}</button>
+                    <button className={styles.submitButton} type="submit">{t.signUpPage.submitButton}</button>
                 </form>
                 <div className="register-wrapper flex flex-row justify-between gap-4">
                     <div className='signup-cta flex flex-col'>
-                        <p className=''>{l('signUpPage.hasAccount')}</p>
-                        <Link href="/signin">{l('signInPage.title')}</Link>
+                        <Link href="/signin">{t.signUpPage.hasAccount}</Link>
                     </div>
-                </div>
-                <div className="go-back-wrapper">
-                    <Link href="/"> <FontAwesomeIcon icon={faArrowLeft} /> {l('form.goBackHome')}</Link>
                 </div>
             </article>
         </main>

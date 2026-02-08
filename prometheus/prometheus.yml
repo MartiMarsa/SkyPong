@@ -31,3 +31,11 @@ scrape_configs:
   - job_name: game-service
     static_configs:
       - targets: ["game-service:4000"]
+
+  - job_name: profile-service
+    static_configs:
+      - targets: ["profile-service:5000"]
+
+  - job_name: statistics-service
+    static_configs:
+      - targets: ["statistics-service:6000"]

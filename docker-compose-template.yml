@@ -1,8 +1,9 @@
-
 # ──────────────────────────────────────────────
 # NETWORKS
 # ──────────────────────────────────────────────
 networks:
+  frontend:
+    driver: bridge
   backend:   # Edge (NGINX) <-> Microservicios
     driver: bridge
   internal:  # Observabilidad (Prometheus/Grafana/exporters)
@@ -12,11 +13,40 @@ networks:
 # VOLUMES
 # ──────────────────────────────────────────────
 volumes:
-  certs:
-  sqlite_auth:
+  sqlite_auth_vol:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: PLACEHOLDER_SQLITE_AUTH
+  front-dev_vol:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: PLACEHOLDER_FRONT
+  statistics-service_vol:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: PLACEHOLDER_STATISTICS
+  game-service_vol:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: PLACEHOLDER_GAME_SERVICE
+  profile-service_vol:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: PLACEHOLDER_PROFILE    
+  
   prometheus_data:
   grafana_data:
-
+  certs:
 # ──────────────────────────────────────────────
 # SERVICES
 # ──────────────────────────────────────────────
@@ -37,6 +67,7 @@ services:
       # opcional: redirección HTTP->HTTPS
       # - "80:80"
     networks:
+      - frontend
       - backend
       - internal
     volumes:
@@ -47,12 +78,28 @@ services:
         condition: service_healthy
       game-service:
         condition: service_healthy
+      profile-service:
+        condition: service_healthy
+      statistics-service:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/nginx_status >/dev/null 2>&1 || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 10
 
+  # ────────────────────────────────────────────
+  # FRONT-END
+  # ────────────────────────────────────────────
+  frontend:
+    container_name: frontend
+    build: ./front
+    ports:
+      - "3000:3000"  # solo para desarrollo
+    networks:
+     - frontend
+    volumes:
+     - front-dev_vol:/app/front
   # ────────────────────────────────────────────
   # MICROSERVICIOS
   # ────────────────────────────────────────────
@@ -63,15 +110,24 @@ services:
       - backend
       - internal
     volumes:
-      - sqlite_auth:/app/data
+      - sqlite_auth_vol:/app/data
+    # user: "${UID}:${GID}" 
+      # Optional: mount JWT keys from host secrets
+      # - ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
+      # - ./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro
     environment:
+      - UID=${UID}
+      - GID=${GID}
       - NODE_ENV=production
       - SERVICE_NAME=auth-service
+      # Optional: point to mounted JWT keys
+      # - JWT_PRIVATE_KEY_PATH=/run/secrets/jwt-private.pem
+      # - JWT_PUBLIC_KEY_PATH=/run/secrets/jwt-public.pem
       # añade aquí secretos vía .env (no hardcode)
       # - JWT_SECRET=${JWT_SECRET}
       # - TWOFA_ENCRYPTION_KEY=${TWOFA_ENCRYPTION_KEY}
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8081/health', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
       interval: 10s
       timeout: 3s
       retries: 10
@@ -85,8 +141,44 @@ services:
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=game-service
+    volumes:
+      - game-service_vol:/app/data
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:4000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  profile-service:
+    container_name: profile-service
+    build: ./profile-service
+    networks:
+      - backend
+      - internal
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=profile-service
+    volumes:
+      - profile-service_vol:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:5000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  statistics-service:
+    container_name: statistics-service
+    build: ./statistics-service
+    networks:
+      - backend
+      - internal
+    environment:
+      - NODE_ENV=production
+      - SERVICE_NAME=statistics-service
+    volumes:
+      - statistics-service_vol:/app/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:6000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
       interval: 10s
       timeout: 3s
       retries: 10

@@ -1,10 +1,7 @@
 import jwt from 'jsonwebtoken';
-import fs from 'fs';
-import { getTokenDB } from './dbTokens';
 import { randomUUID } from 'crypto';
-
-const privateKey = fs.readFileSync('./jwt-private.pem');
-const publicKey = fs.readFileSync('./jwt-public.pem');
+import { getTokenDB } from './dbTokens';
+import { privateKey, publicKey } from './keys';
 
 interface RefreshPayload {
     	userId: string;
@@ -72,4 +69,3 @@ export async function isTokenRevoked(tokenId: string): Promise<boolean> {
     	});
     	return !row ? true : !!row.revoked;
 }
-
