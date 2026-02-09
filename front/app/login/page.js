@@ -70,26 +70,31 @@ export default function SignInPage() {
 
             
             const result = await response.json();
+                    console.log("📦 Response status:", response.status);
+        console.log("📦 Response completa:", result);
+        console.log("📦 result.user:", result.user);
+        console.log("📦 Estructura:", JSON.stringify(result, null, 2));
 
             if (!response.ok) {
                 // ✅ Maneja diferentes tipos de errores
                 if (response.status === 404) {
-                    setServerError('Usuario no registrado');
+                    setServerError(t.form.userNotRegistered);
                 } else if (response.status === 401) {
-                    setServerError('Credenciales incorrectas');
+                    console.log("T", t)
+                    console.log("401 Unauthorized: ", t.form.errors.invalidCredentials);
+                    setServerError(t.form.errors.invalidCredentials);
                 } else if (response.status === 403) {
-                    setServerError('Cuenta bloqueada. Contacta soporte.');
+                    setServerError(t.form.errors.accountBlocked);
                 } else {
-                    setServerError(result.message || 'Error al iniciar sesión');
+                    setServerError(result.message || t.form.errors.serverError);
                 }
                 return;
             }
 
-            // ✅ Login exitoso
             console.log("Login exitoso:", result);
-            // Redirigir o guardar token
-            Cookies.set('token', result.token, { httpOnly: true, secure: true, sameSite: 'strict' });
-            window.location.href = '/me';
+            const userId = result.user.id;
+            const userEmail = result.user.email;
+            //window.location.href = '/me?id=' + result.id;
         } catch (error) {
             console.error('Error: ', error);
         }finally {
@@ -120,11 +125,6 @@ export default function SignInPage() {
                             autoComplete="email"
                             {...register('email')} 
                         />
-                        {errors.email && (
-                            <p className={styles.errorMessage}>
-                                {errors.email.message}
-                            </p>
-                        )}
                     </div>
 
                     {/* Password Field */}
@@ -136,11 +136,6 @@ export default function SignInPage() {
                             autoComplete="current-password"
                             {...register('password')}
                         />
-                        {errors.password && (
-                            <p className={styles.errorMessage}>
-                                {errors.password.message}
-                            </p>
-                        )}
                     </div>
                     { serverError && (
                         <p className={styles.errorMessage}>
