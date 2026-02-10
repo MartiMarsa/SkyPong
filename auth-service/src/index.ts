@@ -147,7 +147,7 @@ fastify.post('/auth/signup', async (req: any, reply) => {
 			    issuer: 'auth-service', 
 			    audience: 'transcendence' 
 		    });
-	      	    return reply.status(200).send({ redirect: next });
+	      	    return reply.status(200).send({ user: { id: req.user.id }, redirect: next, alreadyAuthenticated: true });
 	    } catch { }
     }
 
@@ -187,7 +187,6 @@ fastify.post('/auth/signup', async (req: any, reply) => {
 
 // --- LOGIN ---
 fastify.post('/auth/login', async (req: any, reply) => {
-
     const { email, password } = req.body as LoginBody;
     if (!email || !password) return reply.status(400).send('Email and password required');
 
@@ -195,14 +194,27 @@ fastify.post('/auth/login', async (req: any, reply) => {
     
     const accessToken = req.cookies?.access_token;
     if (accessToken) {
-	    try {
-	      	    jwt.verify(accessToken, publicKey, {
-		    	    algorithms: ['RS256'],
-		    	    issuer: 'auth-service',
-		    	    audience: 'transcendence',
-	      	    });
-	      	    return reply.status(200).send({ redirect: next });
-	    } catch { }
+        try {
+            const decoded = jwt.verify(accessToken, publicKey, {
+                algorithms: ['RS256'],
+                issuer: 'auth-service',
+                audience: 'transcendence',
+            }) as any;
+                       // ✅ DEBUG: Ver qué contiene el token decodificado
+            console.log("🔍 Token decodificado:", decoded);
+            console.log("🔍 decoded.id:", decoded.id); 
+            // ✅ El token ya tiene el id del usuario
+            return reply.status(200).send({ 
+                user: {
+                    id: decoded.id,
+                    // Si tienes más info en el token, puedes devolverla
+                },
+                redirect: next,
+                alreadyAuthenticated: true
+            });
+        } catch (err) {
+            console.error('Error verifying access token:', err);
+        }
     }
 
     try {
@@ -214,10 +226,10 @@ fastify.post('/auth/login', async (req: any, reply) => {
         }
 
         const token = generateToken({ 
-		id: user.id, 
-		password_version: user.password_version,
-		token_version: user.token_version
-	});
+            id: user.id, 
+            password_version: user.password_version,
+            token_version: user.token_version
+        });
         const refreshToken = createRefreshToken(user.id);
         const csrfToken = randomUUID();
 
@@ -225,18 +237,69 @@ fastify.post('/auth/login', async (req: any, reply) => {
             .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
             .setCookie('refresh_token', refreshToken, refreshOpts)
             .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'strict', path: '/' })
-	    .status(201)
-	    .send({ 
-		    user: { 
-			    id: user.id, 
-			    email: user.email 
-		    } 
-	    });
+            .status(201)
+            .send({ 
+                user: { 
+                    id: user.id, 
+                    email: user.email 
+                } 
+            });
     } catch (err: any) {
         reply.status(401).send({ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' } });
-//	  reply.status(500). send({ error: {code: err.code, message: err.message } });
     }
 });
+
+// fastify.post('/auth/login', async (req: any, reply) => {
+
+//     const { email, password } = req.body as LoginBody;
+//     if (!email || !password) return reply.status(400).send('Email and password required');
+
+//     const next = req.query.next || req.cookies?.last_page || '/me';
+    
+//     const accessToken = req.cookies?.access_token;
+//     if (accessToken) {
+// 	    try {
+// 	      	    jwt.verify(accessToken, publicKey, {
+// 		    	    algorithms: ['RS256'],
+// 		    	    issuer: 'auth-service',
+// 		    	    audience: 'transcendence',
+// 	      	    });
+// 	      	    return reply.status(200).send({ redirect: next });
+// 	    } catch { }
+//     }
+
+//     try {
+//         const user = await login(email, password);
+
+//         if (user.twofa_enabled) {
+//             const twofaToken = generate2FAToken(user.id);
+//             return reply.send({ twofa_required: true, twofa_token: twofaToken });
+//         }
+
+//         const token = generateToken({ 
+// 		id: user.id, 
+// 		password_version: user.password_version,
+// 		token_version: user.token_version
+// 	});
+//         const refreshToken = createRefreshToken(user.id);
+//         const csrfToken = randomUUID();
+
+//         reply
+//             .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
+//             .setCookie('refresh_token', refreshToken, refreshOpts)
+//             .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'strict', path: '/' })
+// 	    .status(201)
+// 	    .send({ 
+// 		    user: { 
+// 			    id: user.id, 
+// 			    email: user.email 
+// 		    } 
+// 	    });
+//     } catch (err: any) {
+//         reply.status(401).send({ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' } });
+// //	  reply.status(500). send({ error: {code: err.code, message: err.message } });
+//     }
+// });
 
 // --- CHANGE USER PASSWORD ---
 fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, reply) => {

@@ -13,12 +13,13 @@ COPY . .
 RUN npm run generate-keys
 RUN npm run build
 RUN mkdir -p /app/keys \
-  && if ls /app/jwt-*.pem >/dev/null 2>&1; then cp /app/jwt-*.pem /app/keys/; fi
+&& if ls /app/jwt-*.pem >/dev/null 2>&1; then cp /app/jwt-*.pem /app/keys/; fi
 
 # Stage 3: run
 FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+RUN apk add --no-cache sqlite
 ARG UID=1000
 ARG GID=1000
 # RUN addgroup -g ${GID} app && adduser -u ${UID} -G app -S app

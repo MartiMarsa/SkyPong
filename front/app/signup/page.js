@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useStyles } from '../hooks/use-styles';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,6 +37,8 @@ const desktopStyles = {
 export default function SignUpPage() {
     const { t } = useTranslation();
     const { styles } = useStyles(mobileStyles, desktopStyles);
+    const [serverError, setServerError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(signUpSchema(t)),
@@ -45,6 +48,8 @@ export default function SignUpPage() {
     const onSubmit = async (data) => {
         try {
             console.log("Datos validados:", data);
+            setIsLoading(true);
+            setServerError(''); // Limpia errores anteriores
             
             // Llamada a la API
             const response = await fetch('/api/auth/signup', {
@@ -54,18 +59,38 @@ export default function SignUpPage() {
                 },
                 body: JSON.stringify(data),
             });
+            const contentType = response.headers.get('content-type');
+        
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Response is not JSON:', await response.text());
+                setServerError(`Error del servidor. La ruta ${apiURL} no existe o está mal configurada.`);
+                return;
+            }
             console.log("Response ",  response );
             if (!response.ok) {
-                throw new Error('Signup failed');
+                    if (response.status === 400) {
+                        const result = await response.json();
+                        setServerError(result.message || t.form.errors.invalidPassword);
+                    }
+                    if (response.status === 409) {
+                        console.log("Error 409: ", t.form.errors.userAlreadyExists);
+                        setServerError(t.form.errors.userAlreadyExists);
+                    }
+                    else {
+                        setServerError(t.form.errors.serverError);
+                    }
+                    return;
             }
 
             const result = await response.json();
             console.log('Signup successful:', result);
-            window.location.href = `/me?id=${result.id}`
+            window.location.href = `/me?id=${result.user.id}`
             //Redirect with credentials
 
         } catch (error) {
             console.error('Error:', error);
+        }finally {
+            setIsLoading(false);
         }
     };
 
@@ -93,11 +118,6 @@ export default function SignUpPage() {
                             autoComplete="email"
                             {...register('email')} 
                         />
-                        {errors.email && (
-                            <p className={styles.errorMessage}>
-                                {errors.email.message}
-                            </p>
-                        )}
                     </div>
 
                     {/* Password Field */}
@@ -109,11 +129,6 @@ export default function SignUpPage() {
                             autoComplete="new-password"
                             {...register('password')}  
                         />
-                        {errors.password && (
-                            <p className={styles.errorMessage}>
-                                {errors.password.message}
-                            </p>
-                        )}
                     </div>
 
                     {/* Confirm Password Field */}
@@ -125,9 +140,10 @@ export default function SignUpPage() {
                             autoComplete="new-password"
                             {...register('confirmPassword')} 
                         />
-                        {errors.confirmPassword && (
-                            <p className={styles.errorMessage}>
-                                {errors.confirmPassword.message}
+                    { serverError && (
+                        <p className={styles.errorMessage}>
+                                { console.log("Error:", serverError)}
+                                {serverError}
                             </p>
                         )}
                     </div>

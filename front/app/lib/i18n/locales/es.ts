@@ -186,6 +186,13 @@ const es = {
         confirmPasswordTooShort: 'Confirma tu contraseña',
         passwordsDoNotMatch: 'Las contraseñas no coinciden',
         invalidEmail: 'Email inválido',
+        invalidPassword: 'Contraseña inválida',
+        invalidCredentials: 'Credenciales inválidas',
+        serverError: 'Error del servidor, por favor intenta de nuevo más tarde',
+        userNotRegistered: 'Usuario no registrado, por favor regístrate primero',
+        accountBlocked: 'Cuenta bloqueada. Contacta soporte.',
+        userAlreadyExists: 'El usuario ya existe, por favor inicia sesión',
+
       },
       emailPlaceholder: 'tu@email.com',
       passwordLabel: 'Contraseña',
