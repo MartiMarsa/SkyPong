@@ -137,7 +137,7 @@ async function requireAuth(req: any, reply: any) {
 fastify.post('/auth/signup', async (req: any, reply) => {
 
     const { email, password } = req.body as AuthBody;
-    const next = req.query.next || req.cookies?.last_page || '/me';
+//    const next = req.query.next || req.cookies?.last_page || '/me';
 
     const accessToken = req.cookies?.access_token;
     if (accessToken) {
@@ -147,7 +147,7 @@ fastify.post('/auth/signup', async (req: any, reply) => {
 			    issuer: 'auth-service', 
 			    audience: 'transcendence' 
 		    });
-	      	    return reply.status(200).send({ user: { id: req.user.id }, redirect: next, alreadyAuthenticated: true });
+	      	    return reply.status(200).send({ user: { id: req.user.id }, redirect: '/me', alreadyAuthenticated: true });
 	    } catch { }
     }
 

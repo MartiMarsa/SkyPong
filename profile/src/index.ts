@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import jwt from 'jsonwebtoken';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import sharp from 'sharp';
@@ -18,6 +19,7 @@ import {
   getUserPublicProfile 
 } from './player';
 import * as friendService from './friendService';
+import { publicKey } from './keys';
 
 const fastify = Fastify({logger: true});
 
@@ -62,17 +64,45 @@ async function requireServiceAuth(req: any, reply: any) {
       	}
 }
 
+async function verifyToken(req: any, reply: any) {
+
+	const accessToken = req.cookies?.access_token;
+
+	if (!accessToken) {
+		return reply.status(401).send();
+    }
+
+	if (accessToken) {
+		try {
+			const verified = jwt.verify(accessToken, 
+										publicKey, 
+										{ 
+											algorithms: ['RS256'],
+											issuer: 'auth-service',
+											audience: 'transcendence',
+											}) as any;
+
+			req.user = verified;
+			return;
+
+		} catch (err) {
+			console.error('Error verifying access token:', err);
+			return reply.status(403).send();
+		}
+	}
+}
+
 // --- PRIVATE PROFILE ---
-fastify.get('/me', async (req, reply) => {
+fastify.get('/me', { preHandler: verifyToken }, async (req, reply) => {
 	try {
-	      	const userId = req.headers['x-user-id'];
+	      	const userId = req.user.sub;
 
 	      	if (!userId) {
-		    	return reply.status(401).send({ error: 'Unauthorized' });
+		    	return reply.status(401).send();
 	      	}
 
 		if (typeof userId !== 'string') {
-			return reply.status(401).send({ error: 'Wrong type of header' });
+			return reply.status(401).send();
 		}
 		
 		let player = await getPlayerById(userId);
@@ -86,21 +116,21 @@ fastify.get('/me', async (req, reply) => {
 	} catch (err: any) {
 
 		fastify.log.error(err);
-		reply.status(500).send({ error: 'Internal server error' });
+		reply.status(500).send();
 	  }
 });
 
 // --- CHANGE PROFILE ---
-fastify.patch('/me', async (req, reply) => {
+fastify.patch('/me', { preHandler: verifyToken }, async (req, reply) => {
 	try {
-		const userId = req.headers['x-user-id'];
+		const userId = req.user.sub;
 
 		if (!userId) {
-		    	return reply.status(401).send({ error: 'Unauthorized' });
+		    	return reply.status(401).send();
 	      	}
 
 		if (typeof userId !== 'string') {
-			return reply.status(401).send({ error: 'Wrong type of header' });
+			return reply.status(401).send();
 		}
 
 		const data = req.body as any;
@@ -113,11 +143,11 @@ fastify.patch('/me', async (req, reply) => {
 	} catch (err: any) {
 
 		if (err?.code === 'SQLITE_CONSTRAINT') {
-			return reply.status(409).send({ error: 'Nickname already exists' });
+			return reply.status(409).send();
 	    	}
 
 		fastify.log.error(err);
-		reply.status(500).send({ error: 'Internal server error' });
+		reply.status(500).send();
 	
 	} 
 });
@@ -204,25 +234,23 @@ fastify.post('/internal/profile/delete', { preHandler: requireServiceAuth }, asy
 });
 
 // --- CHANGE PROFILE AVATAR ---
-fastify.post('/me/avatar', async (req, reply) => {
-	try {
-		const userId = req.headers['x-user-id'];
+fastify.post('/me/avatar', { preHandler: verifyToken }, async (req, reply) => {
+			 try {
+			 const userId = req.query.id;
 
-		if (!userId) {
-			return reply.status(401).send({ error: 'Wrong type of header' });
-		}
+	 		 if (!userId) {
+ 			 return reply.status(401).send();
+	 		 }
 
-		if (typeof userId !== 'string') {
-			return reply.status(401).send({ error: 'Wrong type of header' });
-		}
+	 		 if (typeof userId !== 'string') {
+ 			 return reply.status(401).send();
+	 		 }
 
-		const file = await req.file();
+	 		 const file = await req.file();
 
-	    	if (!file) {
-		  	return reply.status(400).send({
-				error: 'Avatar file is required'
-		  	});
-	    	}
+	 		 if (!file) {
+	 		 return reply.status(400).send();
+	 		 }
 		
 		if (!ALLOWED_MIME.includes(file.mimetype)) {
 		  	return reply.status(400).send({
@@ -275,15 +303,14 @@ fastify.post('/me/avatar', async (req, reply) => {
 
 	    	await updatePlayerAvatar(userId, avatarUrl);
 
-		return reply.status(200).send({
-		  	success: true,
-		  	avatar: avatarUrl
-	    	});
+			return reply.status(200).send({
+											success: true,
+											avatar: avatarUrl
+											});
+		 	 } catch (err: any) {
+		 		 reply.send({ error: err.code, message: err.message });
 
-	} catch (err: any) {
-		reply.send({ error: err.code, message: err.message });
-
-		}
+	 		 }
 });
 
 // --- PUBLIC PROFILE ---
