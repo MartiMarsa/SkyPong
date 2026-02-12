@@ -21,16 +21,19 @@ export default function ProfilePagePublic()
     useEffect(() => {
         const fetchMyProfile = async () => {
             try {
-                const response = await fetch('/api/auth/me', {
+                const response = await fetch('/api/profile/me', {
                     credentials: 'include'
                 });
-                
-                if (!response.ok) {
+
+//				console.log(response.status, await response.text());
+				console.log(response);
+               /* 
+                if (response !== 201) {
                     // No autenticado → redirigir a login
                     router.push('/login');
                     return;
                 }
-
+*/
                 const data = await response.json();
                 setUser(data.user);
             } catch (error) {
