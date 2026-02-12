@@ -1,0 +1,36 @@
+services:
+  # Game server - Colyseus WebSocket server
+  skypong-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: skypong-server
+    ports:
+      - "2567:2567"
+    environment:
+      - PORT=2567
+      - DEBUG_MODE=false
+    restart: unless-stopped
+    networks:
+      - skypong-network
+
+  # Client - nginx serving static React app
+  skypong-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+      args:
+        VITE_SERVER_HOST: luke-allowed-registrar-michel.trycloudflare.com
+        VITE_SERVER_PORT: "443"
+        VITE_WS_PROTOCOL: wss
+    container_name: skypong-client
+    ports:
+      - "80:80"
+    depends_on:
+      - skypong-server
+    networks:
+      - skypong-network
+
+networks:
+  skypong-network:
+    driver: bridge
