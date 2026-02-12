@@ -8,8 +8,8 @@ EOF
 DOCKCOMPS="docker-compose.yml"
 
 # CAMBIAR BASE DEPENDIENDO DEL HOST (42 O TU CASA)
-BASE="/sgoinfre/students/${USER}/transcendence-dev/volumes/"
-# BASE=$PWD/volumes/
+#BASE="/sgoinfre/students/${USER}/transcendence-dev/volumes/"
+ BASE=$PWD/volumes/
 echo $BASE
 AUTH="sqlite_auth"
 FRONT="front-dev"

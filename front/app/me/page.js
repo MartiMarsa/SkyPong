@@ -21,19 +21,21 @@ export default function ProfilePagePublic()
     useEffect(() => {
         const fetchMyProfile = async () => {
             try {
-                const response = await fetch('/api/profile/me', {
-                    credentials: 'include'
-                });
-
-//				console.log(response.status, await response.text());
-				console.log(response);
-               /* 
-                if (response !== 201) {
-                    // No autenticado → redirigir a login
+                const response = await fetch('/api/auth/verify', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        },
+                    });
+                    if (response.ok)
+                        return;
+               if (response.status === 401) 
+                {
+                    // No autenticado → redirigir a login 
                     router.push('/login');
                     return;
                 }
-*/
+                
                 const data = await response.json();
                 setUser(data.user);
             } catch (error) {
@@ -48,16 +50,15 @@ export default function ProfilePagePublic()
     }, [router]);
 
     if (isLoading) return <div>Cargando tu perfil...</div>;
-    if (!user) return null;
 
     return (
         <main>
             <NavigationAppUI  />
             {console.log("T", t)}
             <h1>{t.profilePage}</h1>
-            <PlayerProfilePublicUI nickname={player.info.nickname} winphrase={player.info.winphrase} avatarUrl={player.info.avatarUrl}   />
-            <PlayerStatsPublicUI wins={player.stats.wins} losses={player.stats.losses}/>
-            <PlayerAchievementsPublicUI achievements={player.achievements} />    
+            <PlayerProfilePublicUI nickname={ user?.nickname || player.info.nickname} winphrase={ user?.winphrase || player.info.winphrase} avatarUrl={user?.avatarUrl || player.info.avatarUrl}   />
+            <PlayerStatsPublicUI wins={ user?.stats?.wins || player.stats.wins} losses={ user?.stats?.losses || player.stats.losses}/>
+            <PlayerAchievementsPublicUI achievements={ user?.achievements || player.achievements} />    
         </main>
     );
 }

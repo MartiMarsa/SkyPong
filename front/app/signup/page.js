@@ -8,6 +8,7 @@ import { signUpSchema } from "../lib/form-validation/auth";
 import { useTranslation } from '../hooks/use-translation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const mobileStyles = {
@@ -39,6 +40,7 @@ export default function SignUpPage() {
     const { styles } = useStyles(mobileStyles, desktopStyles);
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
 
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(signUpSchema(t)),
@@ -84,9 +86,7 @@ export default function SignUpPage() {
 
             const result = await response.json();
             console.log('Signup successful:', result);
-            window.location.href = `/me?id=${result.user.id}`
-            //Redirect with credentials
-
+            router.push('/me');
         } catch (error) {
             console.error('Error:', error);
         }finally {
