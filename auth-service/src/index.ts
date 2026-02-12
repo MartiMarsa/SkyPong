@@ -4,13 +4,14 @@ import cookie from '@fastify/cookie';
 import fetch from 'node-fetch';
 import chalk from 'chalk';
 import { randomUUID } from 'crypto';
-import { signup, login } from './auth';
+import { signup, login, oauthLoginOrSignup, generateEmail } from './auth';
 import { initDB, getDB } from './db';
 import { initTokenDB, getTokenDB } from './dbTokens';
 import { privateKey, publicKey } from './keys';
 import { generateToken, generate2FAToken } from './token';
 import { generate2FA, verify2FA } from './twofa';
 import { createRefreshToken, verifyRefreshToken, revokeRefreshToken, revokeRefreshTokenById, isTokenRevoked } from './refresh';
+import { providers } from './providers/providers';
 import { hashPassword, verifyPassword } from './password';
 
 const fastify = Fastify({ logger: true });
@@ -115,7 +116,7 @@ async function authentificate(req: any): Promise<any | null> {
 		const db = getDB();
 
 	    	const user = await new Promise<any>((res, rej) => {
-		  	db.get(`SELECT id, email, password_version, twofa_enabled, token_version, deleted_at FROM users WHERE id = ?`,
+		  	db.get(`SELECT id, email, password_version, twofa_enabled, token_version, deleted_at, needs_password FROM users WHERE id = ?`,
 		       [payload.sub],
 			(err, row) => (err ? rej(err) : res(row))
 			      );
@@ -197,10 +198,9 @@ fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply)
 });
 
 // --- SIGNUP ---
-fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, reply) => {
+fastify.post('/auth/signup',{ preHandler: requireGuest }, async (req: any, reply) => {
 
     const { email, password } = req.body as AuthBody;
-//    const next = req.query.next || req.cookies?.last_page || '/me';
 
     if (!email || !password) {
         return reply.status(400).send({
@@ -231,8 +231,7 @@ fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, repl
 		} 
 	});
     } catch (err: any) {
-        reply.status(409).send({ error: { code: 'EMAIL_OR_USERNAME_TAKEN', message: 'Already exists' } });
-//	  reply.status(500).send({ error: { code: err.code, message: err.message }});
+        reply.status(409).send(); //{ error: { code: 'EMAIL_OR_USERNAME_TAKEN', message: 'Already exists' } }
     }
 });
 
@@ -269,8 +268,95 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
                 } 
             });
     } catch (err: any) {
-        reply.status(401).send({ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' } });
+        reply.status(401).send(); //{ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' } }
     }
+});
+
+// --- OAUTH WITH PROVIDER (GOOGLE OR ANY OTHER) ---
+fastify.get('/auth/:provider', { preHandler: requireGuest },  async (req, reply) => {
+
+      	const { provider } = req.params;
+
+      	if (!providers[provider])
+	    	return reply.code(404).send();
+
+      	const state = randomUUID();
+
+      	reply.setCookie('oauth_state', state, {
+	    	httpOnly: true,
+	    	sameSite: 'lax'
+      	});
+
+      	reply.redirect(
+	    	providers[provider].auth(state)
+      	);
+});
+
+// --- AOUTH CALLBACK ---
+fastify.get('/auth/:provider/callback', async (req, reply) => {
+
+      	const { provider } = req.params;
+      	const { code, state } = req.query;
+
+      	if (state !== req.cookies.oauth_state)
+	    	return reply.code(403).send();
+
+      	const p = providers[provider];
+
+      	const access = await p.token(code);
+
+      	const profile = await p.profile(access);
+
+      	const { user, isNew } =
+	    	await oauthLoginOrSignup(profile, provider);
+
+      	await issueSession(user, reply, isNew);
+});
+
+// --- NEED SET PASSWORD FOR OAUTH ---
+fastify.post('/auth/set-password', {preHandler: requireAuthAllowNeedsPassword }, async (req: any, reply) => {
+
+	const { password } = req.body;
+
+    	if (!password || password.length < 8) {
+	  	return reply.status(400).send({
+			error: {
+		      		code: 'VALIDATION_ERROR',
+		      		message: 'Password must be at least 8 characters'
+			}
+	  	});
+    	}
+
+    	const db = getDB();
+
+    	const user = await new Promise<any>((res, rej) => {
+	  	db.get(`SELECT id, needs_password, password_version, token_version FROM users WHERE id = ?`,
+	       	       [req.user.id],
+		(err, row) => err ? rej(err) : res(row)
+		      );
+    	});
+
+    	if (!user) {
+	  	return reply.status(404).send({ error: 'USER_NOT_FOUND' });
+    	}
+
+    	if (!user.needs_password) {
+	  	return reply.status(400).send({
+			error: {
+		      		code: 'PASSWORD_ALREADY_SET',
+		      		message: 'Password already configured'
+			}
+	  	});
+    	}
+
+	const hash = await hashPassword(password);
+
+    	await new Promise<void>((res, rej) => {
+	  	db.run(`UPDATE users SET password_hash = ?, needs_password = 0, password_version = password_version + 1, token_version = token_version + 1 WHERE id = ?`,
+	       	       [hash, user.id],
+		err => err ? rej(err) : res()
+		      );
+    	});
 });
 
 // --- CHANGE USER PASSWORD ---
@@ -381,6 +467,7 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
       	const userId = req.user.sub;
       	const db = getDB();
       	const dbToken = getTokenDB();
+	const mockEmail = generateEmail();
 
       	try {
 	    	await new Promise<void>((resolve, reject) => {
@@ -395,7 +482,8 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
 				    		if (err) {
 					  		db.run('ROLLBACK');
 				  			return reject(err);
-			    		}
+						}
+					});
 
 			    	// 2. Invalidate JW
 				db.run(
@@ -406,25 +494,21 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
 				      			db.run('ROLLBACK');
 				      			return reject(err || new Error('User not found'));
 						}
+					});
 
-				// 3. Delete user
+				// 3. Soft delete user (we are not deleting user, but changing personal data)
 				db.run(
-		      			`DELETE FROM users WHERE id = ?`,
-			      		[userId],
+		      			`UPDATE users SET email = ?, password_version = password_version + 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?`,
+			      		[mockEmail, userId],
 		      			function (err) {
 			    			if (err) {
 				  			db.run('ROLLBACK');
 				  			return reject(err);
 			    			}
-
-					    	db.run('COMMIT');
-	    					resolve();
-		      			}
-				);
-			  		}
-		    		);
-			      		}
-				);
+					});
+				
+				db.run('COMMIT');
+				resolve();
 		  	});
 	    	});
 		// 4. Clear cookies
@@ -434,9 +518,9 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
 	  	.clearCookie('csrf_token', { path: '/' })
 	  	.send({ status: 'account_deleted' });
 
-      	} catch (err) {
+	} catch (err) {
 	    	req.log.error(err);
-	    	reply.status(500).send({ error: 'ACCOUNT_DELETE_FAILED' });
+	    	reply.status(500).send(); //{ error: 'ACCOUNT_DELETE_FAILED' }
 	}
 });
 

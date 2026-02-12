@@ -18,23 +18,53 @@ const db = new sqlite3.Database(dbPath, err => {
 export function initDB(): Promise<void> {
 
 	return new Promise((resolve, reject) => {
-		db.run(
-       		       `CREATE TABLE IF NOT EXISTS users (
-       			       id TEXT PRIMARY KEY,
-			       email TEXT UNIQUE NOT NULL,
-				   password_hashed TEXT NOT NULL,
-			       password_version INTEGER DEFAULT 1,
-			       twofa_enabled INTEGER DEFAULT 0,
-			       twofa_secret TEXT,
-			       token_version INTEGER DEFAULT 0,
-			       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-			       deleted_at TEXT
-		       )`,
-		       err => {
-			       if (err) reject(err);
-			       else resolve();
-		       }
-		      );
+
+			db. serialize((resolve, reject) => {
+
+			let failed = false;
+
+			const onError = (err: Error | null) => {
+				if (err && !failed) {
+					failed = true;
+					db.run('ROLLBACK');
+					reject(err);
+				}
+			};
+
+			db.run('PRAGMA jornal_mode = WAL');
+			db.run('BEGIN');
+
+			db.run(
+	 			`CREATE TABLE IF NOT EXISTS users (
+	 				id TEXT PRIMARY KEY,
+	 				email TEXT UNIQUE NOT NULL,
+	 				password_hashed TEXT NOT NULL,
+	 				password_version INTEGER DEFAULT 1,
+			       			   
+	 				twofa_enabled INTEGER DEFAULT 0,
+	 				twofa_secret TEXT,
+	 				token_version INTEGER DEFAULT 0,
+
+	 				provider TEXT,
+	 				provider_id TEXT,
+	 				needs_password INTEGER DEFAULT 0,
+	 				created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+	 				deleted_at TEXT
+				)`, onError);
+
+			db.run(`CREATE UNIQUE INDEX idx_oauth
+			       ON users(provider, provider_id)
+			       `, onError);
+
+			db.run('COMMIT', err => {
+				if (err) {
+					db.run('ROLLBACK');
+					return reject(err);
+				}
+
+				resolve();
+			});
+		});
 	});
 }
 
