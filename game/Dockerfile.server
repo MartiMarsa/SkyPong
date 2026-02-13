@@ -49,4 +49,4 @@ COPY --from=builder /app/server/dist/ ./dist/
 EXPOSE 2567
 
 # Start the server
-CMD ["node", "dist/src_serv/index.js"]
+CMD ["node", "dist/server/src_serv/index.js"]
