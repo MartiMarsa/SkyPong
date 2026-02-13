@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlay } from '@fortawesome/free-solid-svg-icons';
 import { useTranslation } from '../hooks/use-translation'; 
-import Link from 'next/link';
+
 
 export default function HeroUI()
 {
@@ -13,7 +13,7 @@ export default function HeroUI()
                 <p className="hero-subtitle text-lg text-center">{t.homePage.description}</p>
             </div>
                 <div className="hero-image text-7xl">
-                    <Link href='/game-engine/'><FontAwesomeIcon icon={faPlay} /></Link>
+                <a href='/game-engine/' aria-label='Play game engine'><FontAwesomeIcon icon={faPlay} /></a>
             </div>
         </section>
     );
