@@ -13,7 +13,7 @@ export default function HeroUI()
                 <p className="hero-subtitle text-lg text-center">{t.homePage.description}</p>
             </div>
                 <div className="hero-image text-7xl">
-                    <Link href='/game-mode'><FontAwesomeIcon icon={faPlay} /></Link>
+                    <Link href='/game-engine/'><FontAwesomeIcon icon={faPlay} /></Link>
             </div>
         </section>
     );
