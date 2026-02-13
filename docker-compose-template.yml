@@ -68,14 +68,18 @@ services:
       - ./nginx-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
       - certs:/etc/nginx/certs
     depends_on:
+      frontend:
+        condition: service_started
+      game-frontend:
+        condition: service_started
       auth-service:
-        condition: service_healthy
+        condition: service_started
       game-service:
-        condition: service_healthy
+        condition: service_started
       profile-service:
-        condition: service_healthy
+        condition: service_started
       statistics-service:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/nginx_status >/dev/null 2>&1 || exit 1"]
       interval: 10s
