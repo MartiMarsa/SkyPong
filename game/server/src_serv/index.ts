@@ -17,6 +17,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
+app.get("/healthz", (_req, res) => {
+    res.status(200).json({ ok: true, service: "game-service" });
+});
+
 const gameServer = new Server({
     transport: new WebSocketTransport({
         server: createServer(app),

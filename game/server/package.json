@@ -4,7 +4,7 @@
     "scripts": {
         "start": "nodemon --exec ts-node src_serv/index.ts",
         "build": "tsc",
-        "start:prod": "node dist/index.js"
+        "start:prod": "node dist/server/src_serv/index.js"
     },
     "dependencies": {
         "@babylonjs/core": "^8.48.0",

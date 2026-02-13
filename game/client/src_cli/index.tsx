@@ -7,7 +7,7 @@ import CanvasPage from './components/pages/CanvasPage';
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 
 root.render(
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
             <Route path="/" element={<StartPage />} />
             <Route path="/canvas" element={<CanvasPage />} />
