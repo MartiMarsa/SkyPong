@@ -14,7 +14,7 @@ DCFLAGS := -p $(PROJECT) -f $(COMPOSE_FILE)
 
 .PHONY: help up down restart ps logs build rebuild pull \
         clean clean-hard prune-volumes prune-images prune-all \
-        exec-nginx exec-auth exec-game
+        exec-nginx exec-auth exec-game exec-game-front
 
 help:
 	@echo ""
@@ -39,6 +39,7 @@ help:
 	@echo "  make exec-nginx     -> shell dentro de nginx-gateway"
 	@echo "  make exec-auth      -> shell dentro de auth-service"
 	@echo "  make exec-game      -> shell dentro de game-service"
+	@echo "  make exec-game-front -> shell dentro de game-frontend"
 	@echo ""
 
 config:
@@ -97,3 +98,6 @@ exec-auth:
 
 exec-game:
 	$(DC) $(DCFLAGS) exec game-service sh
+
+exec-game-front:
+	$(DC) $(DCFLAGS) exec game-frontend sh
