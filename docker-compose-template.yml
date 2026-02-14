@@ -41,6 +41,7 @@ volumes:
   prometheus_data:
   grafana_data:
   certs:
+  keys:
 # ──────────────────────────────────────────────
 # SERVICES
 # ──────────────────────────────────────────────
@@ -119,6 +120,7 @@ services:
       - internal
     volumes:
       - PLACEHOLDER_SQLITE_AUTH:/app/data
+      - keys:/app/keys
     # user: "${UID}:${GID}" 
       # Optional: mount JWT keys from host secrets
       # - ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
@@ -188,8 +190,10 @@ services:
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=profile-service
+      - JWT_PUBLIC_KEY_PATH=/app/keys/jwt-public.pem
     volumes:
       - profile-service_vol:/app/data
+      - keys:/app/keys:ro
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:5000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
       interval: 10s

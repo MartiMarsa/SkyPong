@@ -10,6 +10,9 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+secrets/
+*.pem
+
 
 # Build outputs
 dist/
