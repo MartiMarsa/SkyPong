@@ -115,7 +115,7 @@ async function authentificate(req: any): Promise<any | null> {
 		const db = getDB();
 
 	    	const user = await new Promise<any>((res, rej) => {
-		  	db.get(`SELECT id, email, password_version, twofa_enabled, token_version, deleted_at, needs_password FROM users WHERE id = ?`,
+		  	db.get(`SELECT id, email, password_version, twofa_enabled, token_version, deleted_at  FROM users WHERE id = ?`,
 		       [payload.sub],
 			(err, row) => (err ? rej(err) : res(row))
 			      );
@@ -130,6 +130,7 @@ async function authentificate(req: any): Promise<any | null> {
 	    	return user;
 
 	} catch (err) {
+            console.error("🔥 Error en jwt.verify:", err);
 	    	return null;
 	}
 }
@@ -449,7 +450,7 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
 	.setCookie('csrf_token', csrfToken, {
     		httpOnly: false,
 		secure: true,
-    		sameSite: 'strict',
+    		sameSite: 'none',
     		path: '/',
 	})
 	.send({ ok: true });
@@ -506,7 +507,7 @@ fastify.post('/auth/2fa/disable', async (req, reply) => {
 fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
 	const user = req.user;
 //			const next = req.cookies?.last_page || '/me';
-
+req.log.info({ user: req.user }, 'Resultado de usuario en verify');
 			return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
 });
 

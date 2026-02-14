@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "../lib/form-validation/auth";
@@ -9,7 +9,8 @@ import { useTranslation } from '../hooks/use-translation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
-import  Cookies  from "js-cookie";
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../context/auth-context'
 
 const mobileStyles = {
     main: "flex flex-col justify-center items-center min-h-screen",
@@ -34,6 +35,8 @@ const desktopStyles = {
 };
 
 export default function SignInPage() {
+    const router = useRouter();
+    const { user, checkAuth } = useAuth();
     const { t } = useTranslation();
     const { styles } = useStyles(mobileStyles, desktopStyles);
     const [serverError, setServerError] = useState('');
@@ -51,12 +54,13 @@ export default function SignInPage() {
             
             console.log("Datos validados:", data);
             // Call API here
-            const apiURL = 'api/auth/login'; // Asegúrate de que esta ruta sea correcta
+            const apiURL = '/api/auth/login'; // Asegúrate de que esta ruta sea correcta
             const response = await fetch(apiURL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify(data),
             });
 
@@ -70,10 +74,10 @@ export default function SignInPage() {
 
             
             const result = await response.json();
-                    console.log("📦 Response status:", response.status);
-        console.log("📦 Response completa:", result);
-        console.log("📦 result.user:", result.user);
-        console.log("📦 Estructura:", JSON.stringify(result, null, 2));
+            console.log("📦 Response status:", response.status);
+            console.log("📦 Response completa:", result);
+            console.log("📦 result.user:", result.user);
+            console.log("📦 Estructura:", JSON.stringify(result, null, 2));
 
             if (!response.ok) {
                 // ✅ Maneja diferentes tipos de errores
@@ -92,15 +96,22 @@ export default function SignInPage() {
             }
 
             console.log("Login exitoso:", result);
-            const userId = result.user.id;
-            const userEmail = result.user.email;
-            //window.location.href = '/me?id=' + result.id;
+            const check = await checkAuth();
+            console.log("Check: ", check);
+            if (check)
+                router.push('/')
+            else
+                setServerError("Error validating credentials");
         } catch (error) {
             console.error('Error: ', error);
         }finally {
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+
+    }, []);
 
     return (
         <main className={styles.main}>

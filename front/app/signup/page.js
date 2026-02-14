@@ -9,6 +9,7 @@ import { useTranslation } from '../hooks/use-translation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../context/auth-context'
 import Link from 'next/link';
 
 const mobileStyles = {
@@ -36,11 +37,12 @@ const desktopStyles = {
 };
 
 export default function SignUpPage() {
+    const router = useRouter();
+    const { user, checkAuth } = useAuth();
     const { t } = useTranslation();
     const { styles } = useStyles(mobileStyles, desktopStyles);
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const router = useRouter();
 
     const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm({
         resolver: zodResolver(signUpSchema(t)),
@@ -59,6 +61,7 @@ export default function SignUpPage() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include',
                 body: JSON.stringify(data),
             });
             const contentType = response.headers.get('content-type');
@@ -85,8 +88,15 @@ export default function SignUpPage() {
             }
 
             const result = await response.json();
-            console.log('Signup successful:', result);
-            router.push('/me');
+            const check = await checkAuth();
+            console.log("Check: ", check);
+            if (check)
+            {
+                console.log('Signup successful:', result);
+                router.push('/me');
+            }
+            else
+                setServerError("Error validating credentials");
         } catch (error) {
             console.error('Error:', error);
         }finally {

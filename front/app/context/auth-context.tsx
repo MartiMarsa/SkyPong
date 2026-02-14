@@ -18,16 +18,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:8081/auth/verify', { 
+      const res = await fetch('/api/auth/verify', { 
         credentials: 'include' 
       });
+      console.log("Response:", res)
       if (res.ok) {
         const data = await res.json();
         console.log("Auth data verified: ", data);
         setUser(data);
+        return (true);
       } else {
-        console.log("Auth data NOT verified");
-        setUser(null);
+          setUser(null);
+          console.error("Auth data NOT verified");
+          return (false);
       }
     } catch (err) {
       setUser(null);
@@ -49,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .find(row => row.startsWith('csrf_token='))
         ?.split('=')[1];
 
-      await fetch('http://localhost:8081/auth/logout', {
+      await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
         headers: {
