@@ -8,6 +8,9 @@ const es = {
     description: "Una experiencia celestial de Pong",
     lable: "Ir a la Home",
     },
+    user: {
+        hi: "hola!",
+    },
     gameMode: {
         title: "Modo de Juego",
         cta: "¿Quieres jugar en remoto? Inicia sesión para acceder al modo multijugador en línea.",

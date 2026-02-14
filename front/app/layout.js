@@ -4,6 +4,7 @@ import '@fortawesome/fontawesome-svg-core/styles.css';
 config.autoAddCss = false;
 
 import { LanguageProvider } from './context/language-context';
+import { AuthProvider} from './context/auth-context'
 import { getCurrentLocale } from "./lib/i18n/locale-manager";
 
 export const metadata = {
@@ -23,10 +24,12 @@ export const metadata = {
  
 export default function RootLayout({ children }) {
   return (
-    <LanguageProvider>
-      <html lang={getCurrentLocale()}>
-        <body>{children}</body>
-      </html>
-    </LanguageProvider>
+    <AuthProvider>
+        <LanguageProvider>
+            <html lang={getCurrentLocale()}>
+                <body>{children}</body>
+            </html>
+        </LanguageProvider>
+    </AuthProvider>
   );
 }
