@@ -5,6 +5,9 @@ const en = {
         description: "A celestial Pong experience",
         lable: "Go to Home",
     },
+    user: {
+        hi: "Hi!",
+    },
     gameMode: {
         title: "Game Mode",
         cta: "Want to play remotely? Log in to access online multiplayer mode.",

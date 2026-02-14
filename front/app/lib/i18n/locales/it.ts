@@ -5,6 +5,9 @@ const it = {
         description: "Un'esperienza celestiale di Pong",
         lable: "Vai alla Home",
     },
+    user: {
+        hi: "Ciao!",
+    },
     gameMode: {
         title: "Modalità di gioco",
         cta: "Vuoi giocare da remoto? Accedi per accedere alla modalità multigiocatore online.",

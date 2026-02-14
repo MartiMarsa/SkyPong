@@ -12,29 +12,7 @@ const desktopStyles = { nav: '' }
 
 
 export default function NavigationAppUI({ home, userURL })
-{
-    const router = useRouter();
-    useEffect(() => {
-        const logout = async () => {
-            try {
-                const response = await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
-                if (response.ok) {
-                    // Redirige a la página de inicio o de login después del logout
-                    router.push('/');
-                    
-                } else {
-                    console.error('Error al cerrar sesión');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        }
-    }, []); 
+{ 
     const { t } = useTranslation();
     const { styles } = useStyles(mobileStyles, desktopStyles);
     return (
