@@ -504,7 +504,7 @@ fastify.post('/auth/2fa/disable', async (req, reply) => {
 });
 
 fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
-
+	const user = req.user;
 //			const next = req.cookies?.last_page || '/me';
 
 			return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
