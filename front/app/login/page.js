@@ -36,7 +36,7 @@ const desktopStyles = {
 
 export default function SignInPage() {
     const router = useRouter();
-    const { user, checkAuth } = useAuth();
+    const { user, checkAuth, hasCredentials } = useAuth();
     const { t } = useTranslation();
     const { styles } = useStyles(mobileStyles, desktopStyles);
     const [serverError, setServerError] = useState('');
@@ -46,6 +46,17 @@ export default function SignInPage() {
         resolver: zodResolver(loginSchema(t)),
         mode: 'onBlur',
     });
+    
+    const redirectHome = async () => {
+        const hasCredentials = await checkAuth();
+        console.log("User already loggedin: ", user);
+        if (hasCredentials)
+            router.push('/');
+    };
+
+    useEffect(() => {
+        redirectHome();
+    }, []);
 
     const onSubmit = async (data) => {
         try {
@@ -63,29 +74,28 @@ export default function SignInPage() {
                 credentials: 'include',
                 body: JSON.stringify(data),
             });
-
+            
             const contentType = response.headers.get('content-type');
-        
+            
             if (!contentType || !contentType.includes('application/json')) {
                 console.error('Response is not JSON:', await response.text());
                 setServerError(`Error del servidor. La ruta ${apiURL} no existe o está mal configurada.`);
                 return;
             }
-
+            
             
             const result = await response.json();
             console.log("📦 Response status:", response.status);
             console.log("📦 Response completa:", result);
             console.log("📦 result.user:", result.user);
             console.log("📦 Estructura:", JSON.stringify(result, null, 2));
-
+            
             if (!response.ok) {
                 // ✅ Maneja diferentes tipos de errores
                 if (response.status === 404) {
                     setServerError(t.form.userNotRegistered);
                 } else if (response.status === 401) {
-                    console.log("T", t)
-                    console.log("401 Unauthorized: ", t.form.errors.invalidCredentials);
+                    console.warn("401 Unauthorized: ", t.form.errors.invalidCredentials);
                     setServerError(t.form.errors.invalidCredentials);
                 } else if (response.status === 403) {
                     setServerError(t.form.errors.accountBlocked);
@@ -94,26 +104,25 @@ export default function SignInPage() {
                 }
                 return;
             }
-
+            
             console.log("Login exitoso:", result);
-            const check = await checkAuth();
-            console.log("Check: ", check);
-            if (check)
+            console.log("Has Credentials: ", hasCredentials);
+            if (hasCredentials)
                 router.push('/')
             else
                 setServerError("Error validating credentials");
         } catch (error) {
             console.error('Error: ', error);
-        }finally {
+        } finally {
             setIsLoading(false);
         }
     };
-
-    useEffect(() => {
-
-    }, []);
+    
 
     return (
+        <>
+        { isLoading ? (<div className=''>Loading...</div>) : 
+        (
         <main className={styles.main}>
             <div className={styles.goBackWrapper}>
                 <Link href="/">
@@ -166,5 +175,7 @@ export default function SignInPage() {
                 </div>
             </article>
         </main>
+        )}
+        </>
     );
 }

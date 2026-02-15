@@ -93,7 +93,7 @@ async function verifyToken(req: any, reply: any) {
 }
 
 // --- PRIVATE PROFILE ---
-fastify.get('/me', { preHandler: verifyToken }, async (req, reply) => {
+fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
 	try {
 	      	const userId = req.user.sub;
 
@@ -121,7 +121,7 @@ fastify.get('/me', { preHandler: verifyToken }, async (req, reply) => {
 });
 
 // --- CHANGE PROFILE ---
-fastify.patch('/me', { preHandler: verifyToken }, async (req, reply) => {
+fastify.patch('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
 	try {
 		const userId = req.user.sub;
 
@@ -234,7 +234,7 @@ fastify.post('/internal/profile/delete', { preHandler: requireServiceAuth }, asy
 });
 
 // --- CHANGE PROFILE AVATAR ---
-fastify.post('/me/avatar', { preHandler: verifyToken }, async (req, reply) => {
+fastify.post('/profile/me/avatar', { preHandler: verifyToken }, async (req, reply) => {
 			 try {
 			 const userId = req.query.id;
 
@@ -313,8 +313,12 @@ fastify.post('/me/avatar', { preHandler: verifyToken }, async (req, reply) => {
 	 		 }
 });
 
+fastify.addHook('onRequest', async (request, reply) => {
+  console.log(`Recibida petición: ${request.method} ${request.url}`);
+});
+
 // --- PUBLIC PROFILE ---
-fastify.get('/users/id', async (req, reply) => {
+fastify.get('/users/:id', async (req, reply) => {
 
 	const { id } = req.params as { id: string};
 
@@ -333,7 +337,7 @@ fastify.get('/users/id', async (req, reply) => {
 });
 
 // --- SEND FRIEND REQUEST ---
-fastify.post('/friends/:toId', async (req, reply) => {
+fastify.post('/profile/friends/:toId', async (req, reply) => {
     	const fromId = req.headers['x-user-id'] as string;
     	const { toId } = req.params as { toId: string };
     	try {
@@ -350,7 +354,7 @@ fastify.post('/friends/:toId', async (req, reply) => {
 });
 
 // --- ACCEPT FRIEND REQUEST ---
-fastify.post('/friends/:requesterId/accept', async (req, reply) => {
+fastify.post('/profile/friends/:requesterId/accept', async (req, reply) => {
     	const userId = req.headers['x-user-id'] as string;
     	const { requesterId } = req.params as { requesterId: string };
     	try {
@@ -366,7 +370,7 @@ fastify.post('/friends/:requesterId/accept', async (req, reply) => {
 });
 
 // --- REJECT FRIEND REQUEST ---
-fastify.post('/friends/:requesterId/reject', async (req, reply) => {
+fastify.post('/profile/friends/:requesterId/reject', async (req, reply) => {
     	const userId = req.headers['x-user-id'] as string;
     	const { requesterId } = req.params as { requesterId: string };
     	try {
@@ -382,7 +386,7 @@ fastify.post('/friends/:requesterId/reject', async (req, reply) => {
 });
 
 // --- CANCEL OUTGOING FRIEND REQUEST ---
-fastify.post('/friends/:requesterId/cancel', async (req, reply) => {
+fastify.post('/profile/friends/:requesterId/cancel', async (req, reply) => {
     	const userId = req.headers['x-user-id'] as string;
     	const { requesterId } = req.params as { requesterId: string };
     try {
@@ -398,7 +402,7 @@ fastify.post('/friends/:requesterId/cancel', async (req, reply) => {
 });
 
 // --- REMOVE FRIEND ---
-fastify.delete('/friends/:friendId', async (req, reply) => {
+fastify.delete('/profile/friends/:friendId', async (req, reply) => {
     	const userId = req.headers['x-user-id'] as string;
     	const { friendId } = req.params as { friendId: string };
     	try {

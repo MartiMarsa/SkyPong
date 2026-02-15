@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStyles } from '../hooks/use-styles';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,6 +49,18 @@ export default function SignUpPage() {
         mode: 'onBlur', // Valida cuando el usuario sale del campo
     });
 
+    const redirectHome = async () => {
+        const hasCredentials = await checkAuth();
+        console.log("User already loggedin: ", user);
+        if (hasCredentials)
+            router.push('/');
+    };
+
+    useEffect(() => {
+        redirectHome();
+    }, []);
+
+
     const onSubmit = async (data) => {
         try {
             console.log("Datos validados:", data);
@@ -88,9 +100,9 @@ export default function SignUpPage() {
             }
 
             const result = await response.json();
-            const check = await checkAuth();
-            console.log("Check: ", check);
-            if (check)
+            const hasCredentials = await checkAuth();
+            console.log("Check: ", hasCredentials);
+            if (hasCredentials)
             {
                 console.log('Signup successful:', result);
                 router.push('/me');
@@ -105,72 +117,76 @@ export default function SignUpPage() {
     };
 
     return (
-        <main className={styles.main}>
-            <div className={styles.goBackWrapper}>
-                <Link href="/">
-                    <FontAwesomeIcon icon={faArrowLeft} /> {t.form.goBackHome}
-                </Link>
-            </div>
-
-            <article className={styles.article}> 
-                <span className={styles.spanTitle}>{t.signUpPage.title}</span>
-                <h1 className={styles.h1}>{t.homePage.title}</h1>
-                
-                {/* Use handleSubmit */}
-                <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
-
-                    {/* Email Field */}
-                    <div className={styles.inputWrapper}>
-                        <input 
-                            className={errors.email ? styles.textInputError : styles.textInput}
-                            type="email" 
-                            placeholder={t.form.emailPlaceholder}
-                            autoComplete="email"
-                            {...register('email')} 
-                        />
-                    </div>
-
-                    {/* Password Field */}
-                    <div className={styles.inputWrapper}>
-                        <input 
-                            className={errors.password ? styles.textInputError : styles.textInput}
-                            type="password" 
-                            placeholder={t.signUpPage.newPasswordLabel}
-                            autoComplete="new-password"
-                            {...register('password')}  
-                        />
-                    </div>
-
-                    {/* Confirm Password Field */}
-                    <div className={styles.inputWrapper}>
-                        <input 
-                            className={errors.confirmPassword ? styles.textInputError : styles.textInput}
-                            type="password" 
-                            placeholder={t.signUpPage.confirmPasswordLabel}
-                            autoComplete="new-password"
-                            {...register('confirmPassword')} 
-                        />
-                    { serverError && (
-                        <p className={styles.errorMessage}>
-                                { console.log("Error:", serverError)}
-                                {serverError}
-                            </p>
-                        )}
-                    </div>
-
-                    <button 
-                        className={styles.submitButton} 
-                        type="submit"
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? t.signUpPage.submitting : t.signUpPage.submitButton}
-                    </button>
-                </form>
-
-                <div className={styles.registerWrapper}>
-                    <Link href="/login">{t.signUpPage.hasAccount}</Link>
+        <>
+        { isLoading ? (<div className=''>Loading...</div>) : (
+            <main className={styles.main}>
+                <div className={styles.goBackWrapper}>
+                    <Link href="/">
+                        <FontAwesomeIcon icon={faArrowLeft} /> {t.form.goBackHome}
+                    </Link>
                 </div>
-            </article>
-        </main>
+
+                <article className={styles.article}> 
+                    <span className={styles.spanTitle}>{t.signUpPage.title}</span>
+                    <h1 className={styles.h1}>{t.homePage.title}</h1>
+                    
+                    {/* Use handleSubmit */}
+                    <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
+
+                        {/* Email Field */}
+                        <div className={styles.inputWrapper}>
+                            <input 
+                                className={errors.email ? styles.textInputError : styles.textInput}
+                                type="email" 
+                                placeholder={t.form.emailPlaceholder}
+                                autoComplete="email"
+                                {...register('email')} 
+                            />
+                        </div>
+
+                        {/* Password Field */}
+                        <div className={styles.inputWrapper}>
+                            <input 
+                                className={errors.password ? styles.textInputError : styles.textInput}
+                                type="password" 
+                                placeholder={t.signUpPage.newPasswordLabel}
+                                autoComplete="new-password"
+                                {...register('password')}  
+                            />
+                        </div>
+
+                        {/* Confirm Password Field */}
+                        <div className={styles.inputWrapper}>
+                            <input 
+                                className={errors.confirmPassword ? styles.textInputError : styles.textInput}
+                                type="password" 
+                                placeholder={t.signUpPage.confirmPasswordLabel}
+                                autoComplete="new-password"
+                                {...register('confirmPassword')} 
+                                />
+                        { serverError && (
+                            <p className={styles.errorMessage}>
+                                    { console.log("Error:", serverError)}
+                                    {serverError}
+                                </p>
+                            )}
+                        </div>
+
+                        <button 
+                            className={styles.submitButton} 
+                            type="submit"
+                            disabled={isSubmitting}
+                            >
+                            {isSubmitting ? t.signUpPage.submitting : t.signUpPage.submitButton}
+                        </button>
+                    </form>
+
+                    <div className={styles.registerWrapper}>
+                        <Link href="/login">{t.signUpPage.hasAccount}</Link>
+                    </div>
+                </article>
+            </main>
+                        )}
+        </>
     );
 }

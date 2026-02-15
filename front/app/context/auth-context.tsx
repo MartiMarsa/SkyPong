@@ -8,12 +8,13 @@ const AuthContext = createContext({
   user: null,
   loading: true,
   logout: async () => {},
-  checkAuth: async () => {} // Útil para re-validar tras login
+  checkAuth: async () => { return false; } // Útil para re-validar tras login
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasCredentials , sethasCredentials] = useState(false);
   const router = useRouter();
 
   const checkAuth = useCallback(async () => {
@@ -26,11 +27,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         console.log("Auth data verified: ", data);
         setUser(data);
-        return (true);
+        return(true);
       } else {
           setUser(null);
-          console.error("Auth data NOT verified");
-          return (false);
+          console.warn("Auth data NOT verified");
+         return(false);
       }
     } catch (err) {
       setUser(null);
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout, checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, hasCredentials, logout, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

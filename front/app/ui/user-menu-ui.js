@@ -17,9 +17,10 @@ export default function UserMenuUI({ userURL })
             ) :
             (
                 <div className=''>
-                    {t.user.hi}
-                    <Link href={ userURL } className="user-menu">
-                        { user.username }
+                    { console.info("User:", user)}
+                    {t.user.hi}, 
+                    <Link href={ !user ? (userURL) : (`/you`) } className="user-menu">
+                        { user?.nickname || " SkyPong" }
                     </Link>
 
                 </div>
