@@ -169,13 +169,15 @@ async function requireGuest(req: any, reply: any) {
 		return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
 }
 
-// --- VERIFICATION IF USER IS OLREADY LOGGED --- 
-fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
-			const user = req.user;
-//          const next = req.cookies?.last_page || '/me';
 
-			return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
-});
+// I just commented this route because it was causing some issues to compile the frontend
+// // --- VERIFICATION IF USER IS OLREADY LOGGED --- 
+// fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
+// 			const user = req.user;
+// //          const next = req.cookies?.last_page || '/me';
+
+// 			return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
+// });
 // --- SIGNUP ---
 fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, reply) => {
 
@@ -544,8 +546,10 @@ fastify.post('/auth/2fa/disable', { preHandler: requireAuth }, async (req, reply
                                                           [id],
                                                           (err, row) => (err ? rej(err) : res(row)));
                                                    });
+				if (!result) return reply.status(401).send();
 
-             if (!result) return reply.status(401).send();
+			 reply.send({ id: id, email: result.email, twofa_enabled: result.twofa_enabled });
+		});
 
 fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
 	const user = req.user;
