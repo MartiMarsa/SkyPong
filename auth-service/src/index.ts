@@ -466,26 +466,26 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
 
 // --- 2FA ---
 fastify.post('/auth/2fa/setup', { preHandler: requireAuth }, async (req, reply) => {
-	 		 const id = req.user.id;
+	const id = (req as any).user.id;
+	const db = getDB();
 
-			 const db = getDB();
+	const check = await new Promise<any>((res, rej) => {
+		db.get(`SELECT twofa_enabled FROM users WHERE id = ?`, [id], (err, row) =>
+			err ? rej(err) : res(row)
+		);
+	});
 
-			 const check = await new Promise<any>((res, rej) => {
-												  db.get(`SELECT twofa_enabled FROM users WHERE id = ?`, 
-														 [id],
-														 (err, row) = > (err ? rej(err) : res(row)));
-												  });
+	if (check) {
+		return reply.status(409).send(); // { error: '2FA already enabled' }
+	}
 
-			 if (check) { return reply.status(409).send(); // { error: '2FA already enabled' } 
-
-	 		 const result = await generate2FA(id);
-	 
-			 reply.send(result);
+	const result = await generate2FA(id);
+	reply.send(result);
 });
 
 fastify.post('/auth/2fa/enable', { preHandler: requireAuth }, async (req, reply) => {
 			 const { code } = req.body as { code: string };
-			 const id = req.user.id;
+			 const id = (req as any).user.id;
     	
 		 	 const db = getDB();
     	
@@ -505,7 +505,7 @@ fastify.post('/auth/2fa/enable', { preHandler: requireAuth }, async (req, reply)
 								   	 );
 							   });
 
-			 const result = await new Promise<any>((res. rej) => {
+			 const result = await new Promise<any>((res, rej) => {
 												   db.get(`SELECT email, twofa_enabled FROM users WHERE id = ?`,
 														  [id],
 														  (err, row) => (err ? rej(err) : res(row)));
@@ -518,7 +518,7 @@ fastify.post('/auth/2fa/enable', { preHandler: requireAuth }, async (req, reply)
 
 fastify.post('/auth/2fa/disable', { preHandler: requireAuth }, async (req, reply) => {
 			 const { code } = req.body as { code: string };
-             const id = req.user.id;
+             const id = (req as any).user.id;
 	
 		 	 const db = getDB();
 
@@ -540,7 +540,7 @@ fastify.post('/auth/2fa/disable', { preHandler: requireAuth }, async (req, reply
 					   		   });
 
 			 const result = await new Promise<any>((res, rej) => {
-                                                   db.get(`SELECT email, twofa_enabled FROM users WHETE id = ?`,
+                                                   db.get(`SELECT email, twofa_enabled FROM users WHERE id = ?`,
                                                           [id],
                                                           (err, row) => (err ? rej(err) : res(row)));
                                                    });
