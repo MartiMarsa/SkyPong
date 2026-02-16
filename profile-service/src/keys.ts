@@ -25,17 +25,18 @@ function resolveKeyPath(envValue: string | undefined, fallback: string): string 
 function readPublicKeyOrExit(): string {
     const publicKeyPath = resolveKeyPath(process.env.JWT_PUBLIC_KEY_PATH, DEFAULT_PUBLIC_KEY_PATH);
 
+    // Intentar leer la llave hasta 10 veces antes de rendirse
+    let attempts = 0;
+    while (!fs.existsSync(publicKeyPath) && attempts < 10) {
+        console.log(`[Attempt ${attempts}] Waiting for public key at ${publicKeyPath}...`);
+        // Pausa sincrónica de 1 segundo (solo durante el arranque)
+        const start = Date.now();
+        while (Date.now() - start < 1000); 
+        attempts++;
+    }
+
     if (!fs.existsSync(publicKeyPath)) {
-        console.error(
-            [
-                `Missing JWT public key file.`,
-                `Searched path: ${publicKeyPath}`,
-                `Set JWT_PUBLIC_KEY_PATH to the correct path or provide the key in the container.`,
-                'Fix options:',
-                `- Copy jwt-public.pem into /app/keys`,
-                `- Mount a volume/secret (e.g. /run/secrets/jwt-public.pem) and point JWT_PUBLIC_KEY_PATH to it`,
-            ].join('\n')
-        );
+        console.error(`Missing JWT public key file after 10 attempts.`);
         process.exit(1);
     }
 

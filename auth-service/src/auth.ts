@@ -46,14 +46,14 @@ export async function login(email: string, password: string): Promise<AuthUser> 
 			       if (!row) return reject(new Error('INVALID_CREDENTIALS'));
 			       if (row.deleted_at) return reject(new Error('ACCOUNT_DELETED'))
 		       	       const valid = await verifyPassword(password, row.password_hashed);
-		       	       if (!valid) return reject(new Error('INVALID_CREDENTIALS'));
-			       resolve({
-				       id: row.id,
-				       email: row.email,
-				       twofa_enabled: row.twofa_enabled,
-				       password_version: row.password_version,
-				       token_version: row.token_version,
-			       });
+                    if (!valid) return reject(new Error('INVALID_CREDENTIALS'));
+                    resolve({
+                        id: row.id,
+                        email: row.email,
+                        twofa_enabled: row.twofa_enabled ?? 0,
+                        password_version: row.password_version ?? 1,
+                        token_version: row.token_version ?? 0,
+                    });
 		       }
 		)
 	});

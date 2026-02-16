@@ -130,8 +130,8 @@ async function authentificate(req: any): Promise<any | null> {
 	    	return user;
 
 	} catch (err) {
-		console.error('authentificate error:', err);
-		return null;
+            console.error("Error en jwt.verify:", err);
+	    	return null;
 	}
 }
 
@@ -458,7 +458,7 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
 	.setCookie('csrf_token', csrfToken, {
     		httpOnly: false,
 		secure: true,
-    		sameSite: 'strict',
+    		sameSite: 'none',
     		path: '/',
 	})
 	.send({ ok: true });
@@ -547,9 +547,20 @@ fastify.post('/auth/2fa/disable', { preHandler: requireAuth }, async (req, reply
 
              if (!result) return reply.status(401).send();
 
-             reply.send({ id: id, email: result.email, twofa_enabled: result.twofa_enabled });
+fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
+	const user = req.user;
 
+	req.log.info({ userId: user.id }, 'User verified successfully');
+
+	return reply.status(200).send({
+		id: user.id,
+		email: user.email,
+		username: user.username,
+		twofa_enabled: user.twofa_enabled
+	});
 });
+
+
 
 fastify.post('/auth/2fa/verify', async (req, reply) => {
 	const { twofa_token, code } = req.body as TwoFAVerifyBody;
