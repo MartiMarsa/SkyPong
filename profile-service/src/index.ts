@@ -45,6 +45,18 @@ fastify.register(fastifyStatic, {
       	prefix: '/static/'
 });
 
+declare module 'fastify' {
+  interface FastifyRequest {
+    user: {
+      sub: string;             // Este es el user.id
+      pv: number | string;     // Password version
+      tv: number | string;     // Token version
+      iss: string;             // Issuer (auth-service)
+      aud: string;             // Audience (transcendence)
+    }
+  }
+}
+
 // --- PROFILE INTERNAL MIDDLEWARE ---
 async function requireServiceAuth(req: any, reply: any) {
 
@@ -192,7 +204,7 @@ fastify.post('/internal/profile/gameresult/update', { preHandler: requireService
 // --- GET UPDATED LEADERBOARD ---
 fastify.get('/internal/profile/leaderboard/updates', { preHandler: requireServiceAuth }, async (req: any, reply) => {
 
-    	const since = req.query.since || '2026-01-01';
+    	const since = req.query?.since || '2026-01-01';
 
 	try {
 		const leaderboard = await getLeaderboard(since);
@@ -236,7 +248,7 @@ fastify.post('/internal/profile/delete', { preHandler: requireServiceAuth }, asy
 // --- CHANGE PROFILE AVATAR ---
 fastify.post('/profile/me/avatar', { preHandler: verifyToken }, async (req, reply) => {
 			 try {
-			 const userId = req.query.id;
+			 const userId = req?.user.sub;
 
 	 		 if (!userId) {
  			 return reply.status(401).send();
@@ -318,7 +330,7 @@ fastify.addHook('onRequest', async (request, reply) => {
 });
 
 // --- PUBLIC PROFILE ---
-fastify.get('/users/:id', async (req, reply) => {
+fastify.get('/profile/users/:id', async (req, reply) => {
 
 	const { id } = req.params as { id: string};
 
@@ -418,7 +430,7 @@ fastify.delete('/profile/friends/:friendId', async (req, reply) => {
 });
 
 // --- BLOCK USER ---
-fastify.post('/friends/:targetId/block', async (req, reply) => {
+fastify.post('/profile/friends/:targetId/block', async (req, reply) => {
     	const userId = req.headers['x-user-id'] as string;
     	const { targetId } = req.params as { targetId: string };
     	try {
@@ -434,7 +446,7 @@ fastify.post('/friends/:targetId/block', async (req, reply) => {
 });
 
 // --- UNBLOCK USER ---
-fastify.post('/friends/:targetId/unblock', async (req, reply) => {
+fastify.post('/profile/friends/:targetId/unblock', async (req, reply) => {
     	const userId = req.headers['x-user-id'] as string;
     	const { targetId } = req.params as { targetId: string };
     	try {
@@ -450,31 +462,31 @@ fastify.post('/friends/:targetId/unblock', async (req, reply) => {
 });
 
 // --- GET FRIEND LIST ---
-fastify.get('/friends', async (req, reply) => {
+fastify.get('/profile/friends', async (req, reply) => {
     	const userId = req.headers['x-user-id'] as string;
     	return friendService.getFriendsService(userId);
 });
 
 // --- GET INCOMING FRIEND REQUESTS ---
-fastify.get('/friends/requests/incoming', async (req, reply) => {
+fastify.get('/profile/friends/requests/incoming', async (req, reply) => {
     	const userId = req.headers['x-user-id'] as string;
     	return friendService.getIncomingRequestsService(userId);
 });
 
 // --- GET OUTGOING FRIEND REQUESTS ---
-fastify.get('/friends/requests/outgoing', async (req, reply) => {
+fastify.get('/profile/friends/requests/outgoing', async (req, reply) => {
     	const userId = req.headers['x-user-id'] as string;
     	return friendService.getOutgoingRequestsService(userId);
 });
 
 // --- GET BLOCK LIST ---
-fastify.get('/friends/blocked', async (req, reply) => {
+fastify.get('/profile/friends/blocked', async (req, reply) => {
     	const userId = req.headers['x-user-id'] as string;
     	return friendService.getBlocklistService(userId);
 });
 
 // --- GET FRIEND STATUS ---
-fastify.get('/friends/:otherId/status', async (req, reply) => {
+fastify.get('/profile/friends/:otherId/status', async (req, reply) => {
     	const userId = req.headers['x-user-id'] as string;
     	const { otherId } = req.params as { otherId: string };
     	return friendService.getFriendStatusService(userId, otherId);

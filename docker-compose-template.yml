@@ -199,6 +199,9 @@ services:
       interval: 10s
       timeout: 3s
       retries: 10
+    depends_on:
+      auth-service:
+        condition: service_healthy
 
   statistics-service:
     container_name: statistics-service

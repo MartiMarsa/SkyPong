@@ -106,6 +106,7 @@ export default function SignInPage() {
             }
             
             console.log("Login exitoso:", result);
+            const hasCredentials = await checkAuth();
             console.log("Has Credentials: ", hasCredentials);
             if (hasCredentials)
                 router.push('/')
