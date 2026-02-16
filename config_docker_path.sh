@@ -62,7 +62,7 @@ if [[ $system == "Linux" ]]; then
 fi
 
 # MacOS
-if [[ $system == "darwin" ]]; then
+if [[ $system == "Darwin" ]]; then
     sed -i '' "s|PLACEHOLDER_SQLITE_AUTH|${BASE}${AUTH}|g" "$DOCKCOMPS"
     sed -i '' "s|PLACEHOLDER_STATISTICS|${BASE}${STATISTICS}|g" "$DOCKCOMPS"
     sed -i '' "s|PLACEHOLDER_GAME_SERVICE|${BASE}${GAME_SERVICE}|g" "$DOCKCOMPS"
