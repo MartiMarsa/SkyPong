@@ -115,7 +115,7 @@ async function authentificate(req: any): Promise<any | null> {
 		const db = getDB();
 
 	    	const user = await new Promise<any>((res, rej) => {
-		  	db.get(`SELECT id, email, password_version, twofa_enabled, token_version, deleted_at  FROM users WHERE id = ?`,
+		  	db.get(`SELECT id, email, password_version, twofa_enabled, token_version, deleted_at FROM users WHERE id = ?`,
 		       [payload.sub],
 			(err, row) => (err ? rej(err) : res(row))
 			      );
@@ -130,7 +130,7 @@ async function authentificate(req: any): Promise<any | null> {
 	    	return user;
 
 	} catch (err) {
-            console.error("🔥 Error en jwt.verify:", err);
+            console.error("Error en jwt.verify:", err);
 	    	return null;
 	}
 }
@@ -168,6 +168,14 @@ async function requireGuest(req: any, reply: any) {
 
 		return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
 }
+
+// --- VERIFICATION IF USER IS OLREADY LOGGED --- 
+fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
+			const user = req.user;
+//          const next = req.cookies?.last_page || '/me';
+
+			return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
+});
 // --- SIGNUP ---
 fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, reply) => {
 
@@ -457,59 +465,102 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
 });
 
 // --- 2FA ---
-fastify.post('/auth/2fa/setup', async (req, reply) => {
-    	const { id } = req.body as TwoFABody; 
-    	const result = await generate2FA(id);
-    	reply.send(result);
-});
-
-fastify.post('/auth/2fa/enable', async (req, reply) => {
-    	const { id, code } = req.body as TwoFABody;
-    	
-	const db = getDB();
-    	
-	const row = await new Promise<any>((res, rej) => {
-		db.get(`SELECT twofa_secret FROM users WHERE id = ?`, [id], (err, row) => (err ? rej(err) : res(row)));
-    	});
-
-    	if (!row || !verify2FA(row.twofa_secret, code)) return reply.status(401).send({ error: 'Invalid 2FA code' });
-
-    	db.run(`UPDATE users SET twofa_enabled = 1 WHERE id = ?`, [id]);
-    	reply.send({ status: '2FA enabled' });
-});
-
-fastify.post('/auth/2fa/disable', async (req, reply) => {
-	const { id, code } = req.body as TwoFABody;
-	
+fastify.post('/auth/2fa/setup', { preHandler: requireAuth }, async (req, reply) => {
+	const id = (req as any).user.id;
 	const db = getDB();
 
-	const user = await new Promise<any>((res, rej) => {
-		db.get(`SELECT twofa_secret FROM users WHERE id = ?`,
-		      [id],
-		      (err, row) => (err ? rej(err) : res(row)));
+	const check = await new Promise<any>((res, rej) => {
+		db.get(`SELECT twofa_enabled FROM users WHERE id = ?`, [id], (err, row) =>
+			err ? rej(err) : res(row)
+		);
 	});
 
-	if (!user || !verify2FA(user.twofa_secret, code)) {
-		return reply.status(401).send({ error: 'Invalid 2FA code' });
+	if (check) {
+		return reply.status(409).send(); // { error: '2FA already enabled' }
+	}
+
+	const result = await generate2FA(id);
+	reply.send(result);
+});
+
+fastify.post('/auth/2fa/enable', { preHandler: requireAuth }, async (req, reply) => {
+			 const { code } = req.body as { code: string };
+			 const id = (req as any).user.id;
+    	
+		 	 const db = getDB();
+    	
+		 	 const row = await new Promise<any>((res, rej) => {
+												db.get(`SELECT twofa_secret FROM users WHERE id = ?`, 
+													   [id], 
+													   (err, row) => (err ? rej(err) : res(row)));
+												});
+
+	 		 if (!row || !verify2FA(row.twofa_secret, code)) return reply.status(401).send(); //{ error: 'Invalid 2FA code' }
+
+			 await new Promise((res, rej) => {
+							   db.run(
+								  	  `UPDATE users SET twofa_enabled = 1 WHERE id = ?`,
+								  	  [id],
+								  	  err => err ? rej(err) : res(true)
+								   	 );
+							   });
+
+			 const result = await new Promise<any>((res, rej) => {
+												   db.get(`SELECT email, twofa_enabled FROM users WHERE id = ?`,
+														  [id],
+														  (err, row) => (err ? rej(err) : res(row)));
+												   });
+
+			 if (!result) return reply.status(401).send();
+
+	 		 reply.send({ id: id, email: result.email, twofa_enabled: result.twofa_enabled });
+});
+
+fastify.post('/auth/2fa/disable', { preHandler: requireAuth }, async (req, reply) => {
+			 const { code } = req.body as { code: string };
+             const id = (req as any).user.id;
+	
+		 	 const db = getDB();
+
+		 	 const user = await new Promise<any>((res, rej) => {
+										 		 db.get(`SELECT twofa_secret FROM users WHERE id = ?`,
+										  				[id],
+										  				(err, row) => (err ? rej(err) : res(row)));
+											 	 });
+
+		 	 if (!user || !verify2FA(user.twofa_secret, code)) {
+	 		 return reply.status(401).send(); // { error: 'Invalid 2FA code' })
     	}
 
-	await new Promise((res, rej) => {
-		db.run(`UPDATE users SET twofa_enabled = 0, twofa_secret = NULL WHERE id = ?`,
-	   	[id],
-    		(err) => (err ? rej(err) : res(true))
-		      );
-    	});
+		 	 await new Promise((res, rej) => {
+					   		   db.run(`UPDATE users SET twofa_enabled = 0, twofa_secret = NULL WHERE id = ?`,
+							  		  [id],
+						  			  (err) => (err ? rej(err) : res(true))
+					   				 );
+					   		   });
 
+			 const result = await new Promise<any>((res, rej) => {
+                                                   db.get(`SELECT email, twofa_enabled FROM users WHERE id = ?`,
+                                                          [id],
+                                                          (err, row) => (err ? rej(err) : res(row)));
+                                                   });
 
-    	reply.send({ status: '2FA disabled' });
-});
+             if (!result) return reply.status(401).send();
 
 fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
 	const user = req.user;
-//			const next = req.cookies?.last_page || '/me';
-req.log.info({ user: req.user }, 'Resultado de usuario en verify');
-			return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
+
+	req.log.info({ userId: user.id }, 'User verified successfully');
+
+	return reply.status(200).send({
+		id: user.id,
+		email: user.email,
+		username: user.username,
+		twofa_enabled: user.twofa_enabled
+	});
 });
+
+
 
 fastify.post('/auth/2fa/verify', async (req, reply) => {
 	const { twofa_token, code } = req.body as TwoFAVerifyBody;
