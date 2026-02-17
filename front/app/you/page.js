@@ -3,11 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import NavigationAppUI from '../ui/navigation-app-ui';
-import PlayerProfilePublicUI from '../ui/player-profile-public-ui';
-import PlayerStatsPublicUI from '../ui/player-stats-public-ui';
-import PlayerAchievementsPublicUI from '../ui/player-achievements-public-ui';
 import { useTranslation } from '../hooks/use-translation';
 import { useAuth } from '../context/auth-context';
+import AvatarUpload from '../ui/player-private-profile/avatar-ui'
+
+// import { useSearchParams } from 'next/navigation'
 
 
 export default function ProfilePagePublic()
@@ -15,46 +15,71 @@ export default function ProfilePagePublic()
     const t = useTranslation();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
-    const {user, checkAuth, hasCredentials } = useAuth();
+    const { user, authloading, checkAuth } = useAuth();
     const [player, setPlayer] = useState(null);
     const [serverError, setServerError ] = useState(''); 
     
-    useEffect(() => {
-        const hasCredentials = async () => { await checkAuth() };
+    // const searchParams = useSearchParams()
+    // const id = searchParams.get('id') // Obtiene "123"
+  useEffect(() => {
+    // 1. Si el AuthContext aún está verificando la cookie, esperamos.
+    if (authloading) return;
+
+    // 2. Si ya terminó de cargar y NO hay usuario, mandamos a home.
+    if (!user) {
+        router.push('/');
+        return;
+    }
+
+    const fetchMyProfile = async () => {
+        // Iniciamos carga local para el perfil
+        setIsLoading(true); 
         setServerError('');
-        if(!hasCredentials())
-        {
-            router.push('/');
-            return;
-        }
 
-        const fetchMyProfile = async () => {
-            try {
-                console.log("You user: ", user);
-                const response = await fetch(`/api/profile/users/${user?.id || '' }`, {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        },
-                    });
-                const data = await response.json();
-                if (response.status === 404)
-                {
+        try {
+            console.log("Solicitando perfil para ID:", user.id);
+            
+            const response = await fetch(`/api/profile/users/${user.id}`, {
+                method: 'GET',
+                credentials: 'include',
+            });
+
+            if (!response.ok) {
+                if (response.status === 404) {
                     setServerError("Ruta no encontrada");
+                } else {
+                    setServerError("Error de servidor");
                 }
-                setPlayer(data.user);
-            } catch (error) {
-                console.error('Error:', error);
-                setServerError(`An error has ocurred: ${error}`);
-                // router.push('/login');
-            } finally {
-                setIsLoading(false);
+                return;
             }
-        };
 
+            const data = await response.json();
+            console.log("Datos recibidos:", data);
+            
+            // Seteamos el player con los datos de la API
+            setPlayer(data.user); 
+
+        } catch (error)
+        {
+            console.error('Error en fetchMyProfile:', error);
+            setServerError("Error de conexión");
+        } finally
+        {
+            // Solo dejamos de cargar cuando la petición termina (éxito o error)
+            setIsLoading(false);
+        }
+    };
+
+    // 3. Solo disparamos el fetch si tenemos el ID del usuario
+    if (user?.id) {
         fetchMyProfile();
-    }, [router]);
+    }
+    else
+    {
+        setIsLoading(false);
+    }
+
+}, [authloading, user, router]); 
 
     if (isLoading) return <div>Cargando tu perfil...</div>;
 
@@ -64,9 +89,8 @@ export default function ProfilePagePublic()
         <main>
             <NavigationAppUI  />
             <h1>{t.profilePage}</h1>
-            <PlayerProfilePublicUI nickname={ player?.nickname } winphrase={ player?.winphrase } avatarUrl={player?.avatarUrl }   />
-            <PlayerStatsPublicUI wins={ player?.stats?.wins } losses={ player?.stats?.losses }/>
-            {/* <PlayerAchievementsPublicUI achievements={ player?.achievements || player.achievements} />     */}
+            {console.info("Player in component: ", player)}
+            <AvatarUpload />
         </main>
         )}
         </>

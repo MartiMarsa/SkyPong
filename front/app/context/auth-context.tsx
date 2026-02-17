@@ -7,13 +7,14 @@ import { useRouter } from 'next/navigation';
 const AuthContext = createContext({
   user: null,
   loading: true,
+  hasCredentials: false,
   logout: async () => {},
   checkAuth: async () => { return false; } // Útil para re-validar tras login
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [authloading, setLoading] = useState(true);
   const [hasCredentials , sethasCredentials] = useState(false);
   const router = useRouter();
 
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, hasCredentials, logout, checkAuth }}>
+    <AuthContext.Provider value={{ user, authloading, hasCredentials, logout, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

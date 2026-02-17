@@ -23,6 +23,13 @@ import { publicKey } from './keys';
 
 const fastify = Fastify({logger: true});
 
+// Registrar el plugin de métricas
+fastify.register(require('fastify-metrics'), { 
+  endpoint: '/metrics', // La ruta que ya sabemos que busca Prometheus
+  defaultMetrics: { enabled: true }, // Métricas del sistema (CPU, RAM, Event Loop)
+  routeMetrics: { enabled: true }    // Métricas de tus rutas (peticiones/segundo, latencia)
+});
+
 /* TODO CHANGE SERVICE_TOKEN to env in prod*/
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN || 'secret';
 
@@ -65,6 +72,11 @@ declare module 'fastify' {
   }
 }
 
+
+fastify.get('/healthz', async (request, reply) => {
+  return { status: 'ok' };
+});
+
 // --- PROFILE INTERNAL MIDDLEWARE ---
 async function requireServiceAuth(req: any, reply: any) {
 
@@ -83,6 +95,9 @@ async function requireServiceAuth(req: any, reply: any) {
 	    	return reply.status(403).send({ error: 'Forbidden' });
       	}
 }
+
+fastify.register(require('@fastify/cookie'), {
+});
 
 async function verifyToken(req: any, reply: any) {
 
