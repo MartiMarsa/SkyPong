@@ -28,7 +28,7 @@ function readPublicKeyOrExit(): string {
     // Intentar leer la llave hasta 10 veces antes de rendirse
     let attempts = 0;
     while (!fs.existsSync(publicKeyPath) && attempts < 10) {
-        console.log(`[Attempt ${attempts}] Waiting for public key at ${publicKeyPath}...`);
+        console.log(`[profile] Attempt ${attempts} Waiting for public key at ${publicKeyPath}...`);
         // Pausa sincrónica de 1 segundo (solo durante el arranque)
         const start = Date.now();
         while (Date.now() - start < 1000); 
@@ -36,9 +36,13 @@ function readPublicKeyOrExit(): string {
     }
 
     if (!fs.existsSync(publicKeyPath)) {
-        console.error(`Missing JWT public key file after 10 attempts.`);
+        console.error(`[profile] Missing JWT public key file after 10 attempts.`);
         process.exit(1);
     }
+
+	if (fs.existsSync(publicKeyPath)) {
+		console.log(`[profile] JWT public key loaded from ${publicKeyPath} after ${attempts} attempt(s)`);
+	}
 
     return fs.readFileSync(publicKeyPath, 'utf-8');
 }
