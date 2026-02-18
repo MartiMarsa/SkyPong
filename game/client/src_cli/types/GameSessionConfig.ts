@@ -2,13 +2,13 @@
 // Unified configuration interface for game entrypoint
 // TODO: Add playerId field when auth integration is implemented
 
-export type GameMode = 
-  | 'local-2p' 
-  | 'online-create' 
-  | 'online-join' 
-  | 'ai-easy' 
-  | 'ai-medium' 
-  | 'ai-hard';
+export type GameMode =
+  | 'ai-easy'
+  | 'ai-medium'
+  | 'ai-hard'
+  | 'local-2p'
+  | 'online-create'
+  | 'online-join';
 
 export interface GameSessionConfig {
   // Required for all modes

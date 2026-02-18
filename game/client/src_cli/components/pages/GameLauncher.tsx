@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { decodeConfig, transformToLegacyState } from '../../utils/configDecoder';
+import { decodeConfig } from '../../utils/configDecoder';
 
 const STYLES = {
     container: {
@@ -101,9 +101,8 @@ const GameLauncher: React.FC = () => {
         const result = decodeConfig(base64Config);
 
         if (result.valid) {
-            // Transform to legacy format and navigate
-            const legacyState = transformToLegacyState(result.config);
-            navigate('/canvas', { state: legacyState });
+            // Navigate with validated config directly
+            navigate('/canvas', { state: result.config });
         } else {
             // Show error
             setError(result.error);

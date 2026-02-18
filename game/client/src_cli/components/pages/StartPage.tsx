@@ -256,26 +256,22 @@ const StartPage = () => {
         const p1Name = player1Name.trim() || 'Player 1';
         const p2Name = selectedMode === '2p-local' ? (player2Name.trim() || 'Player 2') : selectedMode === '2p-online' ? '' : 'AI';
         
-        // Create debug config for /launch route testing
-        const gameModeMap: Record<string, any> = {
-            'ai-easy': 'ai-easy',
-            'ai-medium': 'ai-medium',
-            'ai-hard': 'ai-hard',
-            '2p-local': 'local-2p',
-            '2p-online': 'online-create',
-        };
-        
+        // Map selected mode to GameMode type
+        const gameMode = selectedMode === '2p-local' ? 'local-2p' :
+                        selectedMode === '2p-online' ? 'online-create' :
+                        selectedMode as GameSessionConfig['gameMode'];
+
         const config: GameSessionConfig = {
             playerName: p1Name,
             playerColor: player1Color,
-            gameMode: gameModeMap[selectedMode] || 'ai-easy',
+            gameMode: gameMode,
         };
-        
+
         if (selectedMode === '2p-local') {
             config.player2Name = p2Name;
             config.player2Color = player2Color;
         }
-        
+
         const base64Config = encodeConfig(config);
         const launchUrl = `${window.location.origin}${import.meta.env.BASE_URL || '/'}launch?config=${base64Config}`;
         
@@ -287,38 +283,46 @@ const StartPage = () => {
     const handleProceedToGame = () => {
         if (!selectedMode) return;
         const p1Name = player1Name.trim() || 'Player 1';
-        const p2Name = selectedMode === '2p-local' ? (player2Name.trim() || 'Player 2') : selectedMode === '2p-online' ? '' : 'AI';
-        const state: any = { mode: selectedMode, player1Name: p1Name, player2Name: p2Name, player1Color };
-        if (selectedMode === '2p-local') state.player2Color = player2Color;
+
+        // Map selected mode to GameMode type
+        const gameMode = selectedMode === '2p-local' ? 'local-2p' :
+                        selectedMode === '2p-online' ? 'online-create' :
+                        selectedMode as GameSessionConfig['gameMode'];
+
+        const config: GameSessionConfig = {
+            playerName: p1Name,
+            playerColor: player1Color,
+            gameMode: gameMode,
+        };
+
+        if (selectedMode === '2p-local') {
+            config.player2Name = player2Name.trim() || 'Player 2';
+            config.player2Color = player2Color;
+        }
+
         setShowDebugModal(false);
-        navigate('/canvas', { state });
+        navigate('/canvas', { state: config });
     };
 
     const handleEnterLobby = () => setLobbyPhase('lobby');
 
     const handleCreateRoom = () => {
-        navigate('/canvas', {
-            state: {
-                mode: '2p-online',
-                player1Name: player1Name.trim() || 'Player 1',
-                player2Name: '',
-                player1Color,
-                pvpAction: 'create',
-            }
-        });
+        const config: GameSessionConfig = {
+            playerName: player1Name.trim() || 'Player 1',
+            playerColor: player1Color,
+            gameMode: 'online-create',
+        };
+        navigate('/canvas', { state: config });
     };
 
     const handleJoinRoom = (roomId: string) => {
-        navigate('/canvas', {
-            state: {
-                mode: '2p-online',
-                player1Name: player1Name.trim() || 'Player 1',
-                player2Name: '',
-                player1Color,
-                pvpRoomId: roomId,
-                pvpAction: 'join',
-            }
-        });
+        const config: GameSessionConfig = {
+            playerName: player1Name.trim() || 'Player 1',
+            playerColor: player1Color,
+            gameMode: 'online-join',
+            roomId: roomId,
+        };
+        navigate('/canvas', { state: config });
     };
 
     const isAiMode = selectedMode?.startsWith('ai-');
