@@ -1,6 +1,12 @@
 import { google } from './google';
 
-export const providers = {
+interface OAuthProvider {
+	auth(state: string): string;
+	token(code: string): Promise<string>;
+	profile(token: string): Promise<any>;
+}
+
+export const providers: Record<string, OAuthProvider> = {
   google
 };
 

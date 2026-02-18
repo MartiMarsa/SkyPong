@@ -54,7 +54,6 @@ interface Player {
 		avatar?: string;
 }
 
-
 fastify.register(fastifyStatic, {
       	root: path.join(process.cwd(), 'uploads'),
       	prefix: '/static/'
@@ -145,6 +144,25 @@ fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { p
 				}
 });
 
+
+// --- INTERNAL PROFILE ROUTE ---
+fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { preHandler: requireServiceAuth }, async (req, reply) => {
+	try {
+			const userId = req.params.id;
+
+			let player: Player | null = await getPlayerById(userId) as Player | null;
+
+			if (!player) {
+				player = await createPlayer(userId) as Player;
+				}
+
+		  	return reply.send({ nickname: player.nickname, });
+			} catch (err) {
+	  			req.log.error(err, 'Error fetching/creating player');
+		  		return reply.status(500).send();
+    
+				}
+});
 
 // --- PRIVATE PROFILE ---
 fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
