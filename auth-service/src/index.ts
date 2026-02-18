@@ -17,7 +17,7 @@ const fastify = Fastify({ logger: true });
 
 fastify.register(cookie, { secret: 'cookie-secret' });
 
-const PROFILE_SERVICE_URL = process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:8082';
+const PROFILE_SERVICE_URL = process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:5000';
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN ?? 'secret';
 
 
@@ -169,15 +169,33 @@ async function requireGuest(req: any, reply: any) {
 		return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
 }
 
+// --- VERIFICATION IF USER IS OLREADY LOGGED ---
+fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
 
-// I just commented this route because it was causing some issues to compile the frontend
-// // --- VERIFICATION IF USER IS OLREADY LOGGED --- 
-// fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
-// 			const user = req.user;
-// //          const next = req.cookies?.last_page || '/me';
+			const controller = new AbortController();
 
-// 			return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
-// });
+			setTimeout(() => controller.abort(), 5000);
+
+			const user = req.user;
+
+			let profile: any  = null;
+
+			try {
+			const res = await fetch(`${PROFILE_SERVICE_URL}/internal/profile/by-user-id/${user.id}`, { headers: { Authorization: `Bearer ${SERVICE_TOKEN}`, }, signal: controller.signal, });
+
+			if (res.ok) {
+
+			profile = await res.json() as any;
+			}
+			} catch (err) {
+			req.log.error(err, 'Profile service unavailable');
+			}
+
+			req.log.info({ user: req.user }, 'Resultado de usuario en verify');
+
+			return reply.status(200).send({ id: user.id, email: user.email, username: profile?.nickname ?? 'Unknown', twofa_enabled: user.twofa_enabled });
+});
+
 // --- SIGNUP ---
 fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, reply) => {
 
@@ -549,22 +567,7 @@ fastify.post('/auth/2fa/disable', { preHandler: requireAuth }, async (req, reply
 				if (!result) return reply.status(401).send();
 
 			 reply.send({ id: id, email: result.email, twofa_enabled: result.twofa_enabled });
-		});
-
-fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
-	const user = req.user;
-
-	req.log.info({ userId: user.id }, 'User verified successfully');
-
-	return reply.status(200).send({
-		id: user.id,
-		email: user.email,
-		username: user.username,
-		twofa_enabled: user.twofa_enabled
-	});
 });
-
-
 
 fastify.post('/auth/2fa/verify', async (req, reply) => {
 	const { twofa_token, code } = req.body as TwoFAVerifyBody;
