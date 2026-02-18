@@ -25,6 +25,7 @@ interface GameState {
     player1Score: number; player2Score: number;
     winningScore: number;
     winner: string; gameOver: boolean; gameStarted: boolean;
+    player2Joined: boolean;
 }
 
 // Module-level lock to prevent duplicate game instances (React StrictMode)
@@ -161,7 +162,7 @@ export class Game {
                     cam.setTarget(center);
                     cameraSetupComplete = true;
                 };
-
+                
                 const updatePlayerColorsFromState = () => {
                     if (!room.state || !this._gui) return;
 
