@@ -90,7 +90,7 @@ export default function ProfilePagePublic()
             <NavigationAppUI  />
             <h1>{t.profilePage}</h1>
             {console.info("Player in component: ", player)}
-            <AvatarUpload />
+            <AvatarUpload currentAvatar={ `/api/profile/avatars/${user?.id}.webp` || ""} />
         </main>
         )}
         </>

@@ -8,6 +8,19 @@ const it = {
     user: {
         hi: "Ciao!",
     },
+    avatar: {
+        error: {
+            uploadError: "Error en la subida del archivo",
+            avatarNotFound: "Avatar no encontrado",
+            invalidImageFile: "Archivo de imagen no válido",
+            invalidImageFormat: "Formato de imagen no válido",
+            unknownError: "Unknown error",
+            tooLarge: "Image file too large",
+        }
+    },
+    serverError: {
+        conectionError: "Server conection error",
+    },
     gameMode: {
         title: "Modalità di gioco",
         cta: "Vuoi giocare da remoto? Accedi per accedere alla modalità multigiocatore online.",

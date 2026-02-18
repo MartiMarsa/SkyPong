@@ -40,6 +40,8 @@ COPY --from=builder /app/dist ./dist
 # Directorio de uploads
 RUN mkdir -p /app/uploads/avatars && chown -R app:app /app
 
+# Copiamos el avatar por defecto y lo cambiamos de propietario
+COPY --chown=app:app uploads/avatars/default-avatar.webp /app/uploads/avatars/
 USER app
 EXPOSE 5000
 CMD ["node", "dist/index.js"]

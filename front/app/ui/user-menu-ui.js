@@ -22,6 +22,9 @@ export default function UserMenuUI({ userURL })
                     <Link href={ !user ? (userURL) : (`/you`) } className="user-menu">
                         { user?.nickname || " SkyPong" }
                     </Link>
+                    <span className='overflow-hidden rounded-full inline-block aspect-square max-w-12'>
+                        <img src={`/api/profile/avatars/${user.id}.webp`} />
+                    </span>
 
                 </div>
             )

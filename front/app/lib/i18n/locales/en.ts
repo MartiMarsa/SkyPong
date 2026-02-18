@@ -8,6 +8,19 @@ const en = {
     user: {
         hi: "Hi!",
     },
+    avatar: {
+        error: {
+            uploadError: "Error in image upload",
+            avatarNotFound: "Avatar not found",
+            invalidImageFile: "Invalid image file",
+            invalidImageFormat: "Invalid image format",
+            unknownError: "Unknown error",
+            tooLarge: "Image file too large",
+        }
+    },
+    serverError: {
+        conectionError: "Server conection error",
+    },
     gameMode: {
         title: "Game Mode",
         cta: "Want to play remotely? Log in to access online multiplayer mode.",
