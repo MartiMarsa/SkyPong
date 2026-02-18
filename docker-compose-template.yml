@@ -42,6 +42,7 @@ volumes:
   grafana_data:
   certs:
   keys:
+  uploads:
 # ──────────────────────────────────────────────
 # SERVICES
 # ──────────────────────────────────────────────
@@ -194,6 +195,7 @@ services:
     volumes:
       - profile-service_vol:/app/data
       - keys:/app/keys:ro
+      - uploads:/app/uploads
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:5000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
       interval: 10s
@@ -230,6 +232,8 @@ services:
       - -nginx.scrape-uri=http://nginx-gateway:8080/nginx_status
     networks:
       - internal
+    volumes:
+      - uploads:/var/www/uploads:ro
     depends_on:
       nginx-gateway:
         condition: service_healthy
