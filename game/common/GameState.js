@@ -97,6 +97,8 @@ export class MyGameState extends Schema {
         this.player2Id = "";
         this.player1Name = "Player 1";
         this.player2Name = "Player 2";
+        this.player1Color = "#00A6ED";
+        this.player2Color = "#F6511D";
         // Scoring
         this.player1Score = 0;
         this.player2Score = 0;
@@ -105,6 +107,11 @@ export class MyGameState extends Schema {
         this.winner = ""; // SessionId of winner, empty if no winner
         this.gameOver = false;
         this.gameStarted = false;
+        // Client readiness (for loading sync in PvP)
+        this.player1Ready = false;
+        this.player2Ready = false;
+        // Player 2 joined flag (to know when both player colors are set)
+        this.player2Joined = false;
     }
 }
 __decorate([
@@ -136,6 +143,14 @@ __decorate([
     __metadata("design:type", String)
 ], MyGameState.prototype, "player2Name", void 0);
 __decorate([
+    type("string"),
+    __metadata("design:type", String)
+], MyGameState.prototype, "player1Color", void 0);
+__decorate([
+    type("string"),
+    __metadata("design:type", String)
+], MyGameState.prototype, "player2Color", void 0);
+__decorate([
     type("number"),
     __metadata("design:type", Number)
 ], MyGameState.prototype, "player1Score", void 0);
@@ -159,3 +174,15 @@ __decorate([
     type("boolean"),
     __metadata("design:type", Boolean)
 ], MyGameState.prototype, "gameStarted", void 0);
+__decorate([
+    type("boolean"),
+    __metadata("design:type", Boolean)
+], MyGameState.prototype, "player1Ready", void 0);
+__decorate([
+    type("boolean"),
+    __metadata("design:type", Boolean)
+], MyGameState.prototype, "player2Ready", void 0);
+__decorate([
+    type("boolean"),
+    __metadata("design:type", Boolean)
+], MyGameState.prototype, "player2Joined", void 0);

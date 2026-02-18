@@ -123,6 +123,7 @@ export class Game {
                     playerName: player1Name,
                     player2Name: player2Name,
                     playerColor: player1Color,
+                    player2Color: player2Color,
                 };
 
                 if (this._mode === '2p-online') {
@@ -164,27 +165,40 @@ export class Game {
                 const updatePlayerColorsFromState = () => {
                     if (!room.state || !this._gui) return;
 
-                    const p1Color = room.state.player1Color || '#00A6ED';
-                    const p2Color = room.state.player2Color || '#F6511D';
+                    // For online PvP, wait until player2 has joined (both colors are set)
+                    // For local 2P, colors are available immediately from joinOptions
+                    if (this._mode === '2p-online' && !room.state.player2Joined) {
+                        return;
+                    }
+
+                    const p1Color = room.state.player1Color;
+                    const p2Color = room.state.player2Color;
                     const isPlayer2 = room.sessionId === room.state.player2Id;
+
+
 
                     this._gui.hud.updatePlayerColors(isPlayer2 ? p2Color : p1Color, isPlayer2 ? p1Color : p2Color);
 
                     [paddle, paddle2].forEach((p, i) => {
                         const color = i === 0 ? p1Color : p2Color;
                         const mat = p.mesh.material as any;
+
                         if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
-                        if (mat?.tintColor) mat.tintColor = Color3.FromHexString(color);
+                        if (mat?.subSurface?.tintColor) mat.subSurface.tintColor = Color3.FromHexString(color);
                     });
                 };
 
                 if (room.state.player1Id || room.state.player2Id) checkPlayerAssignment();
                 ['player2Id', 'player1Id'].forEach(prop =>
-                    (room.state as any).listen(prop, checkPlayerAssignment)
+                    (room.state as any).listen(prop, () => {
+                        checkPlayerAssignment();
+                        updatePlayerColorsFromState();
+                    })
                 );
                 ['player1Color', 'player2Color'].forEach(prop =>
                     (room.state as any).listen(prop, updatePlayerColorsFromState)
                 );
+                (room.state as any).listen('player2Joined', updatePlayerColorsFromState);
 
                 // Handle room expiration
                 room.onMessage('room_expired', () => {
@@ -293,11 +307,12 @@ export class Game {
                         const p2Color = room.state.player2Color || player2Color;
                         this._gui.hud.updatePlayerColors(p1Color, p2Color);
 
-                        [paddle, paddle2].forEach((p, i) => {
-                            const color = i === 0 ? p1Color : p2Color;
-                            const mat = p.mesh.material as any;
-                            if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
-                        });
+                    [paddle, paddle2].forEach((p, i) => {
+                        const color = i === 0 ? p1Color : p2Color;
+                        const mat = p.mesh.material as any;
+                        if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
+                        if (mat?.subSurface?.tintColor) mat.subSurface.tintColor = Color3.FromHexString(color);
+                    });
                     }
 
                     const signalGameReady = () => {

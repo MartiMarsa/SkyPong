@@ -358,6 +358,9 @@ export class PvpRoom extends Room<MyGameState> {
             this.state.player2Color = options.playerColor || "#F6511D";
             Logger.info(`[PvP] Player 2 joined: ${client.sessionId} (${this.state.player2Name}, color: ${this.state.player2Color})`);
 
+            // Set player2Joined flag so clients know both colors are available
+            this.state.player2Joined = true;
+
             // Cancel expiration timer — opponent joined
             if (this.expirationTimer) {
                 clearTimeout(this.expirationTimer);
