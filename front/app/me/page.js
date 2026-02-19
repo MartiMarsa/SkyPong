@@ -11,7 +11,7 @@ export default function ProfilePagePublic()
     const t = useTranslation();
     const router = useRouter();
     const [profile, setProfile] = useState(null);
-    const { userInfo, checkauth, hasCredentials} = useAuth();
+    const { userInfo, checkAuth, hasCredentials} = useAuth();
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -25,7 +25,7 @@ export default function ProfilePagePublic()
                         'Content-Type': 'application/json',
                         },
                     });
-                await checkauth();
+                await checkAuth();
                 if (!hasCredentials) 
                 {
                     router.push('/login');
