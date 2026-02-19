@@ -175,35 +175,27 @@ fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
 });
 
 // --- CHANGE PROFILE ---
-fastify.patch('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
-	try {
-		const userId = req.user.sub;
+fastify.patch('/profile/updateme', { preHandler: verifyToken }, async (req, reply) => {
+    try {
+        const userId = req.user.sub;
+        const data = req.body as any;
 
-		if (!userId) {
-		    	return reply.status(401).send();
-	      	}
+        // 1. Actualizamos
+        await updatePlayerInfo(userId, data);
 
-		if (typeof userId !== 'string') {
-			return reply.status(401).send();
-		}
+        // 2. Buscamos el usuario actualizado (usa la función que ya tengas para GET profile)
+        const updatedUser = await getPlayerById(userId); 
 
-		const data = req.body as any;
+        // 3. Devolvemos el objeto completo
+        return reply.send({ 
+            status: 'Player info updated', 
+            user: updatedUser 
+        });
 
-		await updatePlayerInfo(userId, data);
-
-		return reply.send({ status: 'Player info updated' });
-
-
-	} catch (err: any) {
-
-		if (err?.code === 'SQLITE_CONSTRAINT') {
-			return reply.status(409).send();
-	    	}
-
-		fastify.log.error(err);
-		reply.status(500).send();
-	
-	} 
+    } catch (err: any) {
+        fastify.log.error(err);
+        reply.status(500).send();
+    } 
 });
 
 // --- UPDATE USER STATS ---

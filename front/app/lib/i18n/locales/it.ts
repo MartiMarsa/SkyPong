@@ -20,6 +20,8 @@ const it = {
     },
     serverError: {
         conectionError: "Server conection error",
+        notFound: "Ruta no encontrada",
+        unknownError: "Unknown Server Error",
     },
     gameMode: {
         title: "Modalità di gioco",

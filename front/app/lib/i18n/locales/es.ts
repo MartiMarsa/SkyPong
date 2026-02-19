@@ -10,6 +10,14 @@ const es = {
     },
     user: {
         hi: "hola!",
+        nickname: "Nickname",
+        winphrase: "Frase de Victoria",
+        errors: {
+            nicknameRequired: "Nickname vacío",
+            nicknameMinLength: (len: number)=>{ return (`La Frase de la vitoria debe contener ${len}`)},
+            winphraseRequired: "Nickname vacío",
+            winphraseMinLength: (len: number)=>{ return (`La Frase de la vitoria debe contener ${len}`)},
+        }
     },
     avatar: {
         error: {
@@ -23,6 +31,8 @@ const es = {
     },
     serverError: {
         conectionError: "Server conection error",
+        notFound: "Ruta no encontrada",
+        unknownError: "Unknown Server Error",
     },
     gameMode: {
         title: "Modo de Juego",

@@ -1,5 +1,5 @@
-import { useTranslation } from '../hooks/use-translation';
-import { useAuth } from '../context/auth-context';
+import { useTranslation } from '../../hooks/use-translation';
+import { useAuth } from '../../context/auth-context';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleUser } from '@fortawesome/free-solid-svg-icons';
