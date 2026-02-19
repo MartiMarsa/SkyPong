@@ -125,25 +125,6 @@ async function verifyToken(req: any, reply: any) {
 		}
 	}
 }
-// --- INTERNAL PROFILE ROUTE ---
-fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { preHandler: requireServiceAuth }, async (req, reply) => {
-	try {
-			const userId = req.params.id;
-
-			let player: Player | null = await getPlayerById(userId) as Player | null;
-
-			if (!player) {
-				player = await createPlayer(userId) as Player;
-				}
-
-		  	return reply.send({ nickname: player.nickname, });
-			} catch (err) {
-	  			req.log.error(err, 'Error fetching/creating player');
-		  		return reply.status(500).send();
-    
-				}
-});
-
 
 // --- INTERNAL PROFILE ROUTE ---
 fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { preHandler: requireServiceAuth }, async (req, reply) => {

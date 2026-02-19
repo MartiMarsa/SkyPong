@@ -1,3 +1,5 @@
+import { GOOGLE_ID, GOOGLE_SECRET } from '../config/secrets';
+
 export interface GoogleProfile {
 	id: string;
 	email: string;
@@ -9,13 +11,16 @@ export interface GoogleProfile {
 	locale?: string;
 }
 
+const REDIRECT_URI = process.env.GOOGLE_CALLBACK! ?? 'https://localhost/api/auth/google/callback';
+
+/* TODO change creds before production*/
 export const google = {
   auth(state: string): string {
     return (
       'https://accounts.google.com/o/oauth2/v2/auth?' +
       new URLSearchParams({
-        client_id: process.env.GOOGLE_ID!,
-        redirect_uri: process.env.GOOGLE_CALLBACK!,
+        client_id: GOOGLE_ID,
+        redirect_uri: REDIRECT_URI,
         response_type: 'code',
         scope: 'openid email profile',
         state,
@@ -27,11 +32,11 @@ export const google = {
     const r = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       body: new URLSearchParams({
-        client_id: process.env.GOOGLE_ID!,
-        client_secret: process.env.GOOGLE_SECRET!,
+        client_id: GOOGLE_ID,
+        client_secret: GOOGLE_SECRET,
         code,
         grant_type: 'authorization_code',
-        redirect_uri: process.env.GOOGLE_CALLBACK!,
+        redirect_uri: REDIRECT_URI,
       }),
     });
 
