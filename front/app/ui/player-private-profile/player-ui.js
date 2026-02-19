@@ -165,6 +165,7 @@ export default function PlayerUI({ userURL })
             ) :
             (
                 <form id="playerDataForm" onSubmit={handleSubmit(onSubmit, (errors) => console.log("Errores de validación:", errors))} className={styles.playerDataForm}>
+                    <h2 className={styles.formTitle}>{t.user.userData}</h2>
                      {/* Nickname Field */}
                         <div className={styles.inputWrapper}>
                             <input 

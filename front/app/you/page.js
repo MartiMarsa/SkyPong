@@ -7,6 +7,7 @@ import { useTranslation } from '../hooks/use-translation';
 import { useAuth } from '../context/auth-context';
 import AvatarUpload from '../ui/player-private-profile/avatar-ui'
 import PlayerUI from '../ui/player-private-profile/player-ui';
+import PlayerCredentialsUI from '../ui/player-private-profile/player-credentials-ui';
 
 // import { useSearchParams } from 'next/navigation'
 
@@ -92,6 +93,7 @@ export default function ProfilePagePrivate()
             {console.info("Player in component: ", player)}
             <AvatarUpload currentAvatar={ `/api/profile/avatars/${user?.id}.webp` || ""} />
             <PlayerUI />
+            <PlayerCredentialsUI />
 
         </main>
         )}

@@ -198,6 +198,7 @@ const es = {
         wins: "Victorias",
         losses: "Derrotas",
         winRate: "Tasa de victorias",
+        userData: "Datos del Jugador",
     },
     form: {
       errors: {
@@ -222,6 +223,7 @@ const es = {
       },
       emailPlaceholder: 'tu@email.com',
       passwordLabel: 'Contraseña',
+      changePassword: "Cambiar contraseña",
       goBackHome: 'Volver al inicio',
     },
     leaderboard: {

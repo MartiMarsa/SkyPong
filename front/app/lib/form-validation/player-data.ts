@@ -19,3 +19,4 @@ export const playerDataSchema = (t: any) => {
       .min(8, { message: errors.winphraseMinLength })
   });
 };
+
