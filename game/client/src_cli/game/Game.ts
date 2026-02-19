@@ -232,7 +232,7 @@ export class Game {
 
                         // Mark "You" player
                         if (room.sessionId === room.state.player2Id) {
-                            bottomLabel = p2Name ? `${p2Name} (You)` : 'Waiting...';
+                            bottomLabel = p2Name || 'Waiting...';
                             topLabel = p1Name;
                         }
 
@@ -303,10 +303,10 @@ export class Game {
                             let bottomLabel = room.state.player1Name;
                             let topLabel = value;
                             if (room.sessionId === room.state.player1Id) {
-                                bottomLabel = `${room.state.player1Name} (You)`;
+                                bottomLabel = `${room.state.player1Name}`;
                                 topLabel = value;
                             } else if (room.sessionId === room.state.player2Id) {
-                                bottomLabel = `${value} (You)`;
+                                bottomLabel = value;
                                 topLabel = room.state.player1Name;
                             }
                             this._gui.hud.updatePlayerNames(bottomLabel, topLabel);
