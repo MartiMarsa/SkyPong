@@ -181,8 +181,9 @@ export class Game {
                         return;
                     }
 
-                    const p1Color = room.state.player1Color;
-                    const p2Color = room.state.player2Color;
+                    // Use room state colors with fallback to config colors
+                    const p1Color = room.state.player1Color || player1Color;
+                    const p2Color = room.state.player2Color || player2Color;
                     const isPlayer2 = room.sessionId === room.state.player2Id;
 
 
@@ -272,11 +273,11 @@ export class Game {
 
                     // For online PvP, signal ready immediately after assets load
                     if (isOnlineMode) {
-                        setTimeout(() => signalGameReady(), 100);
+                        scene.executeWhenReady(() => signalGameReady());
                     } else {
                         // For local-2p, show waiting message
                         if (this._gui) {
-                            setTimeout(() => signalGameReady(), 100);
+                            scene.executeWhenReady(() => signalGameReady());
                         }
                     }
 
@@ -312,17 +313,20 @@ export class Game {
                         }
                     });
                 } else {
+                    // AI mode: update colors from state with fallback to config
                     if (this._gui && room.state) {
                         const p1Color = room.state.player1Color || player1Color;
-                        const p2Color = room.state.player2Color || player2Color;
+                        const p2Color = room.state.player2Color || player2Color || '#666666';
                         this._gui.hud.updatePlayerColors(p1Color, p2Color);
 
-                    [paddle, paddle2].forEach((p, i) => {
-                        const color = i === 0 ? p1Color : p2Color;
-                        const mat = p.mesh.material as any;
-                        if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
-                        if (mat?.subSurface?.tintColor) mat.subSurface.tintColor = Color3.FromHexString(color);
-                    });
+                        [paddle, paddle2].forEach((p, i) => {
+                            const color = i === 0 ? p1Color : p2Color;
+                            if (color) {
+                                const mat = p.mesh.material as any;
+                                if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
+                                if (mat?.subSurface?.tintColor) mat.subSurface.tintColor = Color3.FromHexString(color);
+                            }
+                        });
                     }
 
                     const signalGameReady = () => {
@@ -334,8 +338,8 @@ export class Game {
                             this._startCountdown(room);
                         }
                     };
-                    room.state ? setTimeout(signalGameReady, 100) :
-                        room.onStateChange.once(() => setTimeout(signalGameReady, 100));
+                    // Wait for scene to be fully loaded with textures before signaling ready
+                    scene.executeWhenReady(() => signalGameReady());
                 }
 
 
