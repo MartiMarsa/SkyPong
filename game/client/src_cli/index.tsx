@@ -7,6 +7,7 @@ import GameLauncher from './components/pages/GameLauncher';
 
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 
+// FRONT these are the React Router patterns that will render either the menu or the game
 root.render(
     <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>

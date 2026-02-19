@@ -251,6 +251,7 @@ const StartPage = () => {
         setLobbyError(null);
     };
 
+    // FRONT this is where the data gets preparend this shows the modal with the debug
     const handleStartGame = () => {
         if (!selectedMode) return;
         const p1Name = player1Name.trim() || 'Player 1';
@@ -261,6 +262,7 @@ const StartPage = () => {
                         selectedMode === '2p-online' ? 'online-create' :
                         selectedMode as GameSessionConfig['gameMode'];
 
+        // FRONT building game session object
         const config: GameSessionConfig = {
             playerName: p1Name,
             playerColor: player1Color,
@@ -272,6 +274,7 @@ const StartPage = () => {
             config.player2Color = player2Color;
         }
 
+        // FRONT this is where the GameSessionConfig gets encoded and sent
         const base64Config = encodeConfig(config);
         const launchUrl = `${window.location.origin}${import.meta.env.BASE_URL || '/'}launch?config=${base64Config}`;
         
@@ -280,6 +283,7 @@ const StartPage = () => {
         setShowDebugModal(true);
     };
     
+    // FRONT this starts the game
     const handleProceedToGame = () => {
         if (!selectedMode) return;
         const p1Name = player1Name.trim() || 'Player 1';
@@ -300,6 +304,7 @@ const StartPage = () => {
             config.player2Color = player2Color;
         }
 
+        // FRONT react router that navigates to canvas bringing config
         setShowDebugModal(false);
         navigate('/canvas', { state: config });
     };

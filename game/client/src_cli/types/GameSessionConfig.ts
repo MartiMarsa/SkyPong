@@ -10,6 +10,7 @@ export type GameMode =
   | 'online-create'
   | 'online-join';
 
+// FRONT interface for game configuration
 export interface GameSessionConfig {
   // Required for all modes
   // playerId: string;              // TODO: Add when auth system is integrated

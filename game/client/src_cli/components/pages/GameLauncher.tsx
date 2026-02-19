@@ -96,12 +96,12 @@ const GameLauncher: React.FC = () => {
         styleElement.textContent = spinnerKeyframes;
         document.head.appendChild(styleElement);
 
-        // Process the config on mount
+        // FRONT here is the config received decoded
         const base64Config = searchParams.get('config');
         const result = decodeConfig(base64Config);
 
         if (result.valid) {
-            // Navigate with validated config directly
+            // FRONT here we use the React Router to navigate to the canvas and bring the config along
             navigate('/canvas', { state: result.config });
         } else {
             // Show error

@@ -82,6 +82,7 @@ const CanvasPage = () => {
 
             const isOnlineMode = config.gameMode === 'online-create' || config.gameMode === 'online-join';
 
+            // FRONT this is where the game actually starts
             dispose = startGame(
                 canvasRef.current,
                 config,
