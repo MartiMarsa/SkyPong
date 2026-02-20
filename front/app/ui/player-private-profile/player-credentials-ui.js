@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useStyles } from '../../hooks/use-styles';
 import { useRouter } from 'next/navigation';
-import { playerDataSchema } from '../../lib/form-validation/player-data'
+import { playerPasswordSchema } from '../../lib/form-validation/player-data'
 
 const mobileStyles = {
     main: "flex flex-col justify-center items-center min-h-screen",
@@ -38,81 +38,33 @@ export default function PlayerCredentialsUI({ userURL })
     const [player, setPlayer] = useState('');
     
     const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm({
-        resolver: zodResolver(playerDataSchema(t)),
+        resolver: zodResolver(playerPasswordSchema(t)),
         mode: 'onBlur',
     });
 
-      useEffect(() => {
-    // 1. Si el AuthContext aún está verificando la cookie, esperamos.
-    if (authloading) return;
-
-    // 2. Si ya terminó de cargar y NO hay usuario, mandamos a home.
-    if (!user) {
-        router.push('/');
-        return;
-    }
-
-    const fetchMyProfile = async () => {
-        // Iniciamos carga local para el perfil
-        setIsLoading(true); 
-        setServerError('');
-        if (player)
-            return;
-        try {
-            console.log("Solicitando perfil para ID:", user.id);
-            
-            const response = await fetch(`/api/profile/users/${user.id}`, {
-                method: 'GET',
-                credentials: 'include',
-            });
-
-            if (!response.ok) {
-                if (response.status === 404)
-                    setServerError(t.serverError.notFound);
-                else 
-                    setServerError(t.serverError.unknownError);
-                return;
-            }
-
-            const data = await response.json();
-            console.log("Datos recibidos:", data);
-            
-            // Seteamos el player con los datos de la API
-            setPlayer(data.user); 
-            if (data.user) {
-                setValue('nickname', data.user.nickname || '');
-                console.info("Winphrase data: ", data.user.winPhrase);
-                setValue('winPhrase', data.user.winPhrase || '');
-            }
-
-        } catch (error)
-        {
-            console.error('Error en fetchMyProfile:', error);
-            setServerError(t.serverError.conectionError);
-        } finally
-        {
-            // Solo dejamos de cargar cuando la petición termina (éxito o error)
-            setIsLoading(false);
-        }
-    };
-
-    fetchMyProfile();
-}, [authloading, user, router]); 
-
     // ✅ Handler para actualizar datos
-    const onSubmit = async (data) => {
+    const onSubmit = async (formData) => {
         try {
             setIsLoading(true);
             setServerError('');
-            console.log("Submitting updated profile data info...")
-            const response = await fetch(`/api/profile/updateme`, {
-                method: 'PATCH',
+            console.info("Submitting updated profile password info...\n", formData)
+            const response = await fetch(`/api/auth/password`, {
+                method: 'POST',
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(data),
+                body: JSON.stringify({
+                    old_password: formData.old_password,
+                    new_password: formData.new_password,
+                }),
             });
+
+            if (response.status === 204) {
+                alert("Contraseña actualizada. Por seguridad, vuelve a iniciar sesión.");
+                router.push('/login');
+                return;
+            }
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -120,15 +72,8 @@ export default function PlayerCredentialsUI({ userURL })
                 return;
             }
 
-            const result = await response.json();
-            console.log('Perfil actualizado:', result);
-            
-            // Actualiza el player local
-            setPlayer(result.user);
-            console.info("Updated player: ", player);
-            
         } catch (error) {
-            console.error('Error actualizando perfil:', error);
+            console.error('Error actualizando contraseña:', error);
             setServerError(t.serverError.conectionError);
         } finally {
             setIsLoading(false);
@@ -144,70 +89,48 @@ export default function PlayerCredentialsUI({ userURL })
         );
     }
 
-    // Muestra error si no hay player
-    if (!player) {
-        return (
-            <div className={styles.main}>
-                <p className="text-red-500">
-                    {serverError || 'No se pudo cargar el perfil'}
-                </p>
-                <button onClick={() => router.push('/')}>
-                    Volver al inicio
-                </button>
-            </div>
-        );
-    }
 
-    return (
-        <>
-        { isLoading ? (
-            <>
-                <img src={`/api/profile/avatars/${user.id}.webp`} />
-            </>
-            ) :
-            (
-                <>
-                    <form id="playerCredentialsForm" onSubmit={handleSubmit(onSubmit, (errors) => console.log("Errores de validación:", errors))} className={styles.playerDataForm}>
-                        <h1 className={styles.passwordTitle}>{t.form.changePassword}</h1>
-                            {/* Password Field */}
-                            <div className={styles.inputWrapper}>
-                                <input 
-                                    className={errors.password ? styles.textInputError : styles.inputBox}
-                                    type="password" 
-                                    placeholder={t.signUpPage.newPasswordLabel}
-                                    autoComplete="new-password"
-                                    {...register('password')}  
-                                />
-                            </div>
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className={styles.playerDataForm}>
+        {/* NUEVO: Campo para password antiguo */}
+        <div className={styles.inputWrapper}>
+            <input 
+                className={styles.inputBox}
+                type="password" 
+                placeholder={t.signUpPage.currentPassword}
+                {...register('old_password')} // Asegúrate que Zod lo tenga
+            />
+            {errors.old_password && <p>{errors.old_password.message}</p>}
+        </div>
 
-                            {/* Confirm Password Field */}
-                            <div className={styles.inputWrapper}>
-                                <input 
-                                    className={errors.confirmPassword ? styles.textInputError : styles.inputBox}
-                                    type="password" 
-                                    placeholder={t.signUpPage.confirmPasswordLabel}
-                                    autoComplete="new-password"
-                                    {...register('confirmPassword')} 
-                                    />
-                            { serverError && (
-                                <p className={styles.errorMessage}>
-                                        { console.log("Error:", serverError)}
-                                        {serverError}
-                                    </p>
-                                )}
-                            </div>
+        {/* Password Nuevo */}
+        <div className={styles.inputWrapper}>
+            <input 
+                className={styles.inputBox}
+                type="password" 
+                placeholder={t.signUpPage.newPasswordLabel}
+                {...register('new_password')}  
+            />
+            {errors.password && <p>{errors.password.message}</p>}
+        </div>
 
-                            <button 
-                                className={styles.submitButton} 
-                                type="submit"
-                                disabled={isSubmitting}
-                                >
-                                {isSubmitting ? t.signUpPage.submitting : t.signUpPage.submitButton}
-                            </button>
-                        </form>
-                    </>
-            )
-        }
-        </>
-    );
+        {/* Confirmación Password Nuevo */}
+        <div className={styles.inputWrapper}>
+            <input 
+                className={styles.inputBox}
+                type="password" 
+                placeholder={t.signUpPage.confirmPasswordLabel}
+                {...register('confirm_password')}  
+            />
+            {errors.password && <p>{errors.password.message}</p>}
+        </div>
+
+
+        <button type="submit" className={styles.submitButton} disabled={isLoading || isSubmitting}>
+            {isLoading ? t.form.submitting : t.signUpPage.submitButton}
+        </button>
+        
+        {serverError && <p className={styles.errorMessage}>{serverError}</p>}
+    </form>
+); 
 }

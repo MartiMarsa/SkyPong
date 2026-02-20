@@ -166,6 +166,7 @@ const en = {
         title: "Sign Up",
         hasAccount: "Already have an account", 
         createAccount: "Create new account",
+        currentPassword: "Current Password",
         passwordLabel: "Password",
         newPasswordLabel: "New Password",
         confirmPasswordLabel: "Confirm password",
@@ -213,6 +214,7 @@ const en = {
     passwordLabel: 'Password',
     changePassword: "Cambiar contraseña",
     goBackHome: 'Back to home',
+    submitting: "Submitting...",
     },
     leaderboard: {
         title: "Leaderboard",

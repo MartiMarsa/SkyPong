@@ -177,6 +177,7 @@ const es = {
         title: "Registrarse",
         hasAccount: "Ya tengo cuenta",
         createAccount: "Crear nueva cuenta",
+        currentPassword: "Contaseña Actual",
         passwordLabel: "Contraseña",
         newPasswordLabel: "Nueva contraseña",
         confirmPasswordLabel: "Confirmar contraseña",
@@ -225,6 +226,7 @@ const es = {
       passwordLabel: 'Contraseña',
       changePassword: "Cambiar contraseña",
       goBackHome: 'Volver al inicio',
+      submitting: "Submitting...",
     },
     leaderboard: {
         title: "Tabla de clasificación",

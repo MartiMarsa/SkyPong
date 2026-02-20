@@ -20,3 +20,39 @@ export const playerDataSchema = (t: any) => {
   });
 };
 
+export const playerPasswordSchema = (t: any) => {
+  const errors = {
+    passwordRequired: t?.form?.errors?.passwordTooShort || 'Password is too short',
+    passwordTooShort: t?.form?.errors?.passwordTooShort || 'Password is too short',
+    passwordLetter: t?.form?.errors?.containsLetter || 'Must contain a letter',
+    passwordNumber: t?.form?.errors?.containsNumber || 'Must contain a number',
+    passwordSpecial: t?.form?.errors?.containsSpecialCharacter || 'Must contain a special character',
+    confirmPasswordTooShort: t?.form?.errors?.confirmPasswordTooShort || 'Confirm password is too short',
+    passwordsDoNotMatch: t?.form?.errors?.passwordsDoNotMatch || 'Passwords do not match',
+  };
+
+  return z.object({
+    old_password: z.string()
+      .min(1, { message: errors.passwordRequired }) 
+      .min(8, { message: errors.passwordTooShort })
+      .regex(/[a-zA-Z]/, { message: errors.passwordLetter })
+      .regex(/[0-9]/, { message: errors.passwordNumber })
+      .regex(/[^a-zA-Z0-9]/, { message: errors.passwordSpecial }),
+    new_password: z.string()
+      .min(1, { message: errors.passwordRequired }) 
+      .min(8, { message: errors.passwordTooShort })
+      .regex(/[a-zA-Z]/, { message: errors.passwordLetter })
+      .regex(/[0-9]/, { message: errors.passwordNumber })
+      .regex(/[^a-zA-Z0-9]/, { message: errors.passwordSpecial }),
+    
+    confirm_password: z.string()
+      .min(1, { message: errors.passwordRequired }) 
+      .min(8, { message: errors.confirmPasswordTooShort })
+      .regex(/[a-zA-Z]/, { message: errors.passwordLetter })
+      .regex(/[0-9]/, { message: errors.passwordNumber })
+      .regex(/[^a-zA-Z0-9]/, { message: errors.passwordSpecial }),
+  }).refine((data) => data.new_password === data.confirm_password, {
+    message: errors.passwordsDoNotMatch,
+    path: ["confirm_password"],
+  });
+};

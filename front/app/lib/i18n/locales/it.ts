@@ -167,6 +167,7 @@ const it = {
         title: "Registrati",
         hasAccount: "Hai già un account?",
         createAccount: "Crea nuovo account",
+        currentPassword: "Passowrd Actual",
         passwordLabel: "Password",
         newPasswordLabel: "Nuova password",
         confirmPasswordLabel: "Conferma password",
@@ -214,6 +215,7 @@ const it = {
     passwordLabel: 'Password',
     changePassword: "Cambiar contraseña",
     goBackHome: 'Torna alla home',
+    submitting: "Submitting...",
     },
     leaderboard: {
         title: "Classifica",
