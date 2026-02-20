@@ -24,6 +24,7 @@ export default function AvatarUpload({ currentAvatar }) {
     if (!user) return;
     
     setUploading(true);
+    setServerError('');
     const formData = new FormData();
     // Importante: El nombre 'avatar' debe coincidir con lo que espere tu backend
     formData.append('uploads', file);
