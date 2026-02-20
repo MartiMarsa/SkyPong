@@ -18,10 +18,7 @@ export default function ProfilePagePublic()
         setIsLoading(true);
         const fetchMyProfile = async () => {
             try {
-                const isAuthenticated = typeof checkAuth === 'function'
-                    ? await checkAuth()
-                    : (await fetch('/api/auth/verify', { credentials: 'include' })).ok;
-
+                const isAuthenticated = await checkAuth();
                 if (!isAuthenticated)
                 {
                     router.push('/login');
