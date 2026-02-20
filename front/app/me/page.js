@@ -18,6 +18,16 @@ export default function ProfilePagePublic()
         setIsLoading(true);
         const fetchMyProfile = async () => {
             try {
+                const isAuthenticated = typeof checkAuth === 'function'
+                    ? await checkAuth()
+                    : (await fetch('/api/auth/verify', { credentials: 'include' })).ok;
+
+                if (!isAuthenticated)
+                {
+                    router.push('/login');
+                    return;
+                }
+
                 const response = await fetch('/api/profile/me', {
                     method: 'GET',
                     credentials: 'include',
@@ -25,14 +35,25 @@ export default function ProfilePagePublic()
                         'Content-Type': 'application/json',
                         },
                     });
-                    const isAuthenticated = await checkAuth();
-                    if (!isAuthenticated) 
+
+                if (!response.ok)
                 {
-                    router.push('/login');
-                    return;
+                    throw new Error(`Profile request failed with status ${response.status}`);
                 }
-                
-                const data = await response.json();
+
+                const rawBody = await response.text();
+                if (!rawBody)
+                {
+                    throw new Error('Profile request returned an empty response body');
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(rawBody);
+                } catch {
+                    throw new Error('Profile request did not return valid JSON');
+                }
+
                 console.info("Data:", data);
                 setProfile(data.player);
             } catch (error) {
