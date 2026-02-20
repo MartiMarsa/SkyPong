@@ -54,7 +54,6 @@ interface Player {
 		avatar?: string;
 }
 
-
 fastify.register(fastifyStatic, {
       	root: path.join(process.cwd(), 'uploads'),
       	prefix: '/static/'
@@ -126,6 +125,7 @@ async function verifyToken(req: any, reply: any) {
 		}
 	}
 }
+
 // --- INTERNAL PROFILE ROUTE ---
 fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { preHandler: requireServiceAuth }, async (req, reply) => {
 	try {
@@ -144,7 +144,6 @@ fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { p
     
 				}
 });
-
 
 // --- PRIVATE PROFILE ---
 fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {

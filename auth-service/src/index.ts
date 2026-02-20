@@ -4,14 +4,31 @@ import cookie from '@fastify/cookie';
 import fetch from 'node-fetch';
 import chalk from 'chalk';
 import { randomUUID } from 'crypto';
-import { signup, login } from './auth';
+import { 
+	signup, 
+	login, 
+	oauthLoginOrSignup, 
+	generateEmail
+} from './auth';
 import { initDB, getDB } from './db';
 import { initTokenDB, getTokenDB } from './dbTokens';
 import { privateKey, publicKey } from './keys';
-import { generateToken, generate2FAToken } from './token';
+import { 
+	generateToken, 
+	generate2FAToken,
+} from './token';
+import { issueSession } from './session.service';
 import { generate2FA, verify2FA } from './twofa';
-import { createRefreshToken, verifyRefreshToken, revokeRefreshToken, revokeRefreshTokenById, isTokenRevoked } from './refresh';
+import { 
+	createRefreshToken, 
+	verifyRefreshToken, 
+	revokeRefreshToken, 
+	revokeRefreshTokenById, 
+	isTokenRevoked
+} from './refresh';
+import { providers } from './providers/providers';
 import { hashPassword, verifyPassword } from './password';
+import { generateOAuthTempToken, verifyOAuthTempToken } from './oauth.token';
 
 
 const fastify = Fastify({ logger: true });
@@ -20,22 +37,6 @@ fastify.register(cookie, { secret: 'cookie-secret' });
 
 const PROFILE_SERVICE_URL = process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:5000';
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN ?? 'secret';
-
-
-const cookieOpts = {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'strict' as const,
-    path: '/',
-};
-
-const refreshOpts = {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'strict' as const,
-    path: '/auth/refresh',
-    maxAge: 7 * 24 * 3600,
-};
 
 interface TwoFAVerifyBody {
     twofa_token: string;
@@ -274,6 +275,114 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
     }
 });
 
+// --- OAUTH WITH PROVIDER (GOOGLE OR ANY OTHER) ---
+fastify.get<{ Params: { provider: string } }>('/auth/:provider', { preHandler: requireGuest },  async (req, reply) => {
+
+      	const { provider } = req.params;
+
+      	if (!providers[provider])
+	    	return reply.code(404).send();
+
+      	const state = randomUUID();
+
+      	reply.setCookie('oauth_state', state, {
+	    	httpOnly: true,
+	    	sameSite: 'lax'
+      	});
+
+      	reply.redirect(
+	    	providers[provider].auth(state)
+      	);
+});
+
+// --- AOUTH CALLBACK ---
+fastify.get<{
+  Params: { provider: string };
+  Querystring: {
+    code: string;
+    state: string;
+  };
+}>('/auth/:provider/callback', async (req, reply) => {
+
+      	const { provider } = req.params;
+      	const { code, state } = req.query;
+
+      	if (state !== req.cookies.oauth_state)
+	    	return reply.code(403).send();
+
+      	const p = providers[provider];
+
+		if (!p) return reply.code(404).send();
+
+      	const access = await p.token(code);
+
+      	const profile = await p.profile(access);
+
+      	const { user, isNew } =
+	    	await oauthLoginOrSignup(profile, provider);
+
+		if (isNew) {
+			const oauthToken = generateOAuthTempToken(user.id);
+
+			reply
+			.setCookie('oauth_tmp', oauthToken, { httpOnly: true, sameSite: 'strict', maxAge: 10 * 60 });
+
+			return reply.redirect('/set-password');
+		}
+
+      	await issueSession(user, reply, isNew);
+});
+
+// --- NEED SET PASSWORD FOR OAUTH ---
+fastify.post('/auth/set-password', {preHandler: requireAuthAllowNeedsPassword }, async (req: any, reply) => {
+
+			 const token = req.cookies.oauth_tmp;
+			 if (!token) return reply.code(401).send();
+
+			 const verify = await verifyOAuthTempToken(token);
+			 if (!verify) return reply.code(401).send();
+
+		 	 const { password } = req.body;
+
+	 		 if (!password || password.length < 8) {
+	 		 return reply.status(400).send(); // error: { code: 'VALIDATION_ERROR', message: 'Password must be at least 8 characters' }
+			 }
+
+	 		 const db = getDB();
+
+	 		 const user = await new Promise<any>((res, rej) => {
+										 		 db.get(`SELECT id, needs_password, password_version, token_version FROM users WHERE id = ?`,
+									 					[req.user.id],
+														(err, row) => err ? rej(err) : res(row)
+										 			   );
+										 		 });
+
+    	if (!user) {
+	  	return reply.status(404).send({ error: 'USER_NOT_FOUND' });
+    	}
+
+    	if (!user.needs_password) {
+	  	return reply.status(400).send({
+			error: {
+		      		code: 'PASSWORD_ALREADY_SET',
+		      		message: 'Password already configured'
+			}
+	  	});
+    	}
+
+	const hash = await hashPassword(password);
+
+    	await new Promise<void>((res, rej) => {
+	  	db.run(`UPDATE users SET password_hash = ?, needs_password = 0, password_version = password_version + 1, token_version = token_version + 1 WHERE id = ?`,
+	       	       [hash, user.id],
+		err => err ? rej(err) : res()
+		      );
+    	});
+
+		await issueSession(user, reply, true);
+
+});
+
 // --- CHANGE USER PASSWORD ---
 fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, reply) => {
     const { old_password, new_password } = req.body as ChangePassword;
@@ -449,6 +558,7 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
       	const userId = req.user.sub;
       	const db = getDB();
       	const dbToken = getTokenDB();
+	const mockEmail = generateEmail();
 
       	try {
 	    	await new Promise<void>((resolve, reject) => {
@@ -463,7 +573,8 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
 				    		if (err) {
 					  		db.run('ROLLBACK');
 				  			return reject(err);
-			    		}
+						}
+					});
 
 			    	// 2. Invalidate JW
 				db.run(
@@ -474,25 +585,21 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
 				      			db.run('ROLLBACK');
 				      			return reject(err || new Error('User not found'));
 						}
+					});
 
-				// 3. Delete user
+				// 3. Soft delete user (we are not deleting user, but changing personal data)
 				db.run(
-		      			`DELETE FROM users WHERE id = ?`,
-			      		[userId],
+		      			`UPDATE users SET email = ?, password_version = password_version + 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?`,
+			      		[mockEmail, userId],
 		      			function (err) {
 			    			if (err) {
 				  			db.run('ROLLBACK');
 				  			return reject(err);
 			    			}
-
-					    	db.run('COMMIT');
-	    					resolve();
-		      			}
-				);
-			  		}
-		    		);
-			      		}
-				);
+					});
+				
+				db.run('COMMIT');
+				resolve();
 		  	});
 	    	});
 		// 4. Clear cookies
@@ -502,9 +609,9 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
 	  	.clearCookie('csrf_token', { path: '/' })
 	  	.send({ status: 'account_deleted' });
 
-      	} catch (err) {
+	} catch (err) {
 	    	req.log.error(err);
-	    	reply.status(500).send({ error: 'ACCOUNT_DELETE_FAILED' });
+	    	reply.status(500).send(); //{ error: 'ACCOUNT_DELETE_FAILED' }
 	}
 });
 
@@ -523,7 +630,7 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
     	const db = getDB();
     	const user = await new Promise<any>((res, rej) => {
 		db.get(
-	    		`SELECT id, username, password_version, token_version FROM users WHERE id = ?`,
+	    		`SELECT id, password_version, token_version FROM users WHERE id = ?`,
 			[payload.userId],
 			(err, row) => (err ? rej(err) : res(row))
 		);
@@ -531,25 +638,7 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
 
     	if (!user) return reply.status(401).send({ error: 'User not found' });
 
-    	const newAccess = generateToken({
-		id: user.id,
-		password_version: user.password_version,
-		token_version: user.token_version,
-    	});
-
-    	const newRefresh = createRefreshToken(user.id);
-    	const csrfToken = randomUUID();
-
-    	reply
-	.setCookie('access_token', newAccess, { ...cookieOpts, maxAge: 3600 })
-	.setCookie('refresh_token', newRefresh, refreshOpts)
-	.setCookie('csrf_token', csrfToken, {
-    		httpOnly: false,
-		secure: true,
-    		sameSite: 'none',
-    		path: '/',
-	})
-	.send({ ok: true });
+		return issueSession(user, reply);
 });
 
 // --- 2FA ---
@@ -663,25 +752,7 @@ fastify.post('/auth/2fa/verify', async (req, reply) => {
 		return reply.status(401).send({ error: 'Invalid 2FA code' });
     	}
 
-    	const accessToken = generateToken({
-		id: user.id,
-		password_version: user.password_version,
-		token_version: user.token_version,
-    	});
-
-    	const refreshToken = createRefreshToken(user.id);
-    	const csrfToken = randomUUID();
-
-    	reply
-	.setCookie('access_token', accessToken, { ...cookieOpts, maxAge: 3600 })
-	.setCookie('refresh_token', refreshToken, refreshOpts)
-	.setCookie('csrf_token', csrfToken, {
-    		httpOnly: false,
-    		secure: true,
-    		sameSite: 'strict',
-    		path: '/',
-	})
-	.send({ status: 'ok' });
+		return issueSession(user, reply);
 });
 
 // --- HEALTH ---
@@ -691,11 +762,11 @@ fastify.get('/health', async () => ({ status: 'ok', service: 'auth-service' }));
 const start = async () => {
     try {
         await initDB();
-        console.log(chalk.green.bold('Database initialized'));
+        console.log(chalk.green.bold('[auth] Database initialized'));
         await initTokenDB();
-        console.log(chalk.green.bold('Refresh tokens database initialized'));
+        console.log(chalk.green.bold('[auth] Refresh tokens database initialized'));
         await fastify.listen({ port: 8081, host: '0.0.0.0' });
-        console.log(chalk.green.bold('Authentification is running on :8081'));
+        console.log(chalk.green.bold('[auth] Authentification is running on :8081'));
     } catch (err) {
         fastify.log.error(err);
         process.exit(1);

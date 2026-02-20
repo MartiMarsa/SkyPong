@@ -1,17 +1,14 @@
 'use client';
 import { useState } from 'react';
 import { useAuth } from '../../context/auth-context'; // Ajusta la ruta a tu contexto
-import { useTranslation } from '../../hooks/use-translation';
 
 export default function AvatarUpload({ currentAvatar }) {
   const { user } = useAuth();
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [serverError, setServerError] = useState('');
-  const { t } = useTranslation(); 
   
   // Imagen por defecto si no hay una previa ni una nueva seleccionada
-  const defaultAvatar = "/api/profile/avatars/default-avatar.webp"; 
+  const defaultAvatar = "/images/default-avatar.png"; 
   const displayImage = preview || currentAvatar || defaultAvatar;
 
   const handleFileChange = (e) => {
@@ -38,7 +35,7 @@ export default function AvatarUpload({ currentAvatar }) {
             .find(row => row.startsWith('csrf_token='))
             ?.split('=')[1];
 
-        const response = await fetch('/api/profile/avatar', {
+        const response = await fetch('/api/profile/me/avatar', {
             method: 'POST',
             body: formData, // El navegador se encarga del Content-Type
             credentials: 'include',
@@ -47,41 +44,13 @@ export default function AvatarUpload({ currentAvatar }) {
             }
         });
 
-        if (!response.ok)
-        {
-          let errorData = null;
-
-          try {
-            errorData = await response.json();
-          } catch {
-            errorData = null;
-          }
-
-          console.error("Fallo en la subida.", {
-            status: response.status,
-            error: errorData?.error,
-            message: errorData?.message,
-          });
-
-          if(response.status === 413)
-            setServerError(t.avatar.error.tooLarge);
-          else if (response.status === 400) {
-            if (errorData?.error === 1)
-              setServerError(t.avatar.error.invalidImageFormat);
-            else
-              setServerError(t.avatar.error.invalidImageFile);
-          } else if (response.status === 401 || response.status === 403)
-            setServerError(t.avatar.error.uploadError);
-          else
-            setServerError(t.avatar.error.unknownError);
-
-          return;
-        }
-
-        setServerError('');
-        console.info("Avatar uploaded: ", response);
+      if (response.ok) {
+        alert("¡Avatar actualizado!");
+      } else {
+        console.error("Fallo en la subida");
+      }
     } catch (error) {
-      console.error("Error avatar: ", error);
+      console.error("Error conectando con el servidor", error);
     } finally {
       setUploading(false);
     }
@@ -90,7 +59,6 @@ export default function AvatarUpload({ currentAvatar }) {
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="relative w-32 h-32 overflow-hidden rounded-full border-2 border-gray-300">
-        { console.info("Displayed image: ", displayImage)}
         <img 
           src={displayImage} 
           alt="Avatar" 
@@ -113,9 +81,6 @@ export default function AvatarUpload({ currentAvatar }) {
           disabled={uploading}
         />
       </label>
-      <div className="" name="avatar-error">
-        { serverError }
-      </div>
     </div>
   );
 }

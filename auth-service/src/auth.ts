@@ -1,7 +1,8 @@
 import argon2 from 'argon2';
-import { randomUUID } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 import { getDB } from './db';
 import { hashPassword, verifyPassword } from './password';
+import { getDbHelpers } from './helpers';
 
 export interface AuthUser {
 	id: string,
@@ -11,10 +12,53 @@ export interface AuthUser {
 	token_version: number;
 }
 
+export interface OAuthProfile {
+	id: string;
+	email?: string;
+}
+
+interface UserRow {
+  id: string;
+  email: string;
+  password_hashed: string;
+  password_version: number;
+  token_version: number;
+  twofa_enabled: number;
+  provider?: string;
+  provider_id?: string;
+  needs_password?: number;
+  deleted_at?: string | null;
+}
+
+// --- UTILS ---
+function generateUserId() {
+	return `u_${randomUUID()}`;
+}
+
+export function generateEmail(): string {
+  const ts = Date.now().toString(36);
+  const rand = randomBytes(4).toString('base64url');
+
+  const tail = (ts + rand).slice(0, 10);
+
+  return `deleted_${tail}_@${tail}.deleted`;
+}
+
+function toAuthUser(row: UserRow): AuthUser {
+  return {
+    id: row.id,
+    email: row.email,
+    twofa_enabled: row.twofa_enabled ?? 0,
+    password_version: row.password_version ?? 1,
+    token_version: row.token_version ?? 0,
+  };
+}
+
+// --- MAIN FUNCTIONS ---
 export async function signup(email: string, password: string): Promise<AuthUser> {
 	const hash = await hashPassword(password);
 
-	const userId = `u_${randomUUID()}`;
+	const userId = generateUserId();
 	return new Promise<AuthUser>((resolve, reject) => {
 		const db = getDB();
 		db.run(
@@ -57,4 +101,69 @@ export async function login(email: string, password: string): Promise<AuthUser> 
 		       }
 		)
 	});
+}
+
+export async function oauthLoginOrSignup(
+  profile: OAuthProfile,
+  provider: string
+): Promise<{ user: AuthUser; isNew: boolean }> {
+
+  const h = getDbHelpers(getDB());
+
+  let row = await h.get<UserRow>(
+    `SELECT * FROM users WHERE provider=? AND provider_id=?`,
+    [provider, profile.id]
+  );
+
+  if (row?.deleted_at) {
+    throw new Error('ACCOUNT_DELETED');
+  }
+
+  if (row) {
+    return { user: toAuthUser(row), isNew: false };
+  }
+
+  if (profile.email) {
+    row = await h.get<UserRow>(
+      `SELECT * FROM users WHERE email=?`,
+      [profile.email]
+    );
+
+    if (row) {
+      await h.run(
+        `UPDATE users SET provider=?, provider_id=? WHERE id=?`,
+        [provider, profile.id, row.id]
+      );
+
+      return { user: toAuthUser(row), isNew: false };
+    }
+  }
+
+  // --- SIGNUP ---
+  const userId = generateUserId();
+  const hash = await hashPassword(randomUUID());
+
+  await h.run(
+    `INSERT INTO users (
+      id,
+      email,
+      password_hashed,
+      needs_password,
+      provider,
+      provider_id,
+      password_version
+    ) VALUES (?, ?, ?, 1, ?, ?, 1)`,
+    [userId, profile.email ?? null, hash, provider, profile.id]
+  );
+
+  return {
+    user: {
+      id: userId,
+      email: profile.email ?? '',
+      twofa_enabled: 0,
+      password_version: 1,
+      token_version: 0,
+    },
+    isNew: true
+  };
 }

@@ -11,7 +11,7 @@ export default function ProfilePagePublic()
     const t = useTranslation();
     const router = useRouter();
     const [profile, setProfile] = useState(null);
-    const { checkAuth } = useAuth();
+    const { userInfo, checkAuth, hasCredentials} = useAuth();
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -32,8 +32,8 @@ export default function ProfilePagePublic()
                         'Content-Type': 'application/json',
                         },
                     });
-
-                if (!response.ok)
+                await checkAuth();
+                if (!hasCredentials) 
                 {
                     throw new Error(`Profile request failed with status ${response.status}`);
                 }
@@ -62,7 +62,7 @@ export default function ProfilePagePublic()
         };
 
         fetchMyProfile();
-    }, [checkAuth, router]);
+    }, [router]);
     return (
         <main>
             <NavigationAppUI  />

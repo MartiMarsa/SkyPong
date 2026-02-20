@@ -9,7 +9,7 @@ interface RefreshPayload {
     	type: 'refresh';
 }
 
-export function createRefreshToken(userId: string): string {
+export async function createRefreshToken(userId: string): Promise<string> {
     	const db = getTokenDB();
     	const tokenId = randomUUID();
     	const expiresAt = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(); // 7 days
