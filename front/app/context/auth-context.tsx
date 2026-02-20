@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext({
   user: null,
+  avartar: "/images/default-avatar.png",
   loading: true,
   hasCredentials: false,
   logout: async () => {},
@@ -59,7 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         credentials: 'include',
         headers: {
           'x-csrf-token': csrfToken || '', // Requerido por tu middleware preHandler
-        }
+        },
+        // body: JSON.stringify({ user: { id: user.id }}),
       });
     } catch (err) {
       console.error("Error durante el logout:", err);

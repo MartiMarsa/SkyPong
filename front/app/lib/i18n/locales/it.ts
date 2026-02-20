@@ -8,6 +8,21 @@ const it = {
     user: {
         hi: "Ciao!",
     },
+    avatar: {
+        error: {
+            uploadError: "Error en la subida del archivo",
+            avatarNotFound: "Avatar no encontrado",
+            invalidImageFile: "Archivo de imagen no válido",
+            invalidImageFormat: "Formato de imagen no válido",
+            unknownError: "Unknown error",
+            tooLarge: "Image file too large",
+        }
+    },
+    serverError: {
+        conectionError: "Server conection error",
+        notFound: "Ruta no encontrada",
+        unknownError: "Unknown Server Error",
+    },
     gameMode: {
         title: "Modalità di gioco",
         cta: "Vuoi giocare da remoto? Accedi per accedere alla modalità multigiocatore online.",
@@ -152,6 +167,7 @@ const it = {
         title: "Registrati",
         hasAccount: "Hai già un account?",
         createAccount: "Crea nuovo account",
+        currentPassword: "Passowrd Actual",
         passwordLabel: "Password",
         newPasswordLabel: "Nuova password",
         confirmPasswordLabel: "Conferma password",
@@ -173,6 +189,7 @@ const it = {
         wins: "Vittorie",
         losses: "Sconfitte",
         winRate: "Percentuale di vittorie",
+        playerData: "Datos del Jugador",
     },
     form: {
     errors: {
@@ -196,7 +213,9 @@ const it = {
     },
     emailPlaceholder: 'tu@email.com',
     passwordLabel: 'Password',
+    changePassword: "Cambiar contraseña",
     goBackHome: 'Torna alla home',
+    submitting: "Submitting...",
     },
     leaderboard: {
         title: "Classifica",

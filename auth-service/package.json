@@ -20,6 +20,7 @@
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
     "argon2": "^0.44.0",
+    "bcrypt": "^6.0.0",
     "chalk": "^5.6.2",
     "fastify": "^5.6.2",
     "fastify-jwt": "^4.1.3",

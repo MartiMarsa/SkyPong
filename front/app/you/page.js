@@ -6,11 +6,13 @@ import NavigationAppUI from '../ui/navigation-app-ui';
 import { useTranslation } from '../hooks/use-translation';
 import { useAuth } from '../context/auth-context';
 import AvatarUpload from '../ui/player-private-profile/avatar-ui'
+import PlayerUI from '../ui/player-private-profile/player-ui';
+import PlayerCredentialsUI from '../ui/player-private-profile/player-credentials-ui';
 
 // import { useSearchParams } from 'next/navigation'
 
 
-export default function ProfilePagePublic()
+export default function ProfilePagePrivate()
 {
     const t = useTranslation();
     const router = useRouter();
@@ -45,11 +47,10 @@ export default function ProfilePagePublic()
             });
 
             if (!response.ok) {
-                if (response.status === 404) {
-                    setServerError("Ruta no encontrada");
-                } else {
-                    setServerError("Error de servidor");
-                }
+                if (response.status === 404)
+                    setServerError(t.serverError.notFound);
+                else 
+                    setServerError(t.serverError.unknownError);
                 return;
             }
 
@@ -86,11 +87,14 @@ export default function ProfilePagePublic()
     return (
         <>
         { serverError ? (serverError) : (
-        <main>
+        <main className=''>
             <NavigationAppUI  />
             <h1>{t.profilePage}</h1>
             {console.info("Player in component: ", player)}
-            <AvatarUpload />
+            <AvatarUpload currentAvatar={ `/api/profile/avatars/${user?.id}.webp` || ""} />
+            <PlayerUI />
+            <PlayerCredentialsUI />
+
         </main>
         )}
         </>

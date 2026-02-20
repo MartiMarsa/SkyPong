@@ -10,6 +10,29 @@ const es = {
     },
     user: {
         hi: "hola!",
+        nickname: "Nickname",
+        winphrase: "Frase de Victoria",
+        errors: {
+            nicknameRequired: "Nickname vacío",
+            nicknameMinLength: (len: number)=>{ return (`La Frase de la vitoria debe contener ${len}`)},
+            winphraseRequired: "Nickname vacío",
+            winphraseMinLength: (len: number)=>{ return (`La Frase de la vitoria debe contener ${len}`)},
+        }
+    },
+    avatar: {
+        error: {
+            uploadError: "Error en la subida del archivo",
+            avatarNotFound: "Avatar no encontrado",
+            invalidImageFile: "Archivo de imagen no válido",
+            invalidImageFormat: "Formato de imagen no válido",
+            unknownError: "Error desconocido",
+            tooLarge: "Tamaño de Imagen muy grande",
+        }
+    },
+    serverError: {
+        conectionError: "Server conection error",
+        notFound: "Ruta no encontrada",
+        unknownError: "Unknown Server Error",
     },
     gameMode: {
         title: "Modo de Juego",
@@ -154,6 +177,7 @@ const es = {
         title: "Registrarse",
         hasAccount: "Ya tengo cuenta",
         createAccount: "Crear nueva cuenta",
+        currentPassword: "Contaseña Actual",
         passwordLabel: "Contraseña",
         newPasswordLabel: "Nueva contraseña",
         confirmPasswordLabel: "Confirmar contraseña",
@@ -175,6 +199,7 @@ const es = {
         wins: "Victorias",
         losses: "Derrotas",
         winRate: "Tasa de victorias",
+        userData: "Datos del Jugador",
     },
     form: {
       errors: {
@@ -199,7 +224,9 @@ const es = {
       },
       emailPlaceholder: 'tu@email.com',
       passwordLabel: 'Contraseña',
+      changePassword: "Cambiar contraseña",
       goBackHome: 'Volver al inicio',
+      submitting: "Submitting...",
     },
     leaderboard: {
         title: "Tabla de clasificación",
