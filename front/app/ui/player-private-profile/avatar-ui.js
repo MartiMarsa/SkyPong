@@ -27,6 +27,7 @@ export default function AvatarUpload({ currentAvatar }) {
     if (!user) return;
     
     setUploading(true);
+    setServerError('');
     const formData = new FormData();
     // Importante: El nombre 'avatar' debe coincidir con lo que espere tu backend
     formData.append('uploads', file);
@@ -73,8 +74,11 @@ export default function AvatarUpload({ currentAvatar }) {
             setServerError(t.avatar.error.uploadError);
           else
             setServerError(t.avatar.error.unknownError);
+
           return;
         }
+
+        setServerError('');
         console.info("Avatar uploaded: ", response);
     } catch (error) {
       console.error("Error avatar: ", error);
