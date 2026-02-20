@@ -48,12 +48,6 @@ const ALLOWED_MIME = [
 ]
 
 // --- TYPES ---
-interface Player {
-		id: string;
-		nickname: string;
-		avatar?: string;
-}
-
 fastify.register(fastifyStatic, {
       	root: path.join(process.cwd(), 'uploads'),
       	prefix: '/static/'
@@ -131,10 +125,10 @@ fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { p
 	try {
 			const userId = req.params.id;
 
-			let player: Player | null = await getPlayerById(userId) as Player | null;
+			let player = await getPlayerById(userId);
 
 			if (!player) {
-				player = await createPlayer(userId) as Player;
+				player = await createPlayer(userId);
 				}
 
 		  	return reply.send({ nickname: player.nickname, });

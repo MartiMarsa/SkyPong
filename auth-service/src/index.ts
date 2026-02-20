@@ -38,6 +38,21 @@ fastify.register(cookie, { secret: 'cookie-secret' });
 const PROFILE_SERVICE_URL = process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:5000';
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN ?? 'secret';
 
+const cookieOpts = {
+	httpOnly: true,
+	secure: true,
+	sameSite: 'strict' as const,
+	path: '/',
+};
+
+const refreshOpts = {
+	httpOnly: true,
+	secure: true,
+	sameSite: 'strict' as const,
+	path: '/auth/refresh',
+	maxAge: 7 * 24 * 3600,
+};
+
 interface TwoFAVerifyBody {
     twofa_token: string;
     code: string;
@@ -218,12 +233,13 @@ async function requireAuth(req: any, reply: any) {
                 password_version: user.password_version || 1,
                 token_version: user.token_version || 0
             });
-            const refreshToken = createRefreshToken(user.id);
             const csrfToken = randomUUID();
+            const accessCookieOptions = { ...cookieOpts, maxAge: 3600 };
+            const refreshCookieOptions = { ...refreshOpts };
             
             reply
-            .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
-            .setCookie('refresh_token', refreshToken, refreshOpts)
+            .setCookie('access_token', token, accessCookieOptions)
+            .setCookie('refresh_token', await createRefreshToken(user.id), refreshCookieOptions)
             .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'strict', path: '/' })
             .status(201)
             .send({ 
@@ -256,12 +272,13 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
             password_version: user.password_version,
             token_version: user.token_version
         });
-        const refreshToken = createRefreshToken(user.id);
         const csrfToken = randomUUID();
+        const accessCookieOptions = { ...cookieOpts, maxAge: 3600 };
+        const refreshCookieOptions = { ...refreshOpts };
         
         reply
-        .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
-        .setCookie('refresh_token', refreshToken, refreshOpts)
+        .setCookie('access_token', token, accessCookieOptions)
+        .setCookie('refresh_token', await createRefreshToken(user.id), refreshCookieOptions)
         .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'strict', path: '/' })
         .status(201)
         .send({ 

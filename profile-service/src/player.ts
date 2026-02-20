@@ -142,7 +142,7 @@ export async function getPlayerById(userId: string): Promise<PlayerInfo | null> 
 // CREATE PLAYER
 // --------------------------------------------------
 
-export async function createPlayer(userId: string): Promise<Player> {
+export async function createPlayer(userId: string): Promise<PlayerInfo> {
   for (let i = 1; i <= MAX_RETRIES; i++) {
     const nickname = generateNickname(false);
 
@@ -424,6 +424,8 @@ export async function getUserPublicProfile(userId: string): Promise<PlayerInfo |
             nickname: row.nickname,
             avatarUrl: row.avatarUrl ?? null,
             winPhrase: row.winPhrase ?? null,
+            localization: row.localization,
+            created_at: row.created_at,
 
             stats: {
                     played: row.played ?? 0,
@@ -436,4 +438,3 @@ export async function getUserPublicProfile(userId: string): Promise<PlayerInfo |
     };
 
 }
-
