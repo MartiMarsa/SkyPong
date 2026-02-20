@@ -14,7 +14,7 @@ DCFLAGS := -p $(PROJECT) -f $(COMPOSE_FILE)
 
 .PHONY: help up down restart ps logs build rebuild pull \
         clean clean-hard prune-volumes prune-images prune-all \
-        exec-nginx exec-auth exec-game exec-game-front
+        exec-nginx exec-auth exec-game exec-game-front all hall buildup 
 
 help:
 	@echo ""
@@ -53,6 +53,12 @@ down:
 	$(DC) $(DCFLAGS) down
 
 restart: down up
+
+all: clean config build up
+
+hall: clean-hall config build up
+
+buildup: build up
 
 ps:
 	$(DC) $(DCFLAGS) ps

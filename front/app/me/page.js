@@ -1,41 +1,40 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import NavigationAppUI from '../ui/navigation-app-ui';
-import PlayerProfilePublicUI from '../ui/player-profile-public-ui';
-import PlayerStatsPublicUI from '../ui/player-stats-public-ui';
-import PlayerAchievementsPublicUI from '../ui/player-achievements-public-ui';
-import { getCurrentPlayer } from '../lib/players/get-current-player';
+import  { useState, useEffect } from 'react';
 import { useTranslation } from '../hooks/use-translation';
-
-const player = getCurrentPlayer();
+import NavigationAppUI from '../ui/navigation-app-ui';
+import { useAuth } from '../context/auth-context';
+import { useRouter } from 'next/navigation';
 
 export default function ProfilePagePublic()
 {
     const t = useTranslation();
     const router = useRouter();
-    const [user, setUser] = useState(null);
+    const [profile, setProfile] = useState(null);
+    const { userInfo, checkauth, hasCredentials} = useAuth();
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        setIsLoading(true);
         const fetchMyProfile = async () => {
             try {
                 const response = await fetch('/api/profile/me', {
-                    credentials: 'include'
-                });
-
-//				console.log(response.status, await response.text());
-				console.log(response);
-               /* 
-                if (response !== 201) {
-                    // No autenticado → redirigir a login
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        },
+                    });
+                await checkauth();
+                if (!hasCredentials) 
+                {
                     router.push('/login');
                     return;
                 }
-*/
+                
                 const data = await response.json();
-                setUser(data.user);
+                console.info("Data:", data);
+                setProfile(data.player);
             } catch (error) {
                 console.error('Error:', error);
                 router.push('/login');
@@ -46,18 +45,11 @@ export default function ProfilePagePublic()
 
         fetchMyProfile();
     }, [router]);
-
-    if (isLoading) return <div>Cargando tu perfil...</div>;
-    if (!user) return null;
-
     return (
         <main>
             <NavigationAppUI  />
-            {console.log("T", t)}
-            <h1>{t.profilePage}</h1>
-            <PlayerProfilePublicUI nickname={player.info.nickname} winphrase={player.info.winphrase} avatarUrl={player.info.avatarUrl}   />
-            <PlayerStatsPublicUI wins={player.stats.wins} losses={player.stats.losses}/>
-            <PlayerAchievementsPublicUI achievements={player.achievements} />    
+            { console.info("Translation", t) }
+            <h1>{t?.profilePage?.title || "My Private Profile" }</h1>
         </main>
     );
 }

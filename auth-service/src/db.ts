@@ -22,7 +22,7 @@ export function initDB(): Promise<void> {
        		       `CREATE TABLE IF NOT EXISTS users (
        			       id TEXT PRIMARY KEY,
 			       email TEXT UNIQUE NOT NULL,
-       			       password_hashed TEXT NOT NULL,
+				   password_hashed TEXT NOT NULL,
 			       password_version INTEGER DEFAULT 1,
 			       twofa_enabled INTEGER DEFAULT 0,
 			       twofa_secret TEXT,

@@ -359,7 +359,7 @@ export async function getLeaderboard(lastSync: string) {
 // --------------------------------------------------
 
 export async function getUserPublicProfile(
-  nickname: string
+  user_id: string
 ) {
 
   const user = await db.get<{
@@ -371,9 +371,9 @@ export async function getUserPublicProfile(
     `
     SELECT user_id, nickname, avatarUrl, winPhrase
     FROM players
-    WHERE nickname = ?
+    WHERE user_id = ?
     `,
-    [nickname]
+    [user_id]
   );
 
   if (!user) return null;

@@ -29,7 +29,7 @@ export default function PlayerAchievementsPublicUI( { achievements })
             {
                 achievements.map(element => {
                     console.log("Achievement:", element);
-                    return( <div className='achievement'>
+                    return( <div className='achievement' key={element.id ?? element.nameKey}>
                         <h4 className='achievement-title'>{t[element.nameKey]}</h4>
                         <p className='achievement-description'>{t[element.descriptionKey]}</p>
                         <div className='achievement-icon'>
