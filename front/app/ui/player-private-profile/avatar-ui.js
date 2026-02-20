@@ -48,14 +48,29 @@ export default function AvatarUpload({ currentAvatar }) {
 
         if (!response.ok)
         {
-          console.error("Fallo en la subida. Status: ", response.status, "Error: ", response.error);
+          let errorData = null;
+
+          try {
+            errorData = await response.json();
+          } catch {
+            errorData = null;
+          }
+
+          console.error("Fallo en la subida.", {
+            status: response.status,
+            error: errorData?.error,
+            message: errorData?.message,
+          });
 
           if(response.status === 413)
-           setServerError(t.avatar.error.tooLarge);
-          else if (response.status === 400)
-           setServerError(t.avatar.error.invalidImageFile);
-          else if(response.error === 2)
-            setServerError(t.avatar.error.invalidFormat);
+            setServerError(t.avatar.error.tooLarge);
+          else if (response.status === 400) {
+            if (errorData?.error === 1)
+              setServerError(t.avatar.error.invalidImageFormat);
+            else
+              setServerError(t.avatar.error.invalidImageFile);
+          } else if (response.status === 401 || response.status === 403)
+            setServerError(t.avatar.error.uploadError);
           else
             setServerError(t.avatar.error.unknownError);
           return;
