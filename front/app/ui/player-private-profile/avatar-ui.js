@@ -27,6 +27,7 @@ export default function AvatarUpload({ currentAvatar }) {
     if (!user) return;
     
     setUploading(true);
+    setServerError('');
     const formData = new FormData();
     // Importante: El nombre 'avatar' debe coincidir con lo que espere tu backend
     formData.append('uploads', file);
@@ -48,18 +49,30 @@ export default function AvatarUpload({ currentAvatar }) {
 
         if (!response.ok)
         {
-          console.error("Fallo en la subida. Status: ", response.status, "Error: ", response.error);
+          let errorData = null;
+
+          try {
+            errorData = await response.json();
+          } catch {
+            errorData = null;
+          }
 
           if(response.status === 413)
-           setServerError(t.avatar.error.tooLarge);
-          else if (response.status === 400)
-           setServerError(t.avatar.error.invalidImageFile);
-          else if(response.error === 2)
-            setServerError(t.avatar.error.invalidFormat);
+            setServerError(t.avatar.error.tooLarge);
+          else if (response.status === 400) {
+            if (errorData?.error === 1)
+              setServerError(t.avatar.error.invalidImageFormat);
+            else
+              setServerError(t.avatar.error.invalidImageFile);
+          } else if (response.status === 401 || response.status === 403)
+            setServerError(t.avatar.error.uploadError);
           else
             setServerError(t.avatar.error.unknownError);
+
           return;
         }
+
+        setServerError('');
         console.info("Avatar uploaded: ", response);
     } catch (error) {
       console.error("Error avatar: ", error);
