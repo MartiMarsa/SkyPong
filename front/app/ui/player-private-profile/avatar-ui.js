@@ -57,6 +57,12 @@ export default function AvatarUpload({ currentAvatar }) {
             errorData = null;
           }
 
+          console.error("Fallo en la subida.", {
+            status: response.status,
+            error: errorData?.error,
+            message: errorData?.message,
+          });
+
           if(response.status === 413)
             setServerError(t.avatar.error.tooLarge);
           else if (response.status === 400) {
