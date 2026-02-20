@@ -102,14 +102,19 @@ export default function PlayerUI({ userURL })
     // ✅ Handler para actualizar datos
     const onSubmit = async (data) => {
         try {
-            setIsLoading(true);
-            setServerError('');
+            const csrfToken = document.cookie
+                .split('; ')
+                .find(row => row.startsWith('csrf_token='))
+                ?.split('=')[1];
+                setIsLoading(true);
+                setServerError('');
             console.log("Submitting updated profile data info...")
             const response = await fetch(`/api/profile/updateme`, {
                 method: 'PATCH',
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
+                    'x-csrf-token': csrfToken || '', // <-- para el middleware de CSRF
                 },
                 body: JSON.stringify(data),
             });
@@ -176,6 +181,7 @@ export default function PlayerUI({ userURL })
                                 {...register('nickname')} 
                             />
                         </div>
+                        {errors.nickname && <p className={styles.errorFieldBox}>{errors.nickname.message}</p>}
                      {/* Winphrase Field */}
                         <div className={styles.inputWrapper}>
                             <input 
@@ -185,6 +191,7 @@ export default function PlayerUI({ userURL })
                                 autoComplete="winPhrase"
                                 {...register('winPhrase')} 
                             />
+                            {errors.winPhrase && <p className={styles.errorFieldBox}>{errors.winPhrase.message}</p>}
                         </div>
                         {/* Error del servidor */}
                         {serverError && (

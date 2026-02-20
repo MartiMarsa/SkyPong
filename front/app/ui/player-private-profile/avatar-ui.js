@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '../../context/auth-context'; // Ajusta la ruta a tu contexto
 import { useTranslation } from '../../hooks/use-translation';
 
-export default function AvatarUpload({ currentAvatar }) {
+export default function AvatarUpload() {
   const { user } = useAuth();
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -11,8 +11,16 @@ export default function AvatarUpload({ currentAvatar }) {
   const { t } = useTranslation(); 
   
   // Imagen por defecto si no hay una previa ni una nueva seleccionada
-  const defaultAvatar = "/api/profile/avatars/default-avatar.webp"; 
-  const displayImage = preview || currentAvatar || defaultAvatar;
+  const defaultAvatar = "/avatar/default-avatar.png"; 
+  const displayImage = preview || user?.avatarURL || defaultAvatar;
+
+const getCookie = (name) => {
+    return document.cookie
+        .split('; ')
+        .find(row => row.startsWith(name + '='))
+        ?.split('=')[1];
+};
+
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -29,20 +37,23 @@ export default function AvatarUpload({ currentAvatar }) {
     setUploading(true);
     const formData = new FormData();
     // Importante: El nombre 'avatar' debe coincidir con lo que espere tu backend
-    formData.append('uploads', file);
+    formData.append('uploads/avatars/', file);
 
     try {
-        const csrfToken = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('csrf_token='))
-            ?.split('=')[1];
+        const rawCookie = getCookie('csrf_token');
+        const csrfToken = rawCookie ? decodeURIComponent(rawCookie) : '';
+
+        if (!csrfToken) {
+            setServerError('CSRF token missing');
+            return;
+        }
 
         const response = await fetch('/api/profile/avatar', {
             method: 'POST',
             body: formData, // El navegador se encarga del Content-Type
             credentials: 'include',
             headers: {
-                'x-csrf-token': csrfToken || '', // <-- para el middleware de CSRF
+                'x-csrf-token': csrfToken, // <-- para el middleware de CSRF
             }
         });
 
@@ -94,9 +105,11 @@ export default function AvatarUpload({ currentAvatar }) {
           disabled={uploading}
         />
       </label>
-      <div className="" name="avatar-error">
-        { serverError }
-      </div>
+        {serverError && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                {serverError}
+            </div>
+        )}
     </div>
   );
 }

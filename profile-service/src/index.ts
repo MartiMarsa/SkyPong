@@ -511,6 +511,7 @@ fastify.get('/profile/users/:id', async (req, reply) => {
       	return { user };
 });
 
+
 // --- SEND FRIEND REQUEST ---
 fastify.post('/profile/friends/:toId', async (req, reply) => {
     	const fromId = req.headers['x-user-id'] as string;
