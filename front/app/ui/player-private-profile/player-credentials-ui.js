@@ -9,6 +9,13 @@ import { useStyles } from '../../hooks/use-styles';
 import { useRouter } from 'next/navigation';
 import { playerPasswordSchema } from '../../lib/form-validation/player-data'
 
+const getCookie = (name) => {
+    return document.cookie
+        .split('; ')
+        .find(row => row.startsWith(name + '='))
+        ?.split('=')[1];
+};
+
 const mobileStyles = {
     main: "flex flex-col justify-center items-center min-h-screen",
     playerDataForm: "flex flex-col m-80 center p-5 gap-4 border-4 border-amber-400 rounded-sm",
@@ -48,11 +55,20 @@ export default function PlayerCredentialsUI({ userURL })
             setIsLoading(true);
             setServerError('');
             console.info("Submitting updated profile password info...\n", formData)
+
+			const csrfToken = getCookie('csrf_token');
+
+			if (!csrfToken) {
+				setServerError('CSRF token missing');
+				return;
+			}
+
             const response = await fetch(`/api/auth/password`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
+					'x-csrf-token': csrfToken,
                 },
                 body: JSON.stringify({
                     old_password: formData.old_password,
