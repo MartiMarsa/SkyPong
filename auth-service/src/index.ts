@@ -30,6 +30,7 @@ import { providers } from './providers/providers';
 import { hashPassword, verifyPassword } from './password';
 import { generateOAuthTempToken, verifyOAuthTempToken } from './oauth.token';
 
+
 const fastify = Fastify({ logger: true });
 
 fastify.register(cookie, { secret: 'cookie-secret' });
@@ -38,12 +39,12 @@ const PROFILE_SERVICE_URL = process.env.PROFILE_SERVICE_URL ?? 'http://profile-s
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN ?? 'secret';
 
 interface TwoFAVerifyBody {
-	twofa_token: string;
-      	code: string;
+    twofa_token: string;
+    code: string;
 }
 
 interface TwoFABody {
-	id: string;
+    id: string;
 	code: string;
 }
 
@@ -53,168 +54,187 @@ interface AuthBody {
 }
 
 interface LoginBody {
-      	email: string;
+    email: string;
       	password: string;
-}
+    }
 
-interface ChangePassword {
+    interface ChangePassword {
 	old_password: string;
 	new_password: string;
 }
 
 interface DBUser {
-    	password_hashed: string;
-    	password_version: number;
+    password_hashed: string;
+    password_version: number;
 }
 
 const CSRF_IGNORED_METHODS = new Set([
-	'GET', 
+    'GET', 
 	'HEAD', 
 	'OPTIONS'
 ]);
 
 const CSRF_EXCLUDED_PATHS = new Set([
-      	'/auth/signup',
-      	'/auth/login',
-      	'/auth/refresh',      
-		'/auth/google',
-      	'/auth/google/callback',
-      	'/auth/set-password'
+    '/auth/signup',
+    '/auth/login',
+    '/auth/refresh',      
+    '/auth/google',
+    '/auth/google/callback',
+    '/auth/set-password'
 ]);
 
 // --- CSRF protection ---
 fastify.addHook('preHandler', async (req: any, reply) => {
 
-	if (CSRF_IGNORED_METHODS.has(req.method)) return;
+    if (CSRF_IGNORED_METHODS.has(req.method)) return;
 
 	const checkUrl = req.url;
-
+    
 	if (CSRF_EXCLUDED_PATHS.has(checkUrl)) return;
-
+    
 	const csrfCookie = req.cookies?.csrf_token;
-      	const csrfHeader = req.headers['x-csrf-token'];
-
-      	if (!csrfCookie || csrfCookie !== csrfHeader) {
-	    	return reply.status(403).send(); //{ error: 'CSRF' }
-      	}
+    const csrfHeader = req.headers['x-csrf-token'];
+    
+    if (!csrfCookie || csrfCookie !== csrfHeader) {
+        return reply.status(403).send(); //{ error: 'CSRF' }
+    }
 });
 
 // --- AUTH MIDDLEWARE ---
 async function authentificate(req: any): Promise<any | null> {
-
-	const token = req.cookies?.access_token;
-
+    
+    const token = req.cookies?.access_token;
+    
 	if (!token) return null;
-
+    
 	try {
-		const payload: any = jwt.verify(token, publicKey, {
-			algorithms: ['RS256'],
+        const payload: any = jwt.verify(token, publicKey, {
+            algorithms: ['RS256'],
 			issuer: 'auth-service',
 			audience: 'transcendence',
 		});
 
 		const db = getDB();
-
-	    	const user = await new Promise<any>((res, rej) => {
-		  	db.get(`SELECT id, email, password_version, twofa_enabled, token_version, deleted_at, needs_password FROM users WHERE id = ?`,
-		       [payload.sub],
-			(err, row) => (err ? rej(err) : res(row))
-			      );
-	    	});
-
-	    	if (!user || user.deleted_at) return null;
-
-	    	if (payload.pv !== user.password_version) return null;
-
-	    	if (payload.tv !== user.token_version) return null;
-
-	    	return user;
-
+        
+        const user = await new Promise<any>((res, rej) => {
+            db.get(`SELECT id, email, password_version, twofa_enabled, token_version, deleted_at FROM users WHERE id = ?`,
+                [payload.sub],
+                (err, row) => (err ? rej(err) : res(row))
+            );
+        });
+        
+        if (!user || user.deleted_at) return null;
+        
+        if (payload.pv !== user.password_version) return null;
+        
+        if (payload.tv !== user.token_version) return null;
+        
+        return user;
+        
 	} catch (err) {
-            console.error("Error en jwt.verify:", err);
-	    	return null;
-	}
+        console.error("Error en jwt.verify:", err);
+        return null;
+    }
 }
 
 async function requireAuthAllowNeedsPassword(req: any, reply: any) {
-
-	const user = await authentificate(req);      
+    
+    const user = await authentificate(req);      
 	if (!user) {
-		return reply.status(401).send(); // { error: 'Unauthorized' }
+        return reply.status(401).send(); // { error: 'Unauthorized' }
 	};
-
-      	req.user = user;
+    
+    req.user = user;
 }
-
+    
 async function requireAuth(req: any, reply: any) {
-      
-	const user = await authentificate(req);
-      	if (!user) {
-		return reply.status(401).send(); // { error: 'Unauthorized' }
-	}
-
-      	if (user.needs_password) {
-	    	return reply.status(403).send(); // { error: 'SET_PASSWORD_REQUIRED' }
-      	}
-
-      	req.user = user;
-}
-
-async function requireGuest(req: any, reply: any) {
-      	const user = await authentificate(req);
-
-      	if (!user) return;
-
-//      	const next = req.cookies?.last_page || '/me';
-
+        
+        const user = await authentificate(req);
+        if (!user) {
+            return reply.status(401).send(); // { error: 'Unauthorized' }
+        }
+        
+        if (user.needs_password) {
+            return reply.status(403).send(); // { error: 'SET_PASSWORD_REQUIRED' }
+        }
+        
+        req.user = user;
+    }
+    
+    async function requireGuest(req: any, reply: any) {
+        const user = await authentificate(req);
+        
+        if (!user) return;
+        
+        //      	const next = req.cookies?.last_page || '/me';
+        
 		return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
-}
-
-// --- VERIFICATION IF USER IS ALREADY LOGGED ---
-fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
-
-			const controller = new AbortController();
-
-			setTimeout(() => controller.abort(), 5000);
-
-			const user = req.user;
-
-			let profile: any  = null;
-
-			try {
-			const res = await fetch(`${PROFILE_SERVICE_URL}/internal/profile/by-user-id/${user.id}`, { headers: { Authorization: `Bearer ${SERVICE_TOKEN}`, }, signal: controller.signal, });
+    }
+    
+    // --- VERIFICATION IF USER IS OLREADY LOGGED ---
+    fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
+        
+        const controller = new AbortController();
+        
+        setTimeout(() => controller.abort(), 5000);
+        
+        const user = req.user;
+        
+        let profile: any  = null;
+        
+        try {
+            const res = await fetch(`${PROFILE_SERVICE_URL}/internal/profile/by-user-id/${user.id}`, { headers: { Authorization: `Bearer ${SERVICE_TOKEN}`, }, signal: controller.signal, });
 
 			if (res.ok) {
-
-			profile = await res.json() as any;
+                
+                profile = await res.json() as any;
 			}
-			} catch (err) {
+        } catch (err) {
 			req.log.error(err, 'Profile service unavailable');
-			}
-
-			req.log.info({ user: req.user }, 'Resultado de usuario en verify');
-
-			return reply.status(200).send({ id: user.id, email: user.email, username: profile?.nickname ?? 'Unknown', twofa_enabled: user.twofa_enabled });
-});
-
-// --- SIGNUP ---
-fastify.post('/auth/signup',{ preHandler: requireGuest }, async (req: any, reply) => {
-
-    const { email, password } = req.body as AuthBody;
-
-    if (!email || !password) {
-        return reply.status(400).send({
-            error: { code: 'VALIDATION_ERROR', message: 'Invalid input: username, email and password required' },
-        });
-    }
-
-    try {
-        const user = await signup(email, password);
-
-		return issueSession(user, reply);
-
-    } catch (err: any) {
-        reply.status(409).send(); //{ error: { code: 'EMAIL_OR_USERNAME_TAKEN', message: 'Already exists' } }
+        }
+        
+        req.log.info({ user: req.user }, 'Resultado de usuario en verify');
+        
+        return reply.status(200).send({ id: user.id, email: user.email, username: profile?.nickname ?? 'Unknown', twofa_enabled: user.twofa_enabled });
+    });
+    
+    // --- SIGNUP ---
+    fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, reply) => {
+        
+        const { email, password } = req.body as AuthBody;
+        //    const next = req.query.next || req.cookies?.last_page || '/me';
+        
+        if (!email || !password) {
+            return reply.status(400).send({
+                error: { code: 'VALIDATION_ERROR', message: 'Invalid input: username, email and password required' },
+            });
+        }
+        
+        try {
+            const user = await signup(email, password);
+            
+            const token = generateToken({ 
+                id: user.id, 
+                password_version: user.password_version || 1,
+                token_version: user.token_version || 0
+            });
+            const refreshToken = createRefreshToken(user.id);
+            const csrfToken = randomUUID();
+            
+            reply
+            .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
+            .setCookie('refresh_token', refreshToken, refreshOpts)
+            .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'strict', path: '/' })
+            .status(201)
+            .send({ 
+		user: { 
+            id: user.id, 
+			email: user.email,
+		} 
+	});
+} catch (err: any) {
+    reply.status(409).send({ error: { code: 'EMAIL_OR_USERNAME_TAKEN', message: 'Already exists' } });
+    //	  reply.status(500).send({ error: { code: err.code, message: err.message }});
     }
 });
 
@@ -222,19 +242,36 @@ fastify.post('/auth/signup',{ preHandler: requireGuest }, async (req: any, reply
 fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply) => {
     const { email, password } = req.body as LoginBody;
     if (!email || !password) return reply.status(400).send('Email and password required');
-
+    
     try {
         const user = await login(email, password);
-
+        
         if (user.twofa_enabled) {
             const twofaToken = generate2FAToken(user.id);
             return reply.send({ twofa_required: true, twofa_token: twofaToken });
         }
-
-		return issueSession(user, reply);
-
-    } catch (err: any) {
-        reply.status(401).send(); //{ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' } }
+        
+        const token = generateToken({ 
+            id: user.id, 
+            password_version: user.password_version,
+            token_version: user.token_version
+        });
+        const refreshToken = createRefreshToken(user.id);
+        const csrfToken = randomUUID();
+        
+        reply
+        .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
+        .setCookie('refresh_token', refreshToken, refreshOpts)
+        .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'strict', path: '/' })
+        .status(201)
+        .send({ 
+            user: { 
+                id: user.id, 
+                email: user.email 
+            } 
+            });
+        } catch (err: any) {
+        reply.status(401).send({ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' } });
     }
 });
 
@@ -348,76 +385,143 @@ fastify.post('/auth/set-password', {preHandler: requireAuthAllowNeedsPassword },
 
 // --- CHANGE USER PASSWORD ---
 fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, reply) => {
+    const { old_password, new_password } = req.body as ChangePassword;
+    
+    console.log("Changing password...");
+    // 1. Validaciones básicas
+    if (!old_password || !new_password) {
+        return reply.status(400).send({
+            error: { code: 'VALIDATION_ERROR', message: 'Missing fields' },
+        });
+    }
 
-	const { old_password, new_password } = req.body as ChangePassword;
+    if (new_password.length < 8) {
+        return reply.status(400).send({
+            error: { code: 'WEAK_PASSWORD', message: 'Password too short' },
+        });
+    } else if (new_password === old_password) {
+        return reply.status(400).send({
+            error: { code: 'SAME_PASSWORD', message: 'New password must be different' },
+        });
+    }
 
-	if (!old_password || !new_password) {
-		return reply.status(400).send({
-			error: { 
-				code: 'VALIDATION_ERROR', 
-				message: 'Missing fields' },
-	  	});
-	}
+    const userId = req.user.sub;
+    const db = getDB();
 
-	if (new_password.length < 8) {
-	  	return reply.status(400).send({
-			error: { 
-				code: 'WEAK_PASSWORD', 
-				message: 'Password too short' },
-	  	});
-    	} else if (new_password === old_password) {
-		return reply.status(400).send({
-			error: {
-				code: 'SAME_PASSWORD',
-				message: 'You can not use the same password' },
-		});
-	}
+    // 2. Obtener hash actual
+    const user = await new Promise<DBUser | null>((resolve, reject) => {
+        db.get(
+            `SELECT password_hashed FROM users WHERE id = ?`,
+            [userId],
+            (err, row) => (err ? reject(err) : resolve(row as DBUser | null))
+        );
+    });
+    
+    console.info("Retrieve user:", user);
+    if (!user) return reply.status(404).send();
 
-	const userId = req.user.sub;
+    // 3. ✅ VALIDACIÓN CORRECTA: Comparamos la ANTIGUA contra el Hash
+    const valid = await verifyPassword(old_password, user.password_hashed);
+    
+    if (!valid) {
+        return reply.status(403).send({
+            error: { code: 'CURRENT_PASSWORD_INCORRECT', message: 'Current password is incorrect' },
+        });
+    }
 
-	const db = getDB();
+    // 4. Hashear nueva contraseña
+    const newHash = await hashPassword(new_password);
 
-	const user = await new Promise<DBUser | null>((resolve, reject) => {
-	    	db.get(
-			`SELECT password_hashed, password_version FROM users WHERE id = ?`,
-				[userId],
-			(err, row) => {
-		    		if (err) return reject(err);
-		    		resolve(row as DBUser | null);
-			}
-	    	);
-	});
+    // 5. ✅ UPDATE CORREGIDO: Sintaxis SQL limpia
+    await new Promise<void>((resolve, reject) => {
+        db.run(
+            `UPDATE users
+             SET password_hashed = ?, 
+                 password_version = password_version + 1, 
+                 token_version = token_version + 1
+             WHERE id = ?`,
+            [newHash, userId],
+            err => (err ? reject(err) : resolve())
+        );
+    });
 
-	if (!user) {
-		return reply.status(404).send();
-    	}
+    // 6. Revocar sesión antigua
+    await revokeRefreshTokenById(userId);
 
-	const valid = await verifyPassword(new_password, user.password_hashed);
-    	if (valid === false) {
-	  	return reply.status(403).send({
-			error: {
-		      		code: 'CURRENT_PASSWORD_INCORRECT',
-		      		message: 'Current password is incorrect',
-			},
-	  	});
-    	}
-	
-	const newHash = await hashPassword(new_password);
-
-	await new Promise<void>((resolve, reject) => {
-	  	db.run(
-			`UPDATE users
-	       		SET password_hash = ?, password_version = password_version + 1, token_version + 1,
-	       		WHERE id = ?`,
-				[newHash, userId],
-			err => (err ? reject(err) : resolve())
-	  	);
-    	});
-
-	await revokeRefreshTokenById(userId);
-
-	reply.status(204).send();
+    return reply.status(204).send();
 });
+// fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, reply) => {
+
+//     const { old_password, new_password } = req.body as ChangePassword;
+//     console.log("Changin Password...");
+// 	if (!old_password || !new_password) {
+//         console.log("Old or new password information missing: ", old_password, " | ", new_password);
+// 		return reply.status(400).send({
+// 			error: { 
+//                 code: 'VALIDATION_ERROR', 
+// 				message: 'Missing fields' },
+//             });
+// 	}
+    
+// 	if (new_password.length < 8) {
+// 	  	return reply.status(400).send({
+// 			error: { 
+// 				code: 'WEAK_PASSWORD', 
+// 				message: 'Password too short' },
+// 	  	});
+//     	} else if (new_password === old_password) {
+// 		return reply.status(400).send({
+// 			error: {
+// 				code: 'SAME_PASSWORD',
+// 				message: 'You can not use the same password' },
+// 		});
+// 	}
+
+// 	const userId = req.user.sub;
+
+// 	const db = getDB();
+
+// 	const user = await new Promise<DBUser | null>((resolve, reject) => {
+// 	    	db.get(
+// 			`SELECT password_hashed, password_version FROM users WHERE id = ?`,
+// 				[userId],
+// 			(err, row) => {
+// 		    		if (err) return reject(err);
+// 		    		resolve(row as DBUser | null);
+// 			}
+// 	    	);
+// 	});
+
+// 	if (!user) {
+// 		return reply.status(404).send();
+//     	}
+
+// 	const valid = await verifyPassword(new_password, user.password_hashed);
+//     	if (valid === false) {
+// 	  	return reply.status(403).send({
+// 			error: {
+// 		      		code: 'CURRENT_PASSWORD_INCORRECT',
+// 		      		message: 'Current password is incorrect',
+// 			},
+// 	  	});
+//     	}
+	
+// 	const newHash = await hashPassword(new_password);
+
+// 	await new Promise<void>((resolve, reject) => {
+// 	  	db.run(
+// 			`UPDATE users
+// 	       		SET password_hash = ?, password_version = password_version + 1, token_version + 1
+// 	       		WHERE id = ?`,
+// 				[newHash, userId],
+// 			err => (err ? reject(err) : resolve())
+// 	  	);
+//     	});
+
+// 	await revokeRefreshTokenById(userId);
+
+// 	reply.status(204).send();
+// });
 
 // --- LOGOUT ---
 fastify.post('/auth/logout', {preHandler: requireAuth }, async (req: any, reply) => {

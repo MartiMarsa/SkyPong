@@ -174,35 +174,27 @@ fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
 });
 
 // --- CHANGE PROFILE ---
-fastify.patch('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
-	try {
-		const userId = req.user.sub;
+fastify.patch('/profile/updateme', { preHandler: verifyToken }, async (req, reply) => {
+    try {
+        const userId = req.user.sub;
+        const data = req.body as any;
 
-		if (!userId) {
-		    	return reply.status(401).send();
-	      	}
+        // 1. Actualizamos
+        await updatePlayerInfo(userId, data);
 
-		if (typeof userId !== 'string') {
-			return reply.status(401).send();
-		}
+        // 2. Buscamos el usuario actualizado (usa la función que ya tengas para GET profile)
+        const updatedUser = await getPlayerById(userId); 
 
-		const data = req.body as any;
+        // 3. Devolvemos el objeto completo
+        return reply.send({ 
+            status: 'Player info updated', 
+            user: updatedUser 
+        });
 
-		await updatePlayerInfo(userId, data);
-
-		return reply.send({ status: 'Player info updated' });
-
-
-	} catch (err: any) {
-
-		if (err?.code === 'SQLITE_CONSTRAINT') {
-			return reply.status(409).send();
-	    	}
-
-		fastify.log.error(err);
-		reply.status(500).send();
-	
-	} 
+    } catch (err: any) {
+        fastify.log.error(err);
+        reply.status(500).send();
+    } 
 });
 
 // --- UPDATE USER STATS ---
@@ -286,85 +278,214 @@ fastify.post('/internal/profile/delete', { preHandler: requireServiceAuth }, asy
     	}
 });
 
+
+// Use profile-service volume to persist avatars
+const AVATARS_DIR = process.env.AVATARS_PATH || path.join(process.cwd(), 'uploads', 'avatars');
+
+// Creates service image directory
+(async () => {
+    try {
+        await fs.mkdir(AVATARS_DIR, { recursive: true });
+        console.log(`✅ Avatars directory ready: ${AVATARS_DIR}`);
+    } catch (error) {
+        console.error('Error creating avatars directory:', error);
+    }
+})();
+
 // --- CHANGE PROFILE AVATAR ---
-fastify.post('/profile/me/avatar', { preHandler: verifyToken }, async (req, reply) => {
-			 try {
-			 const userId = req?.user.sub;
+fastify.post('/profile/avatar', { preHandler: verifyToken }, async (req, reply) => {
+    try {
+        const userId = req?.user?.sub;
+        console.info("Trying to upload avatar from", userId);
+        
+        if (!userId || typeof userId !== 'string') {
+            return reply.status(401).send({ error: 'Unauthorized' });
+        }
 
-	 		 if (!userId) {
- 			 return reply.status(401).send();
-	 		 }
+        const file = await req.file();
+        console.info("File:", file);
+        
+        if (!file) {
+            return reply.status(400).send({ error: 'No file uploaded' });
+        }
 
-	 		 if (typeof userId !== 'string') {
- 			 return reply.status(401).send();
-	 		 }
+        if (!ALLOWED_MIME.includes(file.mimetype)) {
+            return reply.status(400).send({
+                error: 'Only PNG, JPG, WebP allowed'
+            });
+        }
 
-	 		 const file = await req.file();
+        const buffer = await file.toBuffer();
 
-	 		 if (!file) {
-	 		 return reply.status(400).send();
-	 		 }
-		
-		if (!ALLOWED_MIME.includes(file.mimetype)) {
-		  	return reply.status(400).send({
-				error: 'Only PNG, JPG, WebP allowed'
-		  	});
-	    	}
-		
-		const buffer = await file.toBuffer();
+        // Valida la imagen
+        let meta;
+        try {
+            meta = await sharp(buffer).metadata();
+        } catch {
+            return reply.status(400).send({
+                error: 1 //Invalid image file
+            });
+        }
 
-		let meta;
+        if (!meta.format || !['png', 'jpeg', 'webp'].includes(meta.format)) {
+            return reply.status(400).send({
+                error: 1 //Invalid image format
+            });
+        }
 
-	    	try {
-		  	meta = await sharp(buffer).metadata();
-	    	} catch {
-		  	return reply.status(400).send({
-				error: 'Invalid image file'
-		  	});
-	    	}
+        // Procesa la imagen
+        const avatar = await sharp(buffer)
+            .resize(256, 256, {
+                fit: 'cover',
+                position: 'center'
+            })
+            .toFormat('webp', {
+                quality: 80
+            })
+            .toBuffer();
 
-	    	if (!meta.format || !['png', 'jpeg', 'webp'].includes(meta.format)) {
-		  	return reply.status(400).send({
-				error: 'Invalid image format'
-		  	});
-	    	}
+        // ✅ CORRECCIÓN: Guarda en el volumen persistente
+        console.log("Uploading Avatar to:", AVATARS_DIR);
+        
+        const filePath = path.join(AVATARS_DIR, `${userId}.webp`);
+        await fs.writeFile(filePath, avatar);
+        
+        console.log("✅ Avatar saved at:", filePath);
 
-		const avatar = await sharp(buffer)
-	  	.resize(256, 256, {
-			fit: 'cover',
-			position: 'center'
-	  	})
-	  	.toFormat('webp', {
-			quality: 80
-	  	})
-	  	.toBuffer();
+        // ✅ URL pública del avatar
+        const avatarUrl = `/api/profile/avatars/${userId}.webp`;
 
+        // Actualiza en la base de datos
+        await updatePlayerAvatar(userId, avatarUrl);
 
-		const uploadDir = path.join(
-		  	process.cwd(),
-		  	'uploads',
-		  	'avatars'
-	    	);
-
-	    	await fs.mkdir(uploadDir, { recursive: true });
-
-	    	const filePath = path.join(uploadDir, `${userId}.webp`);
-
-	    	await fs.writeFile(filePath, avatar);
-
-		const avatarUrl = `/static/avatars/${userId}.webp`;
-
-	    	await updatePlayerAvatar(userId, avatarUrl);
-
-			return reply.status(200).send({
-											success: true,
-											avatar: avatarUrl
-											});
-		 	 } catch (err: any) {
-		 		 reply.send({ error: err.code, message: err.message });
-
-	 		 }
+        return reply.status(200).send({
+            success: true,
+            avatar: avatarUrl
+        });
+        
+    } catch (err: any) {
+        console.error('Error uploading avatar:', err);
+        return reply.status(500).send({ 
+            error: err.code || 'UPLOAD_ERROR', 
+            message: err.message || 'Failed to upload avatar'
+        });
+    }
 });
+
+fastify.get('/profile/avatars/:filename', async (req, reply) => {
+    try {
+        const { filename } = req.params as { filename: string };
+
+        if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
+            return reply.status(400).send({ error: 'Invalid filename' });
+        }
+
+        if (!filename.endsWith('.webp')) {
+            return reply.status(400).send({ error: 'Invalid file type' });
+        }
+
+        const filePath = path.join(AVATARS_DIR, filename);
+
+        try {
+            await fs.access(filePath);
+        } catch {
+            console.warn('Avatar not found:', filePath);
+            
+            return reply.redirect('/api/profile/avatar/default-avatar.png');
+        }
+
+        const fileBuffer = await fs.readFile(filePath);
+        
+        return reply
+            .type('image/webp')
+            .header('Cache-Control', 'public, max-age=3600') // Cache 1 hora
+            .send(fileBuffer);
+            
+    } catch (error) {
+        console.error('Error serving avatar:', error);
+        return reply.status(500).send({ error: 'Failed to serve avatar' });
+    }
+});
+
+// // --- CHANGE PROFILE AVATAR ---
+// fastify.post('/profile/me/avatar', { preHandler: verifyToken }, async (req, reply) => {
+// 			 try {
+// 			 const userId = req?.user.sub;
+//                 console.info("Trying to uplaod avatar from ", userId);
+// 	 		 if (!userId) {
+//                 return reply.status(401).send();
+// 	 		 }
+
+// 	 		 if (typeof userId !== 'string') {
+//                 return reply.status(401).send();
+// 	 		 }
+
+// 	 		 const file = await req.file();
+//              console.info("File: ", file);
+// 	 		 if (!file) {
+//                     return reply.status(400).send();
+//                 }
+		
+// 		if (!ALLOWED_MIME.includes(file.mimetype)) {
+//                 return reply.status(400).send({
+//                     error: 'Only PNG, JPG, WebP allowed'
+//                 });
+// 	    	}
+		
+// 		const buffer = await file.toBuffer();
+
+// 		let meta;
+
+// 	    	try {
+// 		  	meta = await sharp(buffer).metadata();
+// 	    	} catch {
+// 		  	return reply.status(400).send({
+// 				error: 'Invalid image file'
+// 		  	});
+// 	    	}
+
+// 	    	if (!meta.format || !['png', 'jpeg', 'webp'].includes(meta.format)) {
+// 		  	return reply.status(400).send({
+// 				error: 'Invalid image format'
+// 		  	});
+// 	    	}
+
+// 		const avatar = await sharp(buffer)
+// 	  	.resize(256, 256, {
+// 			fit: 'cover',
+// 			position: 'center'
+// 	  	})
+// 	  	.toFormat('webp', {
+// 			quality: 80
+// 	  	})
+// 	  	.toBuffer();
+
+
+// 		const uploadDir = path.join(
+// 		  	process.cwd(),
+// 		  	'uploads',
+// 		  	'avatars'
+// 	    	);
+//             console.log("Uploading Avatar...");
+// 	    	await fs.mkdir(uploadDir, { recursive: true });
+
+// 	    	const filePath = path.join(uploadDir, `${userId}.webp`);
+
+// 	    	await fs.writeFile(filePath, avatar);
+
+// 		const avatarUrl = `/static/avatars/${userId}.webp`;
+
+// 	    	await updatePlayerAvatar(userId, avatarUrl);
+
+// 			return reply.status(200).send({
+// 											success: true,
+// 											avatar: avatarUrl
+// 											});
+// 		 	 } catch (err: any) {
+// 		 		 reply.send({ error: err.code, message: err.message });
+
+// 	 		 }
+// });
 
 fastify.addHook('onRequest', async (request, reply) => {
   console.log(`Recibida petición: ${request.method} ${request.url}`);

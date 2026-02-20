@@ -186,7 +186,7 @@ export async function updatePlayerAvatar(
     avatarUrl && avatarUrl.length
       ? avatarUrl
       : DEFAULT_AVATAR;
-
+  console.info("Updating avatar in DB: ", final);
   await db.run(
     `UPDATE players SET avatarUrl = ? WHERE user_id = ?`,
     [final, userId]
