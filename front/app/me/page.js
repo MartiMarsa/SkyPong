@@ -11,7 +11,7 @@ export default function ProfilePagePublic()
     const t = useTranslation();
     const router = useRouter();
     const [profile, setProfile] = useState(null);
-    const { checkAuth } = useAuth();
+    const { userInfo, checkauth, hasCredentials} = useAuth();
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -25,8 +25,8 @@ export default function ProfilePagePublic()
                         'Content-Type': 'application/json',
                         },
                     });
-                    const isAuthenticated = await checkAuth();
-                    if (!isAuthenticated) 
+                await checkauth();
+                if (!hasCredentials) 
                 {
                     router.push('/login');
                     return;
@@ -44,7 +44,7 @@ export default function ProfilePagePublic()
         };
 
         fetchMyProfile();
-    }, [checkAuth, router]);
+    }, [router]);
     return (
         <main>
             <NavigationAppUI  />
