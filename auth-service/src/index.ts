@@ -25,14 +25,14 @@ const SERVICE_TOKEN = process.env.SERVICE_TOKEN ?? 'secret';
 const cookieOpts = {
     httpOnly: true,
     secure: true,
-    sameSite: 'strict' as const,
+    sameSite: 'none' as const,
     path: '/',
 };
 
 const refreshOpts = {
     httpOnly: true,
     secure: true,
-    sameSite: 'strict' as const,
+    sameSite: 'none' as const,
     path: '/auth/refresh',
     maxAge: 7 * 24 * 3600,
 };
@@ -223,7 +223,7 @@ async function requireAuth(req: any, reply: any) {
             reply
             .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
             .setCookie('refresh_token', refreshToken, refreshOpts)
-            .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'strict', path: '/' })
+            .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'none', path: '/' })
             .status(201)
             .send({ 
 		user: { 
@@ -261,7 +261,7 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
         reply
         .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
         .setCookie('refresh_token', refreshToken, refreshOpts)
-        .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'strict', path: '/' })
+        .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'none', path: '/' })
         .status(201)
         .send({ 
             user: { 
@@ -296,7 +296,7 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
         });
     }
 
-    const userId = req.user.sub;
+    const userId = req.user.id;
     const db = getDB();
 
     // 2. Obtener hash actual
@@ -338,6 +338,8 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
 
     // 6. Revocar sesión antigua
     await revokeRefreshTokenById(userId);
+
+	console.error("Password changed...");
 
     return reply.status(204).send();
 });
