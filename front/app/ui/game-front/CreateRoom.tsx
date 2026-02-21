@@ -1,40 +1,43 @@
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { useTranslation } from '../../hooks/use-translation';
 
 type Props = {
-    onCreate: (roomName: string) => void;
-    onBack: () => void;
-    error?: string | null;
-    isBusy?: boolean;
+  onCreate: (roomName: string) => void;
+  onBack: () => void;
+  error?: string | null;
+  isBusy?: boolean;
 };
 
-export default function CreateRoom({ onCreate, onBack, error = null, isBusy = false }: Props)
-{
-    const { t } = useTranslation();
-    const [roomName, setRoomName] = useState("");
+export default function CreateRoom({ onCreate, onBack, error = null, isBusy = false }: Props) {
+  const { t } = useTranslation();
+  const [roomName, setRoomName] = useState('');
+  const createLabel = t?.gameMode?.remote?.title ?? 'Create room';
+  const backLabel = t?.navigation?.goBack ?? 'Back';
 
-    return (
-        <section className="create-room">
-            <h2>{t.game.createRoom}</h2>
+  const canSubmit = roomName.trim().length > 0 && !isBusy;
 
-            <input
-                value={roomName}
-                onChange={(e) => setRoomName(e.target.value)}
-                placeholder={t.game.roomNamePlaceholder}
-                disabled={isBusy}
-            />
+  return (
+    <section className="create-room">
+      <h2>{createLabel}</h2>
 
-            {error ? <p>{error}</p> : null}
+      <input
+        value={roomName}
+        onChange={(event) => setRoomName(event.target.value)}
+        placeholder="Room name"
+        disabled={isBusy}
+      />
 
-            <button onClick={() => onCreate(roomName)} disabled={isBusy}>
-                {t.game.createRoom}
-            </button>
+      {error ? <p>{error}</p> : null}
 
-            <button onClick={onBack} disabled={isBusy}>
-                {t.common.back}
-            </button>
-        </section>
-    );
+      <button type="button" onClick={() => onCreate(roomName.trim())} disabled={!canSubmit}>
+        {createLabel}
+      </button>
+
+      <button type="button" onClick={onBack} disabled={isBusy}>
+        {backLabel}
+      </button>
+    </section>
+  );
 }

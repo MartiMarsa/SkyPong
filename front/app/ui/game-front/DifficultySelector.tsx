@@ -1,37 +1,37 @@
-"use client";
+'use client';
 
 import { useTranslation } from '../../hooks/use-translation';
 
-export type Difficulty = "EASY" | "MEDIUM" | "HARD";
+export type Difficulty = 'EASY' | 'MEDIUM' | 'HARD';
 
 type Props = {
-    onPick: (difficulty: Difficulty) => void;
-    onBack: () => void;
+  onPick: (difficulty: Difficulty) => void;
+  onBack: () => void;
 };
 
-export default function DifficultySelector({ onPick, onBack }: Props)
-{
-    const { t } = useTranslation();
+export default function DifficultySelector({ onPick, onBack }: Props) {
+  const { t } = useTranslation();
+  const backLabel = t?.navigation?.goBack ?? 'Back';
 
-    return (
-        <section className="difficulty-selector">
-            <h2>{t.game.chooseDifficulty}</h2>
+  return (
+    <section className="difficulty-selector">
+      <h2>{t?.gameMode?.ai?.title ?? '1 vs AI'}</h2>
 
-            <button onClick={() => onPick("EASY")}>
-                {t.game.easy}
-            </button>
+      <button type="button" onClick={() => onPick('EASY')}>
+        Easy
+      </button>
 
-            <button onClick={() => onPick("MEDIUM")}>
-                {t.game.medium}
-            </button>
+      <button type="button" onClick={() => onPick('MEDIUM')}>
+        Medium
+      </button>
 
-            <button onClick={() => onPick("HARD")}>
-                {t.game.difficult}
-            </button>
+      <button type="button" onClick={() => onPick('HARD')}>
+        Hard
+      </button>
 
-            <button onClick={onBack}>
-                {t.common.back}
-            </button>
-        </section>
-    );
+      <button type="button" onClick={onBack}>
+        {backLabel}
+      </button>
+    </section>
+  );
 }
