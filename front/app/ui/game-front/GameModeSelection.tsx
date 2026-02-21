@@ -1,22 +1,28 @@
-import { useTranslation } from '../hooks/use-translation';
+'use client';
 
-export default function GameModeSelection({ onSelectAI, onSelectMultiplayer })
-{
-    const { t } = useTranslation();
+import { useTranslation } from '../../hooks/use-translation';
 
-    return (
-        <section className="game-mode-selection">
-            <h1>{t.game.chooseMode}</h1>
+type Props = {
+  onSelectAI: () => void;
+  onSelectMultiplayer: () => void;
+};
 
-            <div>
-                <button onClick={onSelectAI}>
-                    {t.game.singlePlayer}
-                </button>
+export default function GameModeSelection({ onSelectAI, onSelectMultiplayer }: Props) {
+  const { t } = useTranslation();
 
-                <button onClick={onSelectMultiplayer}>
-                    {t.game.multiplayer}
-                </button>
-            </div>
-        </section>
-    );
+  return (
+    <section className="game-mode-selection">
+      <h1>{t?.gameMode?.chooseMode ?? 'Choose your game mode'}</h1>
+
+      <div>
+        <button type="button" onClick={onSelectAI}>
+          {t?.gameMode?.ai?.title ?? '1 vs AI'}
+        </button>
+
+        <button type="button" onClick={onSelectMultiplayer}>
+          {t?.gameMode?.remote?.title ?? 'Online Multiplayer'}
+        </button>
+      </div>
+    </section>
+  );
 }
