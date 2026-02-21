@@ -348,7 +348,7 @@ export class PvpRoom extends Room<MyGameState> {
             if (this.gameStats) {
                 this.gameStats.setScore(this.state.player1Score, this.state.player2Score);
                 this.gameStats.setEndAt(new Date().toISOString());
-                Logger.info('[GameStats]', this.gameStats.toObject());
+                Logger.info('[GameStats]', this.gameStats.toPayload());
             }
         }
     }

@@ -1,10 +1,15 @@
-// export interface IGameStats {
-//     readonly player1Name: string;
-//     readonly scorePlayer1: number;
-// }
+interface PlayerResult {
+    user_id: string;
+    user_score: number;
+    user_result: 'win' | 'loss';
+}
 
-import { start } from "repl";
-
+interface GameResultPayload {
+    game_id: string;
+    start_at: string;
+    end_at: string;
+    players: [PlayerResult, PlayerResult]
+}
 
 export class GameStats {
 
@@ -57,17 +62,28 @@ export class GameStats {
         this.endAt = endAt;
     }
 
-    toObject() {
-        return {
+    toPayload(): GameResultPayload {
+        let p1Result: 'win' | 'loss' = this.player1Score > this.player2Score ? 'win' : 'loss';
+        let p2Result: 'win' | 'loss' = this.player2Score > this.player1Score ? 'win' : 'loss';
+
+        const payload: GameResultPayload = {
+            game_id: this.gameId,
             start_at: this.startAt,
             end_at: this.endAt,
-            gameId: this.gameId,
-            player1Id: this.player1Id,
-            player2Id: this.player2Id,
-            player1Name: this.player1Name,
-            player2Name: this.player2Name,
-            player1Score: this.player1Score,
-            player2Score: this.player2Score,
-        };
+            players: [
+                {
+                    user_id: this.player1Id,
+                    user_score: this.player1Score,
+                    user_result: p1Result,
+                },
+                {
+                    user_id: this.player2Id,
+                    user_score: this.player2Score,
+                    user_result: p2Result,
+                }
+            ]
+        }
+
+        return payload;
     }
 }
