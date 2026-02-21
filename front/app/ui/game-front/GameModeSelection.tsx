@@ -20,7 +20,7 @@ export default function GameModeSelection({ onSelectAI, onSelectMultiplayer }: P
         </button>
 
         <button type="button" onClick={onSelectMultiplayer}>
-          {t?.gameMode?.remote?.title ?? 'Online Multiplayer'}
+          {'Multiplayer'}
         </button>
       </div>
     </section>
