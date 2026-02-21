@@ -22,6 +22,25 @@ type PlayerResult = {
   result: 'win' | 'loss';
 };
 
+interface PlayerStats {
+    played: number;
+    wins: number;
+    losses: number;
+    winrate: number;
+    rate: number;
+    updated_at: string | null;
+}
+
+interface PlayerInfo {
+    id: string;
+    nickname: string;
+    avatarUrl: string | null;
+    winPhrase: string | null;
+    localization: string;
+    created_at: string;
+    stats: PlayerStats;
+}
+
 type LeaderboardRow = {
   user_id: string;
 
@@ -67,15 +86,56 @@ function calculateRate(
   return Math.max(final, 0);
 }
 
+// --- UTILS FOR DB ---
+const PROFILE_QUERY = `
+  SELECT
+    p.user_id,
+    p.nickname,
+    p.avatarUrl,
+    p.winPhrase,
+    p.localization,
+    p.created_at,
+
+    s.played,
+    s.wins,
+    s.losses,
+    s.winrate,
+    s.rate,
+    s.updated_at AS stats_updated_at
+  FROM players p
+  LEFT JOIN player_stats s ON s.user_id = p.user_id
+  WHERE p.user_id = ?
+    AND p.deleted = 0
+  LIMIT 1
+`;
+
 // --------------------------------------------------
 // GET PLAYER
 // --------------------------------------------------
 
-export async function getPlayerById(userId: string) {
-  return db.get(
-    `SELECT * FROM players WHERE user_id = ?`,
-    [userId]
-  );
+export async function getPlayerById(userId: string): Promise<PlayerInfo | null> {
+
+	const row = await db.get<any>(PROFILE_QUERY, [userId]);
+	
+	if (!row) return null;
+
+  	return {
+			id: row.user_id,
+			nickname: row.nickname,
+			avatarUrl: row.avatarUrl ?? null,
+			winPhrase: row.winPhrase ?? null,
+			localization: row.localization,
+			created_at: row.created_at,
+
+			stats: {
+					played: row.played ?? 0,
+					wins: row.wins ?? 0,
+			  		losses: row.losses ?? 0,
+			  		winrate: row.winrate ?? 0,
+			  		rate: row.rate ?? 0,
+			  		updated_at: row.stats_updated_at ?? null,
+			},
+  	};
 }
 
 // --------------------------------------------------
@@ -358,53 +418,28 @@ export async function getLeaderboard(lastSync: string) {
 // PUBLIC PROFILE
 // --------------------------------------------------
 
-export async function getUserPublicProfile(
-  user_id: string
-) {
+export async function getUserPublicProfile(userId: string): Promise<PlayerInfo | null> {
 
-  const user = await db.get<{
-    user_id: string;
-    nickname: string;
-    avatarUrl: string;
-    winPhrase: string;
-  }>(
-    `
-    SELECT user_id, nickname, avatarUrl, winPhrase
-    FROM players
-    WHERE user_id = ?
-    `,
-    [user_id]
-  );
+	const row = await db.get<any>(PROFILE_QUERY, [userId]);
 
-  if (!user) return null;
+    if (!row) return null;
 
-  const stat = await db.get<{
-    played: number;
-    wins: number;
-    losses: number;
-    winrate: number;
-    rate: number;
-  }>(
-    `
-    SELECT played, wins, losses, winrate, rate
-    FROM player_stats
-    WHERE user_id = ?
-    `,
-    [user.user_id]
-  );
+    return {
+            id: row.user_id,
+            nickname: row.nickname,
+            avatarUrl: row.avatarUrl ?? null,
+            winPhrase: row.winPhrase ?? null,
+            localization: row.localization,
+            created_at: row.created_at,
 
-  return {
-    nickname: user.nickname,
-    avatarUrl: user.avatarUrl,
-    winPhrase: user.winPhrase,
+            stats: {
+                    played: row.played ?? 0,
+                    wins: row.wins ?? 0,
+                    losses: row.losses ?? 0,
+                    winrate: row.winrate ?? 0,
+                    rate: row.rate ?? 0,
+					updated_at: row.stats_updated_at ?? null,
+            },
+    };
 
-    stats: stat ?? {
-      played: 0,
-      wins: 0,
-      losses: 0,
-      winrate: 0,
-      rate: 0
-    }
-  };
 }
-
