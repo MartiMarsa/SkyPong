@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as Colyseus from 'colyseus.js';
 import { SERVER_CONNECTION } from '../../config';
-
-type GameMode = 'ai-easy' | 'ai-medium' | 'ai-hard' | '2p-local' | '2p-online';
+import { GameMode, GameSessionConfig } from '../../types/GameSessionConfig';
+import { encodeConfig } from '../../utils/configDecoder';
 
 interface RoomListing {
     roomId: string;
@@ -193,6 +193,7 @@ const StartPage = () => {
     const [availableRooms, setAvailableRooms] = useState<RoomListing[]>([]);
     const [lobbyError, setLobbyError] = useState<string | null>(null);
     const [lobbyLoading, setLobbyLoading] = useState(false);
+    const [scoreToWin, setScoreToWin] = useState(5);
     const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const colyseusClientRef = useRef<Colyseus.Client | null>(null);
 
@@ -243,41 +244,55 @@ const StartPage = () => {
         setLobbyPhase('name');
         setAvailableRooms([]);
         setLobbyError(null);
+        setScoreToWin(5);
+    };
+
+    const launchGame = (config: GameSessionConfig) => {
+        const encoded = encodeConfig(config);
+        navigate(`/launch?config=${encoded}`);
     };
 
     const handleStartGame = () => {
         if (!selectedMode) return;
         const p1Name = player1Name.trim() || 'Player 1';
         const p2Name = selectedMode === '2p-local' ? (player2Name.trim() || 'Player 2') : selectedMode === '2p-online' ? '' : 'AI';
-        const state: any = { mode: selectedMode, player1Name: p1Name, player2Name: p2Name, player1Color };
-        if (selectedMode === '2p-local') state.player2Color = player2Color;
-        navigate('/canvas', { state });
+        const config: GameSessionConfig = {
+            // Placeholder until frontend user/session wiring is available
+            playerId: 'frontend-placeholder-player',
+            mode: selectedMode,
+            scoreToWin,
+            player1Name: p1Name,
+            player2Name: p2Name,
+            player1Color,
+            ...(selectedMode === '2p-local' ? { player2Color } : {}),
+        };
+        launchGame(config);
     };
 
     const handleEnterLobby = () => setLobbyPhase('lobby');
 
     const handleCreateRoom = () => {
-        navigate('/canvas', {
-            state: {
-                mode: '2p-online',
-                player1Name: player1Name.trim() || 'Player 1',
-                player2Name: '',
-                player1Color,
-                pvpAction: 'create',
-            }
+        launchGame({
+            playerId: 'frontend-placeholder-player',
+            mode: '2p-online',
+            scoreToWin,
+            player1Name: player1Name.trim() || 'Player 1',
+            player2Name: '',
+            player1Color,
+            pvpAction: 'create',
         });
     };
 
     const handleJoinRoom = (roomId: string) => {
-        navigate('/canvas', {
-            state: {
-                mode: '2p-online',
-                player1Name: player1Name.trim() || 'Player 1',
-                player2Name: '',
-                player1Color,
-                pvpRoomId: roomId,
-                pvpAction: 'join',
-            }
+        launchGame({
+            playerId: 'frontend-placeholder-player',
+            mode: '2p-online',
+            scoreToWin,
+            player1Name: player1Name.trim() || 'Player 1',
+            player2Name: '',
+            player1Color,
+            pvpRoomId: roomId,
+            pvpAction: 'join',
         });
     };
 
@@ -303,6 +318,20 @@ const StartPage = () => {
                         />
                     </div>
                     <ColorPicker selectedColor={player1Color} onColorSelect={setPlayer1Color} label='Choose Your Color' />
+                    <div style={{ width: '100%' }}>
+                        <label style={STYLES.label}>Score to win</label>
+                        <select
+                            value={scoreToWin}
+                            onChange={(e) => setScoreToWin(Number(e.target.value))}
+                            style={STYLES.input}
+                        >
+                            <option value={3}>3</option>
+                            <option value={5}>5</option>
+                            <option value={7}>7</option>
+                            <option value={9}>9</option>
+                            <option value={11}>11</option>
+                        </select>
+                    </div>
                     <div style={{ display: 'flex', gap: '12px', marginTop: '20px', width: '100%' }}>
                         <button onClick={handleBackToMenu} style={STYLES.backButton}>Back</button>
                         <GameButton onClick={handleEnterLobby} color='#9C27B0' hoverColor='rgba(156, 39, 176, 0.4)'>Enter Lobby</GameButton>
@@ -399,6 +428,20 @@ const StartPage = () => {
                             Opponent: AI ({selectedMode.replace('ai-', '').toUpperCase()})
                         </div>
                     )}
+                    <div style={{ width: '100%' }}>
+                        <label style={STYLES.label}>Score to win</label>
+                        <select
+                            value={scoreToWin}
+                            onChange={(e) => setScoreToWin(Number(e.target.value))}
+                            style={STYLES.input}
+                        >
+                            <option value={3}>3</option>
+                            <option value={5}>5</option>
+                            <option value={7}>7</option>
+                            <option value={9}>9</option>
+                            <option value={11}>11</option>
+                        </select>
+                    </div>
                     <div style={{ display: 'flex', gap: '12px', marginTop: '20px', width: '100%' }}>
                         <button onClick={handleBackToMenu} style={STYLES.backButton}>Back</button>
                         <GameButton onClick={handleStartGame} color='#4CAF50' hoverColor='rgba(76, 175, 80, 0.4)'>Start Game</GameButton>

@@ -58,6 +58,8 @@ export class Game {
         onBackToMenu?: () => void,
         pvpRoomId?: string,
         pvpAction?: 'create' | 'join',
+        scoreToWin: number = 5,
+        playerId?: string,
     ) => {
         if (gameInstanceLock) return null;
         gameInstanceLock = true;
@@ -123,16 +125,18 @@ export class Game {
                     playerName: player1Name,
                     player2Name: player2Name,
                     playerColor: player1Color,
+                    scoreToWin,
+                    playerId,
                 };
 
                 if (this._mode === '2p-online') {
                     if (this._pvpAction === 'join' && this._pvpRoomId) {
-                        room = await client.joinById<GameState>(this._pvpRoomId, { playerName: player1Name, playerColor: player1Color });
+                        room = await client.joinById<GameState>(this._pvpRoomId, { playerName: player1Name, playerColor: player1Color, scoreToWin, playerId });
                     } else {
-                        room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.PVP_ROOM, { playerName: player1Name, playerColor: player1Color });
+                        room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.PVP_ROOM, { playerName: player1Name, playerColor: player1Color, scoreToWin, playerId });
                     }
                 } else if (this._mode === '2p-local') {
-                    room = await client.joinOrCreate<GameState>(SERVER_CONNECTION.ROOMS.GAME_ROOM, { playerName: player1Name, playerColor: player1Color });
+                    room = await client.joinOrCreate<GameState>(SERVER_CONNECTION.ROOMS.GAME_ROOM, { playerName: player1Name, playerColor: player1Color, scoreToWin, playerId });
                 } else if (this._mode.startsWith('ai-')) {
                     room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.AI_GAME_ROOM, { ...joinOptions, difficulty: this._mode.replace('ai-', '') });
                 } else {
@@ -504,7 +508,9 @@ export const startGame = (
     onBackToMenu?: () => void,
     pvpRoomId?: string,
     pvpAction?: 'create' | 'join',
+    scoreToWin: number = 5,
+    playerId?: string,
 ) => {
     const game = new Game();
-    return game.startGame(canvas, mode, player1Name, player2Name, player1Color, player2Color, onGameReady, onBackToMenu, pvpRoomId, pvpAction);
+    return game.startGame(canvas, mode, player1Name, player2Name, player1Color, player2Color, onGameReady, onBackToMenu, pvpRoomId, pvpAction, scoreToWin, playerId);
 };
