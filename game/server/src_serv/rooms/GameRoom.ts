@@ -44,7 +44,7 @@ export class GameRoom extends Room<MyGameState> {
         this.serverPaddle = new ServerPaddle(this.scene, this.physicsEngine, false);
         this.serverPaddle2 = new ServerPaddle(this.scene, this.physicsEngine, true);
         this.inputManager = new InputManager();
-        
+
         // Do NOT launch ball immediately - wait for client "launch" message
         this.ballLaunched = false;
 
@@ -310,6 +310,9 @@ export class GameRoom extends Room<MyGameState> {
     }
 
     onJoin(client: Client, options: any): void | Promise<any> {
+
+        const isLocal2P = options.player2Name && options.player2Name !== '';
+
         // Assign player slots
         if (!this.player1Client) {
             this.player1Client = client;
@@ -317,6 +320,15 @@ export class GameRoom extends Room<MyGameState> {
             this.state.player1Name = options.playerName || "Player 1";
             this.state.player1Color = options.playerColor || "#00A6ED";
             Logger.info(`Player 1 joined: ${client.sessionId} (${this.state.player1Name}, color: ${this.state.player1Color})`);
+
+            // local 2P mode
+            if (isLocal2P) {
+                this.state.player2Id = "local_p2";
+                this.state.player2Name = options.player2Name;
+                this.state.player2Color = options.player2Color || "#F6511D";
+                Logger.info(`Local Player 2 configured: ${this.state.player2Name}, color: ${this.state.player2Color}`);
+                this.state.gameStarted = true;
+            }
         } else if (!this.player2Client) {
             this.player2Client = client;
             this.state.player2Id = client.sessionId;

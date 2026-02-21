@@ -7,6 +7,7 @@ interface LoadingOverlayProps {
     fadingOut?: boolean;
 }
 
+// FRONT loading screen setup
 const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ message = 'Loading...', error, visible, fadingOut = false }) => {
     console.log('[LoadingOverlay] Render - visible:', visible, 'fadingOut:', fadingOut, 'message:', message);
 

@@ -1,6 +1,6 @@
 /**
  * Central re-export for all common constants
- * Import from this file for convenience: import { GMCN, PHYSICS, AI_DIFFICULTY } from '@repong/common/constants'
+ * Import from this file for convenience: import { GMCN, PHYSICS, AI_DIFFICULTY } from '@skypong/common/constants'
  */
 export * from "./GameConstants.js";
 export * from "./PhysicsConstants.js";

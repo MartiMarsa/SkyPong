@@ -16,6 +16,7 @@ import { GMCN, INTERPOLATION, NETWORK } from '@skypong/common/constants';
 import { GameUIManager } from '../ui/GameUIManager';
 import { SERVER_CONNECTION, VISUAL, CLIENT_TIMING, RENDERING, CAMERA } from '../config';
 import { adjustCamera } from '../utils/Camera';
+import { GameSessionConfig } from '../types/GameSessionConfig';
 
 interface GameState {
     ball: any; paddle: any; paddle2: any;
@@ -25,6 +26,7 @@ interface GameState {
     player1Score: number; player2Score: number;
     winningScore: number;
     winner: string; gameOver: boolean; gameStarted: boolean;
+    player2Joined: boolean;
 }
 
 // Module-level lock to prevent duplicate game instances (React StrictMode)
@@ -37,36 +39,32 @@ export class Game {
     private _room: Colyseus.Room<GameState> | null = null;
     private _renderObserver: Observer<Scene> | null = null;
     private _renderObservable: any = null;
-    private _mode: string = '2p-local';
+    private _config: GameSessionConfig | null = null;
     private _onGameReady: ((onLaunch: () => void, isWaitingForOpponent?: boolean) => void) | null = null;
     private _onBackToMenu: (() => void) | null = null;
     private _gui: GameUIManager | null = null;
     private _isGameOver: boolean = false;
     private _intervals: number[] = [];
     private _isPlayer2: boolean = false;
-    private _pvpRoomId: string | undefined = undefined;
-    private _pvpAction: 'create' | 'join' | undefined = undefined;
 
     startGame = (
         canvas: HTMLCanvasElement,
-        mode = '2p-local',
-        player1Name = 'Player 1',
-        player2Name = 'Player 2',
-        player1Color = '#00A6ED',
-        player2Color = '#F6511D',
+        config: GameSessionConfig,
         onGameReady?: (onLaunch: () => void, isWaitingForOpponent?: boolean) => void,
         onBackToMenu?: () => void,
-        pvpRoomId?: string,
-        pvpAction?: 'create' | 'join',
     ) => {
         if (gameInstanceLock) return null;
         gameInstanceLock = true;
 
-        this._mode = mode;
+        this._config = config;
         this._onGameReady = onGameReady || null;
         this._onBackToMenu = onBackToMenu || null;
-        this._pvpRoomId = pvpRoomId;
-        this._pvpAction = pvpAction;
+
+        const player1Name = config.playerName || 'Player 1';
+        const player2Name = config.player2Name || 'Player 2';
+        const player1Color = config.playerColor || '#00A6ED';
+        const player2Color = config.player2Color || '#F6511D';
+        const { gameMode } = config;
         const engineSetup = new EngineSetup(canvas);
         this._engineSetup = engineSetup;
         const engine = engineSetup.engine;
@@ -106,8 +104,9 @@ export class Game {
             });
             this._gui = gui;
             // For PvP modes, show "Waiting..." for Player 2 until they join
-            const isPvPMode = this._mode === '2p-local' || this._mode === '2p-online';
-            const initialPlayer2Name = isPvPMode ? 'Waiting...' : player2Name;
+            const isPvPMode = gameMode === 'local-2p' || gameMode === 'online-create' || gameMode === 'online-join';
+            const isAIMode = gameMode.startsWith('ai-');
+            const initialPlayer2Name = isPvPMode ? 'Waiting...' : (isAIMode ? 'AI' : player2Name);
             gui.showGameHUD(player1Name, initialPlayer2Name);
 
             shadowGenerator.addShadowCaster(ball.mesh);
@@ -123,20 +122,31 @@ export class Game {
                     playerName: player1Name,
                     player2Name: player2Name,
                     playerColor: player1Color,
+                    player2Color: player2Color,
                 };
 
-                if (this._mode === '2p-online') {
-                    if (this._pvpAction === 'join' && this._pvpRoomId) {
-                        room = await client.joinById<GameState>(this._pvpRoomId, { playerName: player1Name, playerColor: player1Color });
-                    } else {
+                switch (gameMode) {
+                    case 'online-join':
+                        if (config.roomId) {
+                            room = await client.joinById<GameState>(config.roomId, { playerName: player1Name, playerColor: player1Color });
+                        } else {
+                            throw new Error('roomId is required for online-join mode');
+                        }
+                        break;
+                    case 'online-create':
                         room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.PVP_ROOM, { playerName: player1Name, playerColor: player1Color });
-                    }
-                } else if (this._mode === '2p-local') {
-                    room = await client.joinOrCreate<GameState>(SERVER_CONNECTION.ROOMS.GAME_ROOM, { playerName: player1Name, playerColor: player1Color });
-                } else if (this._mode.startsWith('ai-')) {
-                    room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.AI_GAME_ROOM, { ...joinOptions, difficulty: this._mode.replace('ai-', '') });
-                } else {
-                    room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.AI_GAME_ROOM, { ...joinOptions, difficulty: 'easy' });
+                        break;
+                    case 'local-2p':
+                        room = await client.joinOrCreate<GameState>(SERVER_CONNECTION.ROOMS.GAME_ROOM, joinOptions);
+                        break;
+                    case 'ai-easy':
+                    case 'ai-medium':
+                    case 'ai-hard':
+                        room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.AI_GAME_ROOM, { ...joinOptions, difficulty: gameMode.replace('ai-', '') });
+                        break;
+                    default:
+                        // Fallback to AI easy
+                        room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.AI_GAME_ROOM, { ...joinOptions, difficulty: 'easy' });
                 }
 
                 this._room = room;
@@ -145,46 +155,61 @@ export class Game {
 
                 const checkPlayerAssignment = () => {
                     if (cameraSetupComplete) return;
-                    
+
                     const cam = engineSetup.camera;
                     const mesh = table.mesh;
                     const center = mesh.getBoundingInfo().boundingBox.centerWorld;
-                    
+
                     this._isPlayer2 = room.sessionId === room.state.player2Id;
                     engineSetup.setIsPlayer2(this._isPlayer2);
                     adjustCamera(cam, mesh, engineSetup.engine);
-                    
+
                     if (this._isPlayer2) {
                         cam.position = new Vector3(cam.position.x, cam.position.y, -cam.position.z);
                     }
                     cam.setTarget(center);
                     cameraSetupComplete = true;
                 };
-
+                
                 const updatePlayerColorsFromState = () => {
                     if (!room.state || !this._gui) return;
-                    
-                    const p1Color = room.state.player1Color || '#00A6ED';
-                    const p2Color = room.state.player2Color || '#F6511D';
+
+                    // For online PvP, wait until player2 has joined (both colors are set)
+                    // For local 2P, colors are available immediately from joinOptions
+                    const isOnlineMode = gameMode === 'online-create' || gameMode === 'online-join';
+                    if (isOnlineMode && !room.state.player2Joined) {
+                        return;
+                    }
+
+                    // Use room state colors with fallback to config colors
+                    const p1Color = room.state.player1Color || player1Color;
+                    const p2Color = room.state.player2Color || player2Color;
                     const isPlayer2 = room.sessionId === room.state.player2Id;
-                    
+
+
+
                     this._gui.hud.updatePlayerColors(isPlayer2 ? p2Color : p1Color, isPlayer2 ? p1Color : p2Color);
-                    
+
                     [paddle, paddle2].forEach((p, i) => {
                         const color = i === 0 ? p1Color : p2Color;
                         const mat = p.mesh.material as any;
+
                         if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
-                        if (mat?.tintColor) mat.tintColor = Color3.FromHexString(color);
+                        if (mat?.subSurface?.tintColor) mat.subSurface.tintColor = Color3.FromHexString(color);
                     });
                 };
 
                 if (room.state.player1Id || room.state.player2Id) checkPlayerAssignment();
                 ['player2Id', 'player1Id'].forEach(prop =>
-                    (room.state as any).listen(prop, checkPlayerAssignment)
+                    (room.state as any).listen(prop, () => {
+                        checkPlayerAssignment();
+                        updatePlayerColorsFromState();
+                    })
                 );
                 ['player1Color', 'player2Color'].forEach(prop =>
                     (room.state as any).listen(prop, updatePlayerColorsFromState)
                 );
+                (room.state as any).listen('player2Joined', updatePlayerColorsFromState);
 
                 // Handle room expiration
                 room.onMessage('room_expired', () => {
@@ -195,111 +220,115 @@ export class Game {
                 });
 
                 // For PvP modes, update HUD with actual player names from server state
-                    // and wait for second player before starting countdown
-                    const isPvPMode = this._mode === '2p-local' || this._mode === '2p-online';
-                    if (isPvPMode) {
-                        // Update HUD with actual names and colors from server
-                        if (this._gui && room.state) {
-                            const p1Name = room.state.player1Name || player1Name;
-                            const p2Name = room.state.player2Name || 'Waiting...';
-                            let bottomLabel = p1Name;
-                            let topLabel = p2Name;
-                            
-                            // Mark "You" player
-                            if (room.sessionId === room.state.player2Id) {
-                                bottomLabel = p2Name ? `${p2Name} (You)` : 'Waiting...';
-                                topLabel = p1Name;
-                            }
-                            
-                            this._gui.hud.updatePlayerNames(bottomLabel, topLabel);
-                            
-                            // Apply colors from state (this will be called again when colors change via listeners)
-                            updatePlayerColorsFromState();
+                // and wait for second player before starting countdown
+                const isOnlineMode = gameMode === 'online-create' || gameMode === 'online-join';
+                if (isPvPMode) {
+                    // Update HUD with actual names and colors from server
+                    if (this._gui && room.state) {
+                        const p1Name = room.state.player1Name || player1Name;
+                        const p2Name = room.state.player2Name || 'Waiting...';
+                        let bottomLabel = p1Name;
+                        let topLabel = p2Name;
+
+                        // Mark "You" player
+                        if (room.sessionId === room.state.player2Id) {
+                            bottomLabel = p2Name || 'Waiting...';
+                            topLabel = p1Name;
                         }
 
-                        // Store the countdown callback to call when both are ready
-                        let countdownCallback: (() => void) | null = null;
-                        
-                        // Callback for when both clients/network are ready, before countdown
-                        const signalGameReady = () => {
-                            // For online PvP, send "client_ready" message to server
-                            if (this._mode === '2p-online') {
-                                room.send('client_ready', {});
-                            }
-                            
-                            // Check if game has already started
-                            if (room.state?.gameStarted) {
-                                // Both clients are ready, fade out and start countdown
-                                if (this._onGameReady) {
-                                    const callback = this._onGameReady;
-                                    this._onGameReady = null;
-                                    callback(() => this._startCountdown(room), false);
-                                } else {
-                                    this._startCountdown(room);
-                                }
-                            } else {
-                                // Signal that we're waiting for opponent
-                                if (this._onGameReady) {
-                                    countdownCallback = () => this._startCountdown(room);
-                                    this._onGameReady(countdownCallback, true);
-                                }
-                            }
-                        };
+                        this._gui.hud.updatePlayerNames(bottomLabel, topLabel);
 
-                        // For online PvP, signal ready immediately after assets load
-                        if (this._mode === '2p-online') {
-                            setTimeout(() => signalGameReady(), 100);
-                        } else {
-                            // For 2p-local, show waiting message
-                            if (this._gui) {
-                                this._gui.hud.updateCountdown('Waiting for opponent...');
-                            }
+                        // Apply colors from state (this will be called again when colors change via listeners)
+                        updatePlayerColorsFromState();
+                    }
+
+                    // Store the countdown callback to call when both are ready
+                    let countdownCallback: (() => void) | null = null;
+
+                    // Callback for when both clients/network are ready, before countdown
+                    const signalGameReady = () => {
+                        // For online PvP, send "client_ready" message to server
+                        if (isOnlineMode) {
+                            room.send('client_ready', {});
                         }
-                        
-                        // Listen for gameStarted to become true (when both clients are ready)
-                        (room.state as any).listen('gameStarted', (value: boolean) => {
-                            if (value && countdownCallback && this._onGameReady) {
-                                // Both clients are ready, fade out and start countdown
+
+                        // Check if game has already started
+                        if (room.state?.gameStarted) {
+                            // Both clients are ready, fade out and start countdown
+                            if (this._onGameReady) {
                                 const callback = this._onGameReady;
                                 this._onGameReady = null;
-                                callback(countdownCallback, false);
+                                callback(() => this._startCountdown(room), false);
+                            } else {
+                                this._startCountdown(room);
                             }
-                        });
-                        
-                        // Check initial state in case gameStarted is already true
-                        if (room.state?.gameStarted && countdownCallback && this._onGameReady) {
+                        } else {
+                            // Signal that we're waiting for opponent
+                            if (this._onGameReady) {
+                                countdownCallback = () => this._startCountdown(room);
+                                this._onGameReady(countdownCallback, true);
+                            }
+                        }
+                    };
+
+                    // For online PvP, signal ready immediately after assets load
+                    if (isOnlineMode) {
+                        scene.executeWhenReady(() => signalGameReady());
+                    } else {
+                        // For local-2p, show waiting message
+                        if (this._gui) {
+                            scene.executeWhenReady(() => signalGameReady());
+                        }
+                    }
+
+                    // Listen for gameStarted to become true (when both clients are ready)
+                    (room.state as any).listen('gameStarted', (value: boolean) => {
+                        if (value && countdownCallback && this._onGameReady) {
+                            // Both clients are ready, fade out and start countdown
                             const callback = this._onGameReady;
                             this._onGameReady = null;
                             callback(countdownCallback, false);
                         }
+                    });
+
+                    // Check initial state in case gameStarted is already true
+                    if (room.state?.gameStarted && countdownCallback && this._onGameReady) {
+                        const callback = this._onGameReady;
+                        this._onGameReady = null;
+                        callback(countdownCallback, false);
+                    }
                     // Update Player 2's name when they join
                     (room.state as any).listen('player2Name', (value: string) => {
                         if (value && this._gui) {
                             let bottomLabel = room.state.player1Name;
                             let topLabel = value;
                             if (room.sessionId === room.state.player1Id) {
-                                bottomLabel = `${room.state.player1Name} (You)`;
+                                bottomLabel = `${room.state.player1Name}`;
                                 topLabel = value;
                             } else if (room.sessionId === room.state.player2Id) {
-                                bottomLabel = `${value} (You)`;
+                                bottomLabel = value;
                                 topLabel = room.state.player1Name;
                             }
                             this._gui.hud.updatePlayerNames(bottomLabel, topLabel);
                         }
                     });
                 } else {
+                    // AI mode: update colors from state with fallback to config
                     if (this._gui && room.state) {
                         const p1Color = room.state.player1Color || player1Color;
-                        const p2Color = room.state.player2Color || player2Color;
+                        const p2Color = room.state.player2Color || player2Color || '#666666';
                         this._gui.hud.updatePlayerColors(p1Color, p2Color);
-                        
+
                         [paddle, paddle2].forEach((p, i) => {
                             const color = i === 0 ? p1Color : p2Color;
-                            const mat = p.mesh.material as any;
-                            if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
+                            if (color) {
+                                const mat = p.mesh.material as any;
+                                if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
+                                if (mat?.subSurface?.tintColor) mat.subSurface.tintColor = Color3.FromHexString(color);
+                            }
                         });
                     }
-                    
+
                     const signalGameReady = () => {
                         if (this._onGameReady) {
                             const cb = this._onGameReady;
@@ -309,8 +338,8 @@ export class Game {
                             this._startCountdown(room);
                         }
                     };
-                    room.state ? setTimeout(signalGameReady, 100) :
-                        room.onStateChange.once(() => setTimeout(signalGameReady, 100));
+                    // Wait for scene to be fully loaded with textures before signaling ready
+                    scene.executeWhenReady(() => signalGameReady());
                 }
 
 
@@ -412,7 +441,7 @@ export class Game {
                     );
 
                     if (++inputSendCounter >= NETWORK.SYNC.INPUT_SEND_INTERVAL_FRAMES && !this._isGameOver) {
-                        room.send('input', this._mode === '2p-online'
+                        room.send('input', isOnlineMode
                             ? { a: !!input.inputMap['a'], d: !!input.inputMap['d'] }
                             : input.inputMap);
                         inputSendCounter = 0;
@@ -495,16 +524,10 @@ export class Game {
 
 export const startGame = (
     canvas: HTMLCanvasElement,
-    mode: string = '2p-local',
-    player1Name: string = 'Player 1',
-    player2Name: string = 'Player 2',
-    player1Color: string = '#00A6ED',
-    player2Color: string = '#F6511D',
+    config: GameSessionConfig,
     onGameReady?: (onLaunch: () => void, isWaitingForOpponent?: boolean) => void,
     onBackToMenu?: () => void,
-    pvpRoomId?: string,
-    pvpAction?: 'create' | 'join',
 ) => {
     const game = new Game();
-    return game.startGame(canvas, mode, player1Name, player2Name, player1Color, player2Color, onGameReady, onBackToMenu, pvpRoomId, pvpAction);
+    return game.startGame(canvas, config, onGameReady, onBackToMenu);
 };
