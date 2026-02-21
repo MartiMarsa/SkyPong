@@ -146,8 +146,37 @@ fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { p
 });
 
 
-// --- PRIVATE PROFILE ---
-fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
+// --- PRIVATE PROFILE OTHER PLAYER ---
+fastify.get<{Params: {id: string}}>('/profile/me/:id', { preHandler: verifyToken }, async (req, reply) => {
+	try {
+	      	const userId = req.params.id;
+
+	      	if (!userId) {
+		    	return reply.status(401).send();
+	      	}
+
+		if (typeof userId !== 'string') {
+			return reply.status(401).send();
+		}
+		
+		let player = await getPlayerById(userId);
+
+	  // create new player if it was authorized (signup), but no profile in database
+		if (!player) {
+      			player = await createPlayer(userId);
+      		}
+
+		return reply.send(player);
+	} catch (err: any) {
+
+		fastify.log.error(err);
+		reply.status(500).send();
+	  }
+});
+
+
+// --- PRIVATE PROFILE USER ---
+fastify.get('/profile/me/', { preHandler: verifyToken }, async (req, reply) => {
 	try {
 	      	const userId = req.user.sub;
 

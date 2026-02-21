@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext({
   user: null,
-  avartar: "/images/default-avatar.png",
+  avartarURL: "/avatars/default-avatar.png",
   loading: true,
   hasCredentials: false,
   logout: async () => {},
@@ -21,8 +21,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = useCallback(async () => {
     try {
+    const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf_token='))
+        ?.split('=')[1];
+
       const res = await fetch('/api/auth/verify', { 
-        credentials: 'include' 
+        credentials: 'include', 
+        headers: {
+          'x-csrf-token': csrfToken || '', // Requerido por tu middleware preHandler
+        },
       });
       console.log("Response:", res)
       if (res.ok) {
