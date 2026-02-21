@@ -349,7 +349,7 @@ export class PvpRoom extends Room<MyGameState> {
                 this.gameStats.setScore(this.state.player1Score, this.state.player2Score);
                 this.gameStats.setEndAt(new Date().toISOString());
                 Logger.info('[GameStats]', this.gameStats.toPayload());
-                this.gameStats.send();
+                this.gameStats.send(); // ILYA
             }
         }
     }
