@@ -22,34 +22,14 @@ const CanvasPage = () => {
     const [fadingOut, setFadingOut] = useState(false);
 
     // Get game config from navigation state
-    const gameState = location.state as GameSessionConfig | null;
-
-    useEffect(() => {
-        if (!gameState) {
-            navigate('/', { replace: true });
-        }
-    }, [gameState, navigate]);
-
-    if (!gameState) {
-        return null;
-    }
-
-    const mode = gameState.mode;
-    const playerId = gameState.playerId;
-    const scoreToWin = gameState.scoreToWin;
-    const player1Name = gameState.player1Name || 'Player 1';
-    const player2Name = gameState.player2Name || (mode.startsWith('ai-') ? 'AI' : 'Player 2');
-    const player1Color = gameState.player1Color || '#00A6ED';
-    const player2Color = gameState.player2Color || '#F6511D';
-    const pvpRoomId = gameState.pvpRoomId;
-    const pvpAction = gameState.pvpAction;
+    const config = location.state as GameSessionConfig | null;
 
     useEffect(() => {
         setIsLoading(true);
         setFadingOut(false);
         setLoadingMsg('Loading...');
         setErrorMsg(null);
-    }, [isTestScene, mode, player1Name, player2Name]);
+    }, [isTestScene, config]);
 
     useEffect(() => {
         if (!canvasRef.current) {
@@ -89,20 +69,32 @@ const CanvasPage = () => {
                 handleError('Failed to load visualization.');
             }
         } else {
+            // Start game with config - GUI is now handled by Babylon.js
+            if (!config) {
+                handleError('No game configuration provided');
+                setTimeout(() => navigate('/'), 2000);
+                return;
+            }
+
+            const isOnlineMode = config.gameMode === 'online-create' || config.gameMode === 'online-join';
+
+            // FRONT this is where the game actually starts
             dispose = startGame(
                 canvasRef.current,
-                mode,
-                player1Name,
-                player2Name,
-                player1Color,
-                player2Color,
+                config,
+                // onGameReady callback, called when all assets/network/game is ready
                 (onLaunch, isWaitingForOpponent = false) => {
                     if (isWaitingForOpponent) {
                         setLoadingMsg('Waiting for opponent...');
                         return;
                     }
 
-                    setLoadingMsg(mode === '2p-online' ? 'Starting game...' : 'Ready!');
+                    // Game calls this when ready to launch
+                    // We update message and trigger fade out
+                    setLoadingMsg(isOnlineMode
+                        ? 'Starting game...'
+                        : 'Ready!');
+                    // Fade out overlay
                     handleReady();
 
                     setTimeout(() => {
@@ -115,10 +107,6 @@ const CanvasPage = () => {
                     handleError('Connection failed or room closed.');
                     setTimeout(() => navigate('/'), 2000);
                 },
-                pvpRoomId,
-                pvpAction,
-                scoreToWin,
-                playerId,
             );
 
             if (dispose !== null) {
@@ -140,7 +128,7 @@ const CanvasPage = () => {
             initializedRef.current = false;
             initLockRef.current = false;
         };
-    }, [isTestScene, mode, player1Name, player2Name, player1Color, player2Color, pvpRoomId, pvpAction, navigate, scoreToWin, playerId]);
+    }, [isTestScene, config, navigate]);
 
     const toggleScene = () => {
         setIsTestScene(!isTestScene);

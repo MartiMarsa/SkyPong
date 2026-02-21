@@ -49,4 +49,7 @@ export class MyGameState extends Schema {
     // Client readiness (for loading sync in PvP)
     @type("boolean") player1Ready: boolean = false;
     @type("boolean") player2Ready: boolean = false;
+    
+    // Player 2 joined flag (to know when both player colors are set)
+    @type("boolean") player2Joined: boolean = false;
 }

@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as Colyseus from 'colyseus.js';
 import { SERVER_CONNECTION } from '../../config';
-import { GameMode, GameSessionConfig } from '../../types/GameSessionConfig';
 import { encodeConfig } from '../../utils/configDecoder';
+import { GameSessionConfig } from '../../types/GameSessionConfig';
+
+type GameMode = 'ai-easy' | 'ai-medium' | 'ai-hard' | '2p-local' | '2p-online';
 
 interface RoomListing {
     roomId: string;
@@ -196,6 +198,10 @@ const StartPage = () => {
     const [scoreToWin, setScoreToWin] = useState(5);
     const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const colyseusClientRef = useRef<Colyseus.Client | null>(null);
+    // Debug modal state for showing encoded URL
+    const [showDebugModal, setShowDebugModal] = useState(false);
+    const [debugConfig, setDebugConfig] = useState<GameSessionConfig | null>(null);
+    const [debugUrl, setDebugUrl] = useState<string>('');
 
     const getClient = useCallback(() => {
         if (!colyseusClientRef.current) {
@@ -252,48 +258,83 @@ const StartPage = () => {
         navigate(`/launch?config=${encoded}`);
     };
 
+    // FRONT this is where the data gets preparend this shows the modal with the debug
     const handleStartGame = () => {
         if (!selectedMode) return;
         const p1Name = player1Name.trim() || 'Player 1';
         const p2Name = selectedMode === '2p-local' ? (player2Name.trim() || 'Player 2') : selectedMode === '2p-online' ? '' : 'AI';
+        
+        // Map selected mode to GameMode type
+        const gameMode = selectedMode === '2p-local' ? 'local-2p' :
+                        selectedMode === '2p-online' ? 'online-create' :
+                        selectedMode as GameSessionConfig['gameMode'];
+
+        // FRONT building game session object
         const config: GameSessionConfig = {
-            // Placeholder until frontend user/session wiring is available
-            playerId: 'frontend-placeholder-player',
-            mode: selectedMode,
-            scoreToWin,
-            player1Name: p1Name,
-            player2Name: p2Name,
-            player1Color,
-            ...(selectedMode === '2p-local' ? { player2Color } : {}),
+            playerName: p1Name,
+            playerColor: player1Color,
+            gameMode: gameMode,
         };
-        launchGame(config);
+
+        if (selectedMode === '2p-local') {
+            config.player2Name = p2Name;
+            config.player2Color = player2Color;
+        }
+
+        // FRONT this is where the GameSessionConfig gets encoded and sent
+        const base64Config = encodeConfig(config);
+        const launchUrl = `${window.location.origin}${import.meta.env.BASE_URL || '/'}launch?config=${base64Config}`;
+        
+        setDebugConfig(config);
+        setDebugUrl(launchUrl);
+        setShowDebugModal(true);
+    };
+    
+    // FRONT this starts the game
+    const handleProceedToGame = () => {
+        if (!selectedMode) return;
+        const p1Name = player1Name.trim() || 'Player 1';
+
+        // Map selected mode to GameMode type
+        const gameMode = selectedMode === '2p-local' ? 'local-2p' :
+                        selectedMode === '2p-online' ? 'online-create' :
+                        selectedMode as GameSessionConfig['gameMode'];
+
+        const config: GameSessionConfig = {
+            playerName: p1Name,
+            playerColor: player1Color,
+            gameMode: gameMode,
+        };
+
+        if (selectedMode === '2p-local') {
+            config.player2Name = player2Name.trim() || 'Player 2';
+            config.player2Color = player2Color;
+        }
+
+        // FRONT react router that navigates to canvas bringing config
+        setShowDebugModal(false);
+        navigate('/canvas', { state: config });
     };
 
     const handleEnterLobby = () => setLobbyPhase('lobby');
 
     const handleCreateRoom = () => {
-        launchGame({
-            playerId: 'frontend-placeholder-player',
-            mode: '2p-online',
-            scoreToWin,
-            player1Name: player1Name.trim() || 'Player 1',
-            player2Name: '',
-            player1Color,
-            pvpAction: 'create',
-        });
+        const config: GameSessionConfig = {
+            playerName: player1Name.trim() || 'Player 1',
+            playerColor: player1Color,
+            gameMode: 'online-create',
+        };
+        navigate('/canvas', { state: config });
     };
 
     const handleJoinRoom = (roomId: string) => {
-        launchGame({
-            playerId: 'frontend-placeholder-player',
-            mode: '2p-online',
-            scoreToWin,
-            player1Name: player1Name.trim() || 'Player 1',
-            player2Name: '',
-            player1Color,
-            pvpRoomId: roomId,
-            pvpAction: 'join',
-        });
+        const config: GameSessionConfig = {
+            playerName: player1Name.trim() || 'Player 1',
+            playerColor: player1Color,
+            gameMode: 'online-join',
+            roomId: roomId,
+        };
+        navigate('/canvas', { state: config });
     };
 
     const isAiMode = selectedMode?.startsWith('ai-');
@@ -447,6 +488,96 @@ const StartPage = () => {
                         <GameButton onClick={handleStartGame} color='#4CAF50' hoverColor='rgba(76, 175, 80, 0.4)'>Start Game</GameButton>
                     </div>
                 </div>
+                {showDebugModal && debugConfig && (
+                    <div style={{
+                        position: 'fixed' as const,
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 1000,
+                    }}>
+                        <div style={{
+                            backgroundColor: '#2d2d44',
+                            padding: '30px',
+                            borderRadius: '12px',
+                            maxWidth: '600px',
+                            width: '90%',
+                            display: 'flex',
+                            flexDirection: 'column' as const,
+                            gap: '15px',
+                        }}>
+                            <h2 style={{ color: 'white', margin: 0, fontSize: '24px' }}>Debug: Launch URL</h2>
+                            <p style={{ color: '#aaa', margin: 0, fontSize: '14px' }}>
+                                This is the configuration and encoded URL for the /launch route:
+                            </p>
+                            <div style={{
+                                backgroundColor: '#1a1a2e',
+                                padding: '15px',
+                                borderRadius: '8px',
+                                fontFamily: 'monospace',
+                                fontSize: '12px',
+                                color: '#4CAF50',
+                                overflowX: 'auto' as const,
+                            }}>
+                                <pre style={{ margin: 0 }}>{JSON.stringify(debugConfig, null, 2)}</pre>
+                            </div>
+                            <div style={{
+                                backgroundColor: '#1a1a2e',
+                                padding: '15px',
+                                borderRadius: '8px',
+                                fontFamily: 'monospace',
+                                fontSize: '11px',
+                                color: '#00A6ED',
+                                overflowX: 'auto' as const,
+                                wordBreak: 'break-all' as const,
+                            }}>
+                                {debugUrl}
+                            </div>
+                            <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(debugUrl);
+                                        alert('URL copied to clipboard!');
+                                    }}
+                                    style={{
+                                        flex: 1,
+                                        padding: '12px',
+                                        fontSize: '16px',
+                                        backgroundColor: '#2196F3',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold',
+                                    }}
+                                >
+                                    Copy URL
+                                </button>
+                                <button
+                                    onClick={handleProceedToGame}
+                                    style={{
+                                        flex: 2,
+                                        padding: '12px',
+                                        fontSize: '16px',
+                                        backgroundColor: '#4CAF50',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold',
+                                    }}
+                                >
+                                    Proceed to Game
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }

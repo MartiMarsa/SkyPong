@@ -16,6 +16,8 @@ export const NETWORK = {
         GAME_ROOM: "game_room",
         /** Single-player vs AI room */
         AI_GAME_ROOM: "ai_game_room",
+        /** Online PvP with room-based matchmaking */
+        PVP_ROOM: "pvp_room",
     },
     SYNC: {
         /** Server simulation runs at 60 FPS (16.66ms per frame) */
