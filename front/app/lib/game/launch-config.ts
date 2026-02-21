@@ -13,6 +13,7 @@ export interface GameConfig {
   readonly pointsToWin: number;
   readonly ballColor: string;
   readonly roomId?: string;
+  readonly onlineRole?: 'create' | 'join';
 }
 
 const gameConfigSchema = z
@@ -22,6 +23,7 @@ const gameConfigSchema = z
     pointsToWin: z.number().int().min(3).max(11),
     ballColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
     roomId: z.string().min(1).optional(),
+    onlineRole: z.enum(['create', 'join']).optional(),
   })
   .superRefine((value, ctx) => {
     if (value.mode === 'AI' && !value.difficulty) {
@@ -35,6 +37,13 @@ const gameConfigSchema = z
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Only AI mode can include difficulty.',
+      });
+    }
+
+    if (value.mode !== 'ONLINE' && value.onlineRole) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Only ONLINE mode can include onlineRole.',
       });
     }
   });

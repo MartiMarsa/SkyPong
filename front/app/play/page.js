@@ -99,7 +99,7 @@ export default function PlayPage() {
       {state === STATES.SELECT_MODE ? (
         <GameModeSelection
           onSelectAI={() => {
-            setConfig((prev) => ({ ...prev, mode: 'AI', roomId: undefined }));
+            setConfig((prev) => ({ ...prev, mode: 'AI', roomId: undefined, onlineRole: undefined }));
             setState(STATES.AI_SELECT_DIFFICULTY);
           }}
           onSelectMultiplayer={() => setState(STATES.MULTIPLAYER_MENU)}
@@ -125,7 +125,7 @@ export default function PlayPage() {
           <button
             type="button"
             onClick={() => {
-              setConfig((prev) => ({ ...prev, mode: 'LOCAL', difficulty: undefined, roomId: undefined }));
+              setConfig((prev) => ({ ...prev, mode: 'LOCAL', difficulty: undefined, roomId: undefined, onlineRole: undefined }));
               setState(STATES.LOCAL_P1_SETUP);
             }}
           >
@@ -152,7 +152,13 @@ export default function PlayPage() {
         <CreateRoom
           onCreate={(roomName) => {
             const generatedRoomId = `room-${Math.random().toString(36).slice(2, 8)}`;
-            setConfig((prev) => ({ ...prev, mode: 'ONLINE', roomId: generatedRoomId, difficulty: undefined }));
+            setConfig((prev) => ({
+              ...prev,
+              mode: 'ONLINE',
+              roomId: generatedRoomId,
+              onlineRole: 'create',
+              difficulty: undefined,
+            }));
             setCurrentRoomName(roomName);
             setState(STATES.ONLINE_WAITING);
           }}
@@ -166,7 +172,7 @@ export default function PlayPage() {
           isLoading={loadingRooms}
           onRefresh={refreshRooms}
           onJoin={(roomId) => {
-            setConfig((prev) => ({ ...prev, mode: 'ONLINE', roomId, difficulty: undefined }));
+            setConfig((prev) => ({ ...prev, mode: 'ONLINE', roomId, onlineRole: 'join', difficulty: undefined }));
             setState(STATES.CONFIGURE_GAME);
           }}
           onBack={() => setState(STATES.ONLINE_LOBBY)}
