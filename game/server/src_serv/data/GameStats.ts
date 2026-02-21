@@ -1,3 +1,8 @@
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN || 'secret'; // INFO temporary
+const STATS_SERVICE_URL = process.env.STATS_SERVICE_URL ?? 'http://statistics-service:6000'; // INFO temporary
+
+import fetch from 'node-fetch';
+
 interface PlayerResult {
     user_id: string;
     user_score: number;
@@ -65,7 +70,7 @@ export class GameStats {
     toPayload(): GameResultPayload {
         let p1Result: 'win' | 'loss' = this.player1Score > this.player2Score ? 'win' : 'loss';
         let p2Result: 'win' | 'loss' = this.player2Score > this.player1Score ? 'win' : 'loss';
-
+        
         const payload: GameResultPayload = {
             game_id: this.gameId,
             start_at: this.startAt,
@@ -83,7 +88,29 @@ export class GameStats {
                 }
             ]
         }
-
+        
         return payload;
+    }
+    
+    async send(): Promise<void> {
+        const payload = this.toPayload();
+        // const url = `${process.env.STATS_SERVICE_URL}/internal/statistics/gameresult/`; // TODO use the ones in .env in the future
+        const url = `${STATS_SERVICE_URL}/internal/statistics/gameresult/`;
+        // const token = process.env.SERVICE_TOKEN; // TODO use the ones in .env in the future
+        const token = SERVICE_TOKEN;
+        
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                'X-Service-Name': 'game-service'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+            throw new Error('[FAILED] game results -> statistics')
+        }
     }
 }
