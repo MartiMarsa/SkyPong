@@ -43,9 +43,9 @@ export default function GameConfigForm({
       </div>
 
       <div>
-        <label htmlFor="game-config-ball-color">Ball color</label>
+        <label htmlFor="game-config-ball-color">Paddle color</label>
         <input
-          id="game-config-ball-color"
+          id="game-config-paddle-color"
           type="color"
           value={ballColor}
           onChange={(event) => onChange({ ballColor: event.target.value })}

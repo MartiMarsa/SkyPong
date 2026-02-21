@@ -44,9 +44,9 @@ export default function LocalSetup({
       </div>
 
       <div>
-        <label htmlFor="local-setup-ball-color">Ball color</label>
+        <label htmlFor="local-setup-ball-color">Paddle color</label>
         <input
-          id="local-setup-ball-color"
+          id="local-setup-paddle-color"
           type="color"
           value={ballColor}
           onChange={(event) => onChange({ ballColor: event.target.value })}
