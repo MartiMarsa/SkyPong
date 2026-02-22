@@ -8,6 +8,9 @@ const es = {
     description: "Una experiencia celestial de Pong",
     lable: "Ir a la Home",
     },
+    hero: {
+        howToPlay: "¿Cómo jugar?",
+    },
     user: {
         hi: "hola!",
         nickname: "Nickname",
