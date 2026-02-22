@@ -8,6 +8,7 @@ import { useAuth } from '../context/auth-context';
 import AvatarUpload from '../ui/player-private-profile/avatar-ui'
 import PlayerUI from '../ui/player-private-profile/player-ui';
 import PlayerCredentialsUI from '../ui/player-private-profile/player-credentials-ui';
+import PlayerDeleteUI from '../ui/player-private-profile/player-delete-account-ui';
 
 // import { useSearchParams } from 'next/navigation'
 
@@ -94,6 +95,7 @@ export default function ProfilePagePrivate()
             <AvatarUpload currentAvatar={ `/api/profile/avatars/${user?.id}.webp` || ""} />
             <PlayerUI />
             <PlayerCredentialsUI />
+            <PlayerDeleteUI />
 
         </main>
         )}

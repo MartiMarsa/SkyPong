@@ -26,6 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .find(row => row.startsWith('csrf_token='))
         ?.split('=')[1];
 
+        console.info("Checking auth credentials...")
       const res = await fetch('/api/auth/verify', { 
         credentials: 'include', 
         headers: {
@@ -37,12 +38,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const data = await res.json();
         console.log("Auth data verified: ", data);
         setUser(data);
-        return(true);
       } else {
           setUser(null);
           console.warn("Auth data NOT verified");
-         return(false);
       }
+
+        const res2 = await fetch('/api/profile/me', { 
+            credentials: 'include', 
+            headers: {
+            'x-csrf-token': csrfToken || '', // Requerido por tu middleware preHandler
+            },
+        });
+        console.log("Response:", res2)
+        if (res2.ok) {
+            const data2 = await res2.json();
+            console.log("Profile retieve: ", data2);
+            setUser(data2);
+            return(true);
+        } else {
+          setUser(null);
+          console.warn("Profile info NOT found");
+            return(false);
+        }
     } catch (err) {
       setUser(null);
     } finally {

@@ -11,8 +11,8 @@ export default function AvatarUpload() {
   const { t } = useTranslation(); 
   
   // Imagen por defecto si no hay una previa ni una nueva seleccionada
-  const defaultAvatar = "/avatar/default-avatar.png"; 
-  const displayImage = preview || user?.avatarURL || defaultAvatar;
+  const defaultAvatar =  user?.avatarUrl || "/avatar/default-avatar.png"; 
+  const displayImage = preview || defaultAvatar;
 
 const getCookie = (name) => {
     return document.cookie

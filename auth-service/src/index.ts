@@ -99,6 +99,7 @@ fastify.addHook('preHandler', async (req: any, reply) => {
     }
 });
 
+
 // --- AUTH MIDDLEWARE ---
 async function authentificate(req: any): Promise<any | null> {
     
@@ -343,78 +344,7 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
 
     return reply.status(204).send();
 });
-// fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, reply) => {
 
-//     const { old_password, new_password } = req.body as ChangePassword;
-//     console.log("Changin Password...");
-// 	if (!old_password || !new_password) {
-//         console.log("Old or new password information missing: ", old_password, " | ", new_password);
-// 		return reply.status(400).send({
-// 			error: { 
-//                 code: 'VALIDATION_ERROR', 
-// 				message: 'Missing fields' },
-//             });
-// 	}
-    
-// 	if (new_password.length < 8) {
-// 	  	return reply.status(400).send({
-// 			error: { 
-// 				code: 'WEAK_PASSWORD', 
-// 				message: 'Password too short' },
-// 	  	});
-//     	} else if (new_password === old_password) {
-// 		return reply.status(400).send({
-// 			error: {
-// 				code: 'SAME_PASSWORD',
-// 				message: 'You can not use the same password' },
-// 		});
-// 	}
-
-// 	const userId = req.user.sub;
-
-// 	const db = getDB();
-
-// 	const user = await new Promise<DBUser | null>((resolve, reject) => {
-// 	    	db.get(
-// 			`SELECT password_hashed, password_version FROM users WHERE id = ?`,
-// 				[userId],
-// 			(err, row) => {
-// 		    		if (err) return reject(err);
-// 		    		resolve(row as DBUser | null);
-// 			}
-// 	    	);
-// 	});
-
-// 	if (!user) {
-// 		return reply.status(404).send();
-//     	}
-
-// 	const valid = await verifyPassword(new_password, user.password_hashed);
-//     	if (valid === false) {
-// 	  	return reply.status(403).send({
-// 			error: {
-// 		      		code: 'CURRENT_PASSWORD_INCORRECT',
-// 		      		message: 'Current password is incorrect',
-// 			},
-// 	  	});
-//     	}
-	
-// 	const newHash = await hashPassword(new_password);
-
-// 	await new Promise<void>((resolve, reject) => {
-// 	  	db.run(
-// 			`UPDATE users
-// 	       		SET password_hash = ?, password_version = password_version + 1, token_version + 1
-// 	       		WHERE id = ?`,
-// 				[newHash, userId],
-// 			err => (err ? reject(err) : resolve())
-// 	  	);
-//     	});
-
-// 	await revokeRefreshTokenById(userId);
-
-// 	reply.status(204).send();
-// });
 
 // --- LOGOUT ---
 fastify.post('/auth/logout', {preHandler: requireAuth }, async (req: any, reply) => {
@@ -451,52 +381,46 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
       	const userId = req.user.sub;
       	const db = getDB();
       	const dbToken = getTokenDB();
-
+       
+        console.info("DB Token: ", dbToken);
       	try {
+            // 1. Llamar al Profile Service para el borrado interno
+            const profileRes = await fetch('http://profile-service:5000/internal/profile/delete', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${process.env.INTERNAL_SERVICE_TOKEN?.trim()}` // No sé que poner aquí
+                },
+                body: JSON.stringify({ userId })
+            });
+
+            if (!profileRes.ok) {
+                throw new Error('Could not delete profile data');
+            }
+
+
 	    	await new Promise<void>((resolve, reject) => {
-		  	db.serialize(() => {
-				db.run('BEGIN TRANSACTION');
+            db.serialize(() => {
+                db.run('BEGIN TRANSACTION');
 
-				// 1. Revoke refresh tokens
-			        dbToken.run(
-			      		`UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?`,
-					[userId],
-					err => {
-				    		if (err) {
-					  		db.run('ROLLBACK');
-				  			return reject(err);
-			    		}
+                // 1. Revocar tokens de refresco (en la otra DB)
+                dbToken.run(`UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?`, [userId]);
 
-			    	// 2. Invalidate JW
-				db.run(
-			  		`UPDATE users SET token_version = token_version + 1 WHERE id = ?`,
-					[userId],
-			  		function (err) {
-						if (err || this.changes === 0) {
-				      			db.run('ROLLBACK');
-				      			return reject(err || new Error('User not found'));
-						}
-
-				// 3. Delete user
-				db.run(
-		      			`DELETE FROM users WHERE id = ?`,
-			      		[userId],
-		      			function (err) {
-			    			if (err) {
-				  			db.run('ROLLBACK');
-				  			return reject(err);
-			    			}
-
-					    	db.run('COMMIT');
-	    					resolve();
-		      			}
-				);
-			  		}
-		    		);
-			      		}
-				);
-		  	});
-	    	});
+                // 2. Borrar directamente (si el usuario no existe, this.changes será 0)
+                db.run(`DELETE FROM users WHERE id = ?`, [userId], function (err) {
+                    if (err) {
+                        db.run('ROLLBACK');
+                        return reject(err);
+                    }
+                    if (this.changes === 0) {
+                        db.run('ROLLBACK');
+                        return reject(new Error('User not found in database'));
+                    }
+                    db.run('COMMIT');
+                    resolve();
+                });
+            });
+        });
 		// 4. Clear cookies
 	    	reply
 	  	.clearCookie('access_token', { path: '/' })

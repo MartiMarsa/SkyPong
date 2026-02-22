@@ -11,7 +11,7 @@ import { playerDataSchema } from '../../lib/form-validation/player-data'
 
 const mobileStyles = {
     main: "flex flex-col justify-center items-center min-h-screen",
-    playerDataForm: "flex flex-col m-80 center p-5 gap-4 border-4 border-amber-400 rounded-sm",
+    playerDataForm: "flex flex-col m-8 min-w-200 center p-5 gap-4 border-4 border-amber-400 rounded-sm",
     inputWrapper: "border border-black",
     inputBox: "border border-black w-full h-10 rounded-md",
     textInputError: 'w-full h-10 px-3 border border-red-500 rounded',
@@ -20,7 +20,7 @@ const mobileStyles = {
 
 const desktopStyles = {
     main: "flex flex-col justify-center items-center min-h-screen",
-    playerDataForm: "flex flex-col m-80 center p-5 gap-4 border-4 border-amber-400 rounded-sm",
+    playerDataForm: "flex flex-col m-8 min-w-200 center p-5 gap-4 border-4 border-amber-400 rounded-sm",
     inputWrapper: "w-full",
     inputBox: "border border-black w-full h-10 rounded-md",
     textInputError: 'w-full h-8 px-3 border border-red-500 rounded',
