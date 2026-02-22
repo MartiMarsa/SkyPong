@@ -7,7 +7,7 @@ import NavigationAppUI from './ui/navigation-app-ui';
 import NavigationLanguageUI from './ui/navigation-language-ui';
 
 const mobileStyles = {
-  main: 'h-dvh overflow-hidden bg-[#d9d9d9] text-slate-900',
+  main: 'h-dvh bg-[#d9d9d9] text-slate-900',
 };
 
 const desktopStyles = {
@@ -18,8 +18,8 @@ export default function HomePage() {
   const { styles } = useStyles(mobileStyles, desktopStyles);
 
   return (
-    <main className={styles.main}>
-      <div className="mx-auto flex h-full w-full max-w-6xl flex-col rounded-[2.5rem] border-2 border-slate-700 px-4 py-4 sm:px-8 sm:py-6 lg:py-8">
+    <main className={`${styles.main} overflow-hidden`}>
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col rounded-[2.5rem] border-2 border-slate-700 px-4 py-6 sm:px-8 sm:py-8">
         <NavigationAppUI userURL="/login" compactGuestActions />
 
         <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 py-4 md:gap-8 md:py-6 lg:gap-10 lg:py-10">
