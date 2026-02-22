@@ -142,13 +142,12 @@ export async function getPlayerById(userId: string): Promise<PlayerInfo | null> 
 // CREATE PLAYER
 // --------------------------------------------------
 
-export async function createPlayer(userId: string) {
-
+export async function createPlayer(userId: string): Promise<PlayerInfo> {
   for (let i = 1; i <= MAX_RETRIES; i++) {
-
     const nickname = generateNickname(false);
 
     try {
+      await db.run('BEGIN');
 
       await db.run(
         `INSERT INTO players (user_id, nickname)
@@ -156,33 +155,29 @@ export async function createPlayer(userId: string) {
         [userId, nickname]
       );
 
-      await db.run(`
-		   INSERT OR IGNORE INTO player_stats
-		   (user_id, played, wins, losses, winrate, rate, updated_at)
-		   VALUES
-		   (?, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
-		   `, 
-		   [userId]
-		  );
+      await db.run(
+        `INSERT INTO player_stats (user_id)
+         VALUES (?)`,
+        [userId]
+      );
+
+      await db.run('COMMIT');
 
       const player = await getPlayerById(userId);
-
       if (!player) {
         throw new Error('Player not found after create');
       }
 
       console.log('[createPlayer]', userId, nickname);
-
       return player;
 
     } catch (err: any) {
+      await db.run('ROLLBACK');
 
       if (err?.code === 'SQLITE_CONSTRAINT') {
-
         if (i === MAX_RETRIES) {
           throw new Error('Nickname collision limit');
         }
-
         continue;
       }
 
@@ -190,7 +185,7 @@ export async function createPlayer(userId: string) {
     }
   }
 
-  throw new Error('createPlayer failed');
+  throw new Error('Failed to create player');
 }
 
 // --------------------------------------------------

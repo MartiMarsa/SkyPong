@@ -34,3 +34,17 @@ export function generate2FAToken(userId: string) {
 		  	issuer: 'auth-service',
 	    	});
 }
+
+export function generateOAuthTempToken(userId: string) {
+  	return jwt.sign(
+		{
+			sub: userId,
+			type: 'oauth-setup'
+		},
+		privateKey,
+		{
+			algorithm: 'RS256',
+			expiresIn: '10m'
+		});
+}
+
