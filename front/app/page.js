@@ -11,7 +11,7 @@ const mobileStyles = {
 };
 
 const desktopStyles = {
-  main: 'md:px-10',
+  main: 'h-dvh overflow-hidden bg-[#d9d9d9] px-6 text-slate-900 lg:px-10',
 };
 
 export default function HomePage() {
@@ -22,7 +22,7 @@ export default function HomePage() {
       <div className="mx-auto flex h-full w-full max-w-6xl flex-col rounded-[2.5rem] border-2 border-slate-700 px-4 py-6 sm:px-8 sm:py-8">
         <NavigationAppUI userURL="/login" compactGuestActions />
 
-        <section className="flex flex-1 flex-col items-center justify-center gap-8 py-8 md:gap-10 md:py-12">
+        <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 py-4 md:gap-8 md:py-6 lg:gap-10 lg:py-10">
           <div className="w-full max-w-4xl p-6 sm:p-8 md:p-10">
             <HeroUI />
           </div>
