@@ -5,6 +5,9 @@ const it = {
         description: "Un'esperienza celestiale di Pong",
         lable: "Vai alla Home",
     },
+    hero: {
+        howToPlay: "Come giocare?",
+    },
     user: {
         hi: "Ciao!",
     },

@@ -1,6 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlay } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
+import HowToPlayUI from './how-to-play-ui';
 
 /**
  * Home hero section with the primary CTA to enter the unified play workflow.
@@ -18,12 +19,7 @@ export default function HeroUI() {
         </Link>
       </div>
 
-      <Link
-        href="/play"
-        className="rounded-lg border-2 border-slate-700 px-4 py-2 text-lg font-semibold text-slate-900 transition hover:bg-slate-200"
-      >
-        How to play?
-      </Link>
+      <HowToPlayUI />
     </section>
   );
 }
