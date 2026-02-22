@@ -3,10 +3,10 @@ import { useTranslation } from '../context/language-context';
 import { useStyles } from '../hooks/use-styles';
 
 const mobileStyles = {
-  nav: 'flex items-center gap-2',
-  langItem: 'rounded-md border-2 border-slate-700 bg-[#efefef] p-0.5',
+  nav: 'flex items-center gap-4',
+  langItem: 'rounded-xl border border-slate-600/70 bg-slate-800/70 p-1 shadow-md shadow-slate-950/50',
   langButton:
-    'rounded-sm border border-transparent bg-transparent px-3 py-1 text-sm font-semibold tracking-wide text-slate-900 transition hover:bg-slate-200',
+    'rounded-lg border border-slate-400/40 bg-slate-900/80 px-4 py-2 text-sm font-semibold tracking-wide text-slate-100 transition hover:border-slate-200 hover:bg-slate-700/50',
 };
 const desktopStyles = { nav: '', langItem: '', langButton: '' };
 
