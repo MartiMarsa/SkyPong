@@ -198,45 +198,7 @@ async function requireAuth(req: any, reply: any) {
         return reply.status(200).send({ id: user.id, email: user.email, username: profile?.nickname ?? 'Unknown', twofa_enabled: user.twofa_enabled });
     });
     
-    // --- SIGNUP ---
-    fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, reply) => {
-        
-        const { email, password } = req.body as AuthBody;
-        //    const next = req.query.next || req.cookies?.last_page || '/me';
-        
-        if (!email || !password) {
-            return reply.status(400).send({
-                error: { code: 'VALIDATION_ERROR', message: 'Invalid input: username, email and password required' },
-            });
-        }
-        
-        try {
-            const user = await signup(email, password);
-            
-            const token = generateToken({ 
-                id: user.id, 
-                password_version: user.password_version || 1,
-                token_version: user.token_version || 0
-            });
-            const refreshToken = createRefreshToken(user.id);
-            const csrfToken = randomUUID();
-            
-            reply
-            .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
-            .setCookie('refresh_token', refreshToken, refreshOpts)
-            .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'none', path: '/' })
-            .status(201)
-            .send({ 
-		user: { 
-            id: user.id, 
-			email: user.email,
-		} 
-	});
-} catch (err: any) {
-    reply.status(409).send({ error: { code: 'EMAIL_OR_USERNAME_TAKEN', message: 'Already exists' } });
-    //	  reply.status(500).send({ error: { code: err.code, message: err.message }});
-    }
-});
+
 
 // --- LOGIN ---
 fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply) => {
@@ -256,7 +218,7 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
             password_version: user.password_version,
             token_version: user.token_version
         });
-        const refreshToken = createRefreshToken(user.id);
+        const refreshToken = await createRefreshToken(user.id);
         const csrfToken = randomUUID();
         
         reply
@@ -463,7 +425,7 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
 		token_version: user.token_version,
     	});
 
-    	const newRefresh = createRefreshToken(user.id);
+    	const newRefresh = await createRefreshToken(user.id);
     	const csrfToken = randomUUID();
 
     	reply
@@ -595,7 +557,7 @@ fastify.post('/auth/2fa/verify', async (req, reply) => {
 		token_version: user.token_version,
     	});
 
-    	const refreshToken = createRefreshToken(user.id);
+    	const refreshToken = await createRefreshToken(user.id);
     	const csrfToken = randomUUID();
 
     	reply

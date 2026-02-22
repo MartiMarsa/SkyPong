@@ -30,3 +30,11 @@ volumes/
 # Docker / misc
 *.pid
  
+# /game compiled .js
+game/client/src_cli/**/*.js
+game/common/**/*.js
+game/server/src_serv/**/*.js
+
+# Typescript build cache
+*.tsbuildinfo
+game/common/tsconfig.tsbuildinfo

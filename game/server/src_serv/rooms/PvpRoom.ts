@@ -7,6 +7,7 @@ import { ServerPaddle } from "../entities/ServerPaddle";
 import { ServerTable } from "../entities/ServerTable";
 import { InputManager } from "../input/InputManager";
 import { PhysicsEngine } from "../physics";
+import { GameStats } from "../data/GameStats";
 import { SERVER_CONFIG, ROOM_CONFIG, SERVER_TIMING, Logger } from "../config";
 
 /** 2-minute room expiration timeout (ms) */
@@ -37,13 +38,19 @@ export class PvpRoom extends Room<MyGameState> {
     private player1Client: Client | null = null;
     private player2Client: Client | null = null;
     private expirationTimer: ReturnType<typeof setTimeout> | null = null;
+    private startAt: string | null = null;
+    private endAt: string | null = null;
+    private gameStats: GameStats | null = null;
 
     onCreate(options: any): void | Promise<any> {
         this.maxClients = 2;
+        this.startAt = new Date().toISOString();
         this.setState(new MyGameState());
         this.engine = new NullEngine();
         this.scene = new Scene(this.engine);
         this.physicsEngine = new PhysicsEngine(this.scene);
+        this.gameStats = new GameStats(this.roomId, this.startAt, '', '', '', '', '', 0, 0);
+        Logger.info('[RoomId]' + this.roomId);
 
         const camera = new UniversalCamera(
             "serverCamera",
@@ -82,7 +89,7 @@ export class PvpRoom extends Room<MyGameState> {
                 }
                 // Give client a moment to process the message before disconnecting
                 setTimeout(() => {
-                    this.disconnect().catch(() => {});
+                    this.disconnect().catch(() => { });
                 }, 500);
             }
         }, ROOM_EXPIRATION_MS);
@@ -104,14 +111,14 @@ export class PvpRoom extends Room<MyGameState> {
         // Handle client ready message (when assets are loaded)
         this.onMessage("client_ready", (client, data) => {
             Logger.info(`[PvP] Client ready: ${client.sessionId}`);
-            
+
             // Mark the appropriate player as ready
             if (client.sessionId === this.player1Client?.sessionId) {
                 this.state.player1Ready = true;
             } else if (client.sessionId === this.player2Client?.sessionId) {
                 this.state.player2Ready = true;
             }
-            
+
             // Check if both clients are ready
             if (this.state.player1Ready && this.state.player2Ready && !this.state.gameStarted) {
                 Logger.info("[PvP] Both clients ready, starting game");
@@ -321,19 +328,28 @@ export class PvpRoom extends Room<MyGameState> {
      */
     private checkForWinner(): void {
         const winningScore = this.state.winningScore;
+        let winnerId: string | null = null;
+        let winnerName: string | null = null;
 
         if (this.state.player1Score >= winningScore) {
-            this.state.winner = this.state.player1Id;
-            this.state.gameOver = true;
-            this.serverBall.setGameOver(true);
-            this.serverBall.setEnabled(false);
-            Logger.gameOver(`[PvP] Winner: ${this.state.player1Name} (${this.state.player1Score}-${this.state.player2Score})`);
+            winnerId = this.state.player1Id;
+            winnerName = this.state.player1Name;
         } else if (this.state.player2Score >= winningScore) {
-            this.state.winner = this.state.player2Id;
+            winnerId = this.state.player2Id;
+            winnerName = this.state.player2Name;
+        }
+
+        if (winnerId) {
+            this.state.winner = winnerId;
             this.state.gameOver = true;
             this.serverBall.setGameOver(true);
             this.serverBall.setEnabled(false);
-            Logger.gameOver(`[PvP] Winner: ${this.state.player2Name} (${this.state.player1Score}-${this.state.player2Score})`);
+            Logger.gameOver(`[PvP] Winner: ${winnerName} (${this.state.player1Score}-${this.state.player2Score})`);
+            if (this.gameStats) {
+                this.gameStats.setScore(this.state.player1Score, this.state.player2Score);
+                this.gameStats.setEndAt(new Date().toISOString());
+                Logger.info('[GameStats]', this.gameStats.toPayload());
+            }
         }
     }
 
@@ -343,6 +359,8 @@ export class PvpRoom extends Room<MyGameState> {
             this.state.player1Id = client.sessionId;
             this.state.player1Name = options.playerName || "Player 1";
             this.state.player1Color = options.playerColor || "#00A6ED";
+            this.gameStats?.setPlayer1Id(this.state.player1Id);
+            this.gameStats?.setPlayer1Name(this.state.player1Name);
             Logger.info(`[PvP] Player 1 joined: ${client.sessionId} (${this.state.player1Name}, color: ${this.state.player1Color})`);
 
             // Update metadata with player color for lobby listing
@@ -356,7 +374,12 @@ export class PvpRoom extends Room<MyGameState> {
             this.state.player2Id = client.sessionId;
             this.state.player2Name = options.playerName || "Player 2";
             this.state.player2Color = options.playerColor || "#F6511D";
+            this.gameStats?.setPlayer2Id(this.state.player2Id);
+            this.gameStats?.setPlayer2Name(this.state.player2Name);
             Logger.info(`[PvP] Player 2 joined: ${client.sessionId} (${this.state.player2Name}, color: ${this.state.player2Color})`);
+
+            // Set player2Joined flag so clients know both colors are available
+            this.state.player2Joined = true;
 
             // Cancel expiration timer — opponent joined
             if (this.expirationTimer) {
@@ -404,7 +427,7 @@ export class PvpRoom extends Room<MyGameState> {
         if (!this.player1Client && !this.player2Client) {
             Logger.info(`[PvP] All players left, disposing room`);
             setTimeout(() => {
-                this.disconnect().catch(() => {});
+                this.disconnect().catch(() => { });
             }, ROOM_CONFIG.DISPOSAL_DELAY_MS);
         }
     }
