@@ -12,15 +12,15 @@ const mobileStyles = {
 };
 
 const desktopStyles = {
-  nav: '',
+  nav: 'flex items-center justify-between p-2 text-3xl',
 };
 
 export default function NavigationAppUI({ home, userURL, compactGuestActions = false }) {
   const { t } = useTranslation();
   const { styles } = useStyles(mobileStyles, desktopStyles);
-  const { user, authloading, logout } = useAuth();
+  const { user, logout } = useAuth();
 
-  const showGuestActions = !authloading && !user;
+  const showGuestActions = !user;
 
   return (
     <nav className={styles.nav}>
