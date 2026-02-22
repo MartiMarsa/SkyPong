@@ -10,7 +10,7 @@ export default function HeroUI() {
   return (
     <section className="hero-ui mb-8 flex flex-col items-center justify-center gap-8">
       <div className="hero-content">
-        <h1 className="hero-title mb-4 text-center text-7xl font-black tracking-wide">PONG</h1>
+        <h1 className="hero-title mb-4 text-center text-7xl font-black tracking-wide">SKYPONG</h1>
       </div>
 
       <div className="hero-image text-7xl text-slate-800">
