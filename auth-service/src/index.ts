@@ -79,7 +79,8 @@ const CSRF_EXCLUDED_PATHS = new Set([
     '/auth/refresh',      
     '/auth/google',
     '/auth/google/callback',
-    '/auth/set-password'
+    '/auth/set-password',
+    '/auth/logout'
 ]);
 
 // --- CSRF protection ---
@@ -198,7 +199,45 @@ async function requireAuth(req: any, reply: any) {
         return reply.status(200).send({ id: user.id, email: user.email, username: profile?.nickname ?? 'Unknown', twofa_enabled: user.twofa_enabled });
     });
     
-
+    // --- SIGNUP ---
+    fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, reply) => {
+        
+        const { email, password } = req.body as AuthBody;
+        //    const next = req.query.next || req.cookies?.last_page || '/me';
+        
+        if (!email || !password) {
+            return reply.status(400).send({
+                error: { code: 'VALIDATION_ERROR', message: 'Invalid input: username, email and password required' },
+            });
+        }
+        
+        try {
+            const user = await signup(email, password);
+            
+            const token = generateToken({ 
+                id: user.id, 
+                password_version: user.password_version || 1,
+                token_version: user.token_version || 0
+            });
+            const csrfToken = randomUUID();
+            const refreshToken = await createRefreshToken(user.id);
+            
+            reply
+            .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
+            .setCookie('refresh_token', refreshToken, refreshOpts)
+            .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'none', path: '/' })
+            .status(201)
+            .send({ 
+		user: { 
+            id: user.id, 
+			email: user.email,
+		} 
+	});
+} catch (err: any) {
+    reply.status(409).send({ error: { code: 'EMAIL_OR_USERNAME_TAKEN', message: 'Already exists' } });
+    //	  reply.status(500).send({ error: { code: err.code, message: err.message }});
+    }
+});
 
 // --- LOGIN ---
 fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply) => {
@@ -218,8 +257,8 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
             password_version: user.password_version,
             token_version: user.token_version
         });
-        const refreshToken = await createRefreshToken(user.id);
         const csrfToken = randomUUID();
+        const refreshToken = await createRefreshToken(user.id);
         
         reply
         .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
@@ -307,37 +346,63 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
     return reply.status(204).send();
 });
 
+//Logout less strinct accepts to logut even if token is not correct. 
+fastify.post('/auth/logout', async (req: any, reply) => {
+    // Definimos las opciones exactas que usas en el login
+    const cookieOptions = {
+        path: '/',
+        secure: true, 
+        sameSite: 'none' as const, // Ajusta esto según tu config de login
+        httpOnly: true
+    };
 
-// --- LOGOUT ---
-fastify.post('/auth/logout', {preHandler: requireAuth }, async (req: any, reply) => {
-	const refreshToken = req.cookies?.refresh_token;
+    try {
+        const refreshToken = req.cookies?.refresh_token;
+        if (refreshToken) {
+            const payload = await verifyRefreshToken(refreshToken).catch(() => null);
+            if (payload) await revokeRefreshToken(payload.tokenId).catch(() => {});
+        }
+    } catch (err) { /* ignore */ }
 
-    	if (refreshToken) {
-		const payload = await verifyRefreshToken(refreshToken);
-		if (payload) {
-	    		await revokeRefreshToken(payload.tokenId);
-		}
-    	}
-
-	const db = getDB();
-
-	await new Promise<void>((resolve, reject) => {
-		db.run(`
-		       UPDATE users
-		       SET token_version = token_version + 1
-		       WHERE id = ?
-		       `,
-		       [req.user.id],
-		       err => err ? reject(err) : resolve()
-		      );
-	});
-	
-	reply
-        .clearCookie('access_token', { path: '/' })
-        .clearCookie('refresh_token', { path: '/auth/refresh' })
-        .clearCookie('csrf_token', { path: '/' })
+    return reply
+        // IMPORTANTE: El path del refresh_token suele ser diferente (/auth/refresh)
+        .clearCookie('access_token', { ...cookieOptions, path: '/' })
+        .clearCookie('refresh_token', { ...cookieOptions, path: '/auth/refresh' })
+        .clearCookie('csrf_token', { ...cookieOptions, path: '/', httpOnly: false })
+        .status(200) // Siempre devolvemos 200 para que el navegador procese el borrado
         .send({ status: 'logged_out' });
 });
+
+// // --- LOGOUT ---
+// fastify.post('/auth/logout', {preHandler: requireAuth }, async (req: any, reply) => {
+// 	const refreshToken = req.cookies?.refresh_token;
+
+//     	if (refreshToken) {
+//             const payload = await verifyRefreshToken(refreshToken);
+//             if (payload) {
+//                     await revokeRefreshToken(payload.tokenId);
+//             }
+//     	}
+
+// 	const db = getDB();
+
+// 	await new Promise<void>((resolve, reject) => {
+// 		db.run(`
+// 		       UPDATE users
+// 		       SET token_version = token_version + 1
+// 		       WHERE id = ?
+// 		       `,
+// 		       [req.user.id],
+// 		       err => err ? reject(err) : resolve()
+// 		      );
+// 	});
+	
+// 	reply
+//         .clearCookie('access_token', { path: '/' })
+//         .clearCookie('refresh_token', { path: '/auth/refresh' })
+//         .clearCookie('csrf_token', { path: '/' })
+//         .send({ status: 'logged_out' });
+// });
 
 fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, reply) => {
       	const userId = req.user.sub;

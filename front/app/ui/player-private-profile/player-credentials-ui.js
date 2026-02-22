@@ -37,7 +37,7 @@ const desktopStyles = {
 export default function PlayerCredentialsUI({ userURL })
 {
     const router = useRouter();
-    const { user, authloading, checkAuth } = useAuth();
+    const { user, authloading, logout } = useAuth();
     const { t } = useTranslation();
     const { styles } = useStyles(mobileStyles, desktopStyles);
     const [serverError, setServerError] = useState('');
@@ -78,6 +78,7 @@ export default function PlayerCredentialsUI({ userURL })
 
             if (response.status === 204) {
                 alert("Contraseña actualizada. Por seguridad, vuelve a iniciar sesión.");
+                logout();
                 router.push('/login');
                 return;
             }
