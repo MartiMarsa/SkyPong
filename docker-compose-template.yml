@@ -4,6 +4,7 @@
 networks:
   frontend:
     driver: bridge
+    name: transcendence_frontend_v2
   backend:   # Edge (NGINX) <-> Microservicios
     driver: bridge
   internal:  # Observabilidad (Prometheus/Grafana/exporters)
@@ -208,12 +209,14 @@ services:
   statistics-service:
     container_name: statistics-service
     build: ./statistics-service
+    user: "0:0"
     networks:
       - backend
       - internal
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=statistics-service
+      - STATS_DATA_DIR=/app/data
     volumes:
       - statistics-service_vol:/app/data
     healthcheck:

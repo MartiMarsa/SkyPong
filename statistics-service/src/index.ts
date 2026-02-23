@@ -14,6 +14,11 @@ const fastify = Fastify({logger: true});
 
 let server: typeof fastify;
 
+fastify.register(require("fastify-metrics"), { endpoint: "/metrics" });
+
+fastify.get("/healthz", async () => ({ ok: true, service: "statistics-service" }));
+
+
 // --- STATISTICS INTERNAL MIDDLEWARE ---
 async function requireServiceAuth(req: any, reply: any) {
 
