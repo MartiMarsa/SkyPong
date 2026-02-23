@@ -21,6 +21,7 @@ import { SERVER_CONNECTION, VISUAL, CLIENT_TIMING, RENDERING, CAMERA } from '../
 import { adjustCamera } from '../utils/Camera';
 import { GameSessionConfig } from '../types/GameSessionConfig';
 import { TouchControls } from '../ui/TouchControls';
+import { touchDetection } from '../utils/touchDetection';
 
 interface GameState {
     ball: any; paddle: any; paddle2: any;
@@ -78,7 +79,7 @@ export class Game {
 
         const deviceSourceManager = new DeviceSourceManager(engine);
         console.log(deviceSourceManager.getDeviceSource); // DEBUG
-        const hasTouch = ! !deviceSourceManager.getDeviceSource(DeviceType.Touch);
+        const hasTouch = touchDetection();
 
         const createScene = async () => {
             const scene = engineSetup.scene;
