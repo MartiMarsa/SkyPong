@@ -313,7 +313,10 @@ fastify.get('/internal/profile/leaderboard/updates', { preHandler: requireServic
 // --- DELETE PROFILE ---
 fastify.post('/internal/profile/delete', { preHandler: requireServiceAuth }, async (req: any, reply) => {
 
-    	const { userId  } = req.body;
+		console.info("-----> REQUEST", req);
+    	const { userId  } = req.body as { userId: string };
+
+		console.info("----> USER ID: ", userId);
 
     	if (!userId) {
 	  	return reply.status(400).send({ error: 'userId required' });

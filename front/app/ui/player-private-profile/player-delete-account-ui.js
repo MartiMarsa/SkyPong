@@ -57,7 +57,8 @@ export default function PlayerDeleteUI() {
 
             if (response.ok) {
                 // Redirigir al inicio o página de despedida
-                router.push('/');
+				logout();
+				router.push('/');
             } else {
                 console.error("Error al borrar cuenta");
                 setIsDeleting(false);

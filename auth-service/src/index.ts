@@ -4,7 +4,7 @@ import cookie from '@fastify/cookie';
 import fetch from 'node-fetch';
 import chalk from 'chalk';
 import { randomUUID } from 'crypto';
-import { signup, login } from './auth';
+import { signup, login, generateEmail } from './auth';
 import { initDB, getDB } from './db';
 import { initTokenDB, getTokenDB } from './dbTokens';
 import { privateKey, publicKey } from './keys';
@@ -405,20 +405,21 @@ fastify.post('/auth/logout', async (req: any, reply) => {
 // });
 
 fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, reply) => {
-      	const userId = req.user.sub;
+      	const userId = req.user.id;
       	const db = getDB();
       	const dbToken = getTokenDB();
-       
+		const mockEmail = generateEmail();
+
         console.info("DB Token: ", dbToken);
       	try {
             // 1. Llamar al Profile Service para el borrado interno
-            const profileRes = await fetch('http://profile-service:5000/internal/profile/delete', {
+            const profileRes = await fetch(`${PROFILE_SERVICE_URL}/internal/profile/delete`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.INTERNAL_SERVICE_TOKEN?.trim()}` // No sé que poner aquí
+                    'Authorization': `Bearer ${SERVICE_TOKEN.trim()}` // No sé que poner aquí
                 },
-                body: JSON.stringify({ userId })
+				body: JSON.stringify({ userId })
             });
 
             if (!profileRes.ok) {
@@ -434,7 +435,7 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
                 dbToken.run(`UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?`, [userId]);
 
                 // 2. Borrar directamente (si el usuario no existe, this.changes será 0)
-                db.run(`DELETE FROM users WHERE id = ?`, [userId], function (err) {
+                db.run(`UPDATE users SET email = ?, password_version = password_version + 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?`, [mockEmail, userId], function (err) {
                     if (err) {
                         db.run('ROLLBACK');
                         return reject(err);
