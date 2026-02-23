@@ -1,9 +1,16 @@
+import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
 
-const dbPath = path.resolve(__dirname, '../leaderboard.db');
+//const dbPath = path.resolve(__dirname, '../leaderboard.db');
 
-const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, err => {
+const liderboardDataDir =  process.env.STATS_DATA_DIR?.trim() || path.resolve(process.cwd(), 'data');
+
+const liderboardDbPath = process.env.STATS_DB_PATH?.trim() || path.join(liderboardDataDir, 'leaderboard.db');
+
+fs.mkdirSync(path.dirname(liderboardDbPath), { recursive: true });
+
+const db = new sqlite3.Database(liderboardDbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, err => {
       	if (err) console.error('Leaderboard DB error', err);
       	else console.log('Connected leaderboard DB');
 });

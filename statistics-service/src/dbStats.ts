@@ -1,13 +1,22 @@
+import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
 
-const dbPath = path.resolve(__dirname, '../statistics.db');
+//const dbPath = path.resolve(__dirname, '../statistics.db');
 
-const db = new sqlite3.Database(dbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, err => {
+
+const statsDataDir =  process.env.STATS_DATA_DIR?.trim() || path.resolve(process.cwd(), 'data');
+
+const statsDbPath = process.env.STATS_DB_PATH?.trim() || path.join(statsDataDir, 'statistics.db');
+
+fs.mkdirSync(path.dirname(statsDbPath), { recursive: true });
+
+
+const db = new sqlite3.Database(statsDbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, err => {
 	if (err) {
 		console.error('Failed to connect to SQLite', err);
 	} else {
-		console.log('Connected to SQLite', dbPath);
+		console.log('Connected to SQLite', statsDbPath);
 	}
 });
 

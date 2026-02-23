@@ -97,19 +97,19 @@ export class GameStats {
     async send(): Promise<void> {
         const payload = this.toPayload();
         // const url = `${process.env.STATS_SERVICE_URL}/internal/statistics/gameresult/`; // TODO use the ones in .env in the future
-        const url = `${STATS_SERVICE_URL}/internal/statistics/gameresult/`;
+        const url = `${STATS_SERVICE_URL}/internal/statistics/gameresult/update`;
         // const token = process.env.SERVICE_TOKEN; // TODO use the ones in .env in the future
         const token = SERVICE_TOKEN;
 
         try {
-            const res = await axios.post(url, {
+            const res = await axios.post(url, payload, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                     'X-Service-Name': 'game-service'
                 },
-                body: JSON.stringify(payload)
+//                body: JSON.stringify(payload)
             });
 
             if (res.status < 200 || res.status >= 300) {
