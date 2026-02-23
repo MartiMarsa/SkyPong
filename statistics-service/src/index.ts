@@ -18,7 +18,6 @@ fastify.register(require("fastify-metrics"), { endpoint: "/metrics" });
 
 fastify.get("/healthz", async () => ({ ok: true, service: "statistics-service" }));
 
-
 // --- STATISTICS INTERNAL MIDDLEWARE ---
 async function requireServiceAuth(req: any, reply: any) {
 

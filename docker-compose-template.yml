@@ -186,12 +186,14 @@ services:
   profile-service:
     container_name: profile-service
     build: ./profile-service
+    user: "0:0"
     networks:
       - backend
       - internal
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=profile-service
+      - PROFILE_DATA_DIR=/app/data
       - JWT_PUBLIC_KEY_PATH=/app/keys/jwt-public.pem
     volumes:
       - profile-service_vol:/app/data

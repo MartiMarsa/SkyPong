@@ -1,8 +1,7 @@
 import fs from 'fs';
+import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
-
-//const dbPath = path.resolve(__dirname, '../leaderboard.db');
 
 const liderboardDataDir =  process.env.STATS_DATA_DIR?.trim() || path.resolve(process.cwd(), 'data');
 
