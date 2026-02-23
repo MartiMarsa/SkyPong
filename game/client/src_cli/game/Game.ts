@@ -3,6 +3,8 @@ import {
     Vector3,
     Observer,
     Color3,
+    DeviceSourceManager,
+    DeviceType,
 } from "@babylonjs/core";
 import * as Colyseus from "colyseus.js";
 import { InputController } from "../input/InputController";
@@ -17,6 +19,7 @@ import { GameUIManager } from '../ui/GameUIManager';
 import { SERVER_CONNECTION, VISUAL, CLIENT_TIMING, RENDERING, CAMERA } from '../config';
 import { adjustCamera } from '../utils/Camera';
 import { GameSessionConfig } from '../types/GameSessionConfig';
+import { TouchControls } from '../ui/TouchControls';
 
 interface GameState {
     ball: any; paddle: any; paddle2: any;
@@ -72,6 +75,9 @@ export class Game {
         const client = new Colyseus.Client(SERVER_CONNECTION.WS_URL);
         let activeScene: Scene | null = null;
 
+        const deviceSourceManager = new DeviceSourceManager(engine);
+        const hasTouch = ! !deviceSourceManager.getDeviceSource(DeviceType.Touch);
+
         const createScene = async () => {
             const scene = engineSetup.scene;
             engineSetup.camera.setTarget(Vector3.Zero());
@@ -103,6 +109,12 @@ export class Game {
                 }
             });
             this._gui = gui;
+            const touchControls = new TouchControls(this._gui.texture);
+            if (hasTouch) {
+                touchControls.showText("Touch [YES]")
+            } else {
+                touchControls.showText("Touch [NO]")
+            }
             // For PvP modes, show "Waiting..." for Player 2 until they join
             const isPvPMode = gameMode === 'local-2p' || gameMode === 'online-create' || gameMode === 'online-join';
             const isAIMode = gameMode.startsWith('ai-');
@@ -170,7 +182,7 @@ export class Game {
                     cam.setTarget(center);
                     cameraSetupComplete = true;
                 };
-                
+
                 const updatePlayerColorsFromState = () => {
                     if (!room.state || !this._gui) return;
 
