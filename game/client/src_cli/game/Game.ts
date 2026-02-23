@@ -5,6 +5,7 @@ import {
     Color3,
     DeviceSourceManager,
     DeviceType,
+    Logger,
 } from "@babylonjs/core";
 import * as Colyseus from "colyseus.js";
 import { InputController } from "../input/InputController";
@@ -76,6 +77,7 @@ export class Game {
         let activeScene: Scene | null = null;
 
         const deviceSourceManager = new DeviceSourceManager(engine);
+        console.log(deviceSourceManager.getDeviceSource); // DEBUG
         const hasTouch = ! !deviceSourceManager.getDeviceSource(DeviceType.Touch);
 
         const createScene = async () => {
@@ -112,8 +114,10 @@ export class Game {
             const touchControls = new TouchControls(this._gui.texture);
             if (hasTouch) {
                 touchControls.showText("Touch [YES]")
+                console.log('[TOUCH DETECTED]') // DEBUG
             } else {
                 touchControls.showText("Touch [NO]")
+                console.log('[TOUCH NOT AVAILABLE]') // DEBUG
             }
             // For PvP modes, show "Waiting..." for Player 2 until they join
             const isPvPMode = gameMode === 'local-2p' || gameMode === 'online-create' || gameMode === 'online-join';
