@@ -9,9 +9,16 @@ import { useStyles } from '../../hooks/use-styles';
 import { useRouter } from 'next/navigation';
 import { playerPasswordSchema } from '../../lib/form-validation/player-data'
 
+const getCookie = (name) => {
+    return document.cookie
+        .split('; ')
+        .find(row => row.startsWith(name + '='))
+        ?.split('=')[1];
+};
+
 const mobileStyles = {
     main: "flex flex-col justify-center items-center min-h-screen",
-    playerDataForm: "flex flex-col m-80 center p-5 gap-4 border-4 border-amber-400 rounded-sm",
+    playerDataForm: "flex flex-col m-8 min-w-200 center p-5 gap-4 border-4 border-amber-400 rounded-sm",
     inputWrapper: "border border-black",
     inputBox: "border border-black w-full h-10 rounded-md",
     textInputError: 'w-full h-10 px-3 border border-red-500 rounded',
@@ -20,7 +27,7 @@ const mobileStyles = {
 
 const desktopStyles = {
     main: "flex flex-col justify-center items-center min-h-screen",
-    playerDataForm: "flex flex-col m-80 center p-5 gap-4 border-4 border-amber-400 rounded-sm",
+    playerDataForm: "flex flex-col m-8 min-w-200 center p-5 gap-4 border-4 border-amber-400 rounded-sm",
     inputWrapper: "w-full",
     inputBox: "border border-black w-full h-10 rounded-md",
     textInputError: 'w-full h-8 px-3 border border-red-500 rounded',
@@ -30,7 +37,7 @@ const desktopStyles = {
 export default function PlayerCredentialsUI({ userURL })
 {
     const router = useRouter();
-    const { user, authloading, checkAuth } = useAuth();
+    const { user, authloading, logout } = useAuth();
     const { t } = useTranslation();
     const { styles } = useStyles(mobileStyles, desktopStyles);
     const [serverError, setServerError] = useState('');
@@ -48,11 +55,20 @@ export default function PlayerCredentialsUI({ userURL })
             setIsLoading(true);
             setServerError('');
             console.info("Submitting updated profile password info...\n", formData)
+
+			const csrfToken = getCookie('csrf_token');
+
+			if (!csrfToken) {
+				setServerError('CSRF token missing');
+				return;
+			}
+
             const response = await fetch(`/api/auth/password`, {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
+					'x-csrf-token': csrfToken,
                 },
                 body: JSON.stringify({
                     old_password: formData.old_password,
@@ -62,6 +78,7 @@ export default function PlayerCredentialsUI({ userURL })
 
             if (response.status === 204) {
                 alert("Contraseña actualizada. Por seguridad, vuelve a iniciar sesión.");
+                logout();
                 router.push('/login');
                 return;
             }
