@@ -195,6 +195,7 @@ const StartPage = () => {
     const [availableRooms, setAvailableRooms] = useState<RoomListing[]>([]);
     const [lobbyError, setLobbyError] = useState<string | null>(null);
     const [lobbyLoading, setLobbyLoading] = useState(false);
+    const [scoreToWin, setScoreToWin] = useState(5);
     const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const colyseusClientRef = useRef<Colyseus.Client | null>(null);
     // Debug modal state for showing encoded URL
@@ -249,6 +250,12 @@ const StartPage = () => {
         setLobbyPhase('name');
         setAvailableRooms([]);
         setLobbyError(null);
+        setScoreToWin(5);
+    };
+
+    const launchGame = (config: GameSessionConfig) => {
+        const encoded = encodeConfig(config);
+        navigate(`/launch?config=${encoded}`);
     };
 
     // FRONT this is where the data gets preparend this shows the modal with the debug
@@ -352,6 +359,20 @@ const StartPage = () => {
                         />
                     </div>
                     <ColorPicker selectedColor={player1Color} onColorSelect={setPlayer1Color} label='Choose Your Color' />
+                    <div style={{ width: '100%' }}>
+                        <label style={STYLES.label}>Score to win</label>
+                        <select
+                            value={scoreToWin}
+                            onChange={(e) => setScoreToWin(Number(e.target.value))}
+                            style={STYLES.input}
+                        >
+                            <option value={3}>3</option>
+                            <option value={5}>5</option>
+                            <option value={7}>7</option>
+                            <option value={9}>9</option>
+                            <option value={11}>11</option>
+                        </select>
+                    </div>
                     <div style={{ display: 'flex', gap: '12px', marginTop: '20px', width: '100%' }}>
                         <button onClick={handleBackToMenu} style={STYLES.backButton}>Back</button>
                         <GameButton onClick={handleEnterLobby} color='#9C27B0' hoverColor='rgba(156, 39, 176, 0.4)'>Enter Lobby</GameButton>
@@ -448,6 +469,20 @@ const StartPage = () => {
                             Opponent: AI ({selectedMode.replace('ai-', '').toUpperCase()})
                         </div>
                     )}
+                    <div style={{ width: '100%' }}>
+                        <label style={STYLES.label}>Score to win</label>
+                        <select
+                            value={scoreToWin}
+                            onChange={(e) => setScoreToWin(Number(e.target.value))}
+                            style={STYLES.input}
+                        >
+                            <option value={3}>3</option>
+                            <option value={5}>5</option>
+                            <option value={7}>7</option>
+                            <option value={9}>9</option>
+                            <option value={11}>11</option>
+                        </select>
+                    </div>
                     <div style={{ display: 'flex', gap: '12px', marginTop: '20px', width: '100%' }}>
                         <button onClick={handleBackToMenu} style={STYLES.backButton}>Back</button>
                         <GameButton onClick={handleStartGame} color='#4CAF50' hoverColor='rgba(76, 175, 80, 0.4)'>Start Game</GameButton>
