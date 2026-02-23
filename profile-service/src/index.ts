@@ -220,8 +220,14 @@ fastify.post('/internal/profile/gameresult/update', { preHandler: requireService
     	}
 
 	try {
-		await updatePlayerStats(res.game_id, p1, p2);
-		reply.send({ status: 'ok'});
+		const result = await updatePlayerStats(res.game_id, p1, p2);
+		
+		if (!result.applied) {
+	  		return reply.status(400).send({ error: 'One or both players not found in profile' });
+		}
+
+		reply.send({ status: 'ok', rate: result.rate });
+
 	} catch (err) {
 		req.log.error(err);
 		reply.status(500).send({ error: 'PROFILE_STATS_UPDATE_FAILED'});

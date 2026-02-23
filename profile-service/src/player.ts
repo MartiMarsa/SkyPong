@@ -313,14 +313,11 @@ export async function updatePlayerStats(
       [p1.user_id, p2.user_id]
     );
 
-/*    console.log('-------------> gameid: ', gameId);
-    console.log('-------------> user_1: ', p1.user_id, p1.result);
-    console.log('------------->', p1.user_id, p2.user_id);
-    console.log('------------->', players.length)
-*/
     if (players.length !== 2) {
-      throw new Error('Players not found');
-    }
+
+		await db.exec('ROLLBACK');
+  		return { applied: false };
+	}
 
     const A = players.find(p => p.user_id === p1.user_id)!;
     const B = players.find(p => p.user_id === p2.user_id)!;
