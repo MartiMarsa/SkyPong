@@ -56,7 +56,7 @@ restart: down up
 
 all: clean config build up
 
-hall: clean-hall config build up
+hall: clean-hard config build up
 
 buildup: build up
 

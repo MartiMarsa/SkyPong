@@ -146,6 +146,7 @@ export default function SignInPage() {
                             autoComplete="email"
                             {...register('email')} 
                         />
+                        {errors.email && <p>{errors.email.message}</p>}
                     </div>
 
                     {/* Password Field */}
@@ -157,6 +158,7 @@ export default function SignInPage() {
                             autoComplete="current-password"
                             {...register('password')}
                         />
+                        {errors.password && <p>{errors.password.message}</p>}
                     </div>
                     { serverError && (
                         <p className={styles.errorMessage}>

@@ -7,6 +7,10 @@ const it = {
     },
     user: {
         hi: "Ciao!",
+                nickname: "Nickname",
+        winphrase: "Win Phrase",
+        deleteBtn: "Delete Account",
+        deleteAccountWarning: "This will remove permanently your account. This acction is irreverible. Ate you sure?",
     },
     avatar: {
         error: {
