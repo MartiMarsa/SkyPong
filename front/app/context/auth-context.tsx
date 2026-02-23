@@ -32,7 +32,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .find(row => row.startsWith('csrf_token='))
         ?.split('=')[1];
 
-         console.info("Checking auth credentials...")
+        console.info("Checking auth credentials...");
+
+		if (!csrfToken) return;
+		
         const res = await fetch('/api/auth/verify', { 
             credentials: 'include', 
             headers: {
