@@ -16,7 +16,7 @@ const CanvasPage = () => {
     const [, forceUpdate] = useState({});
 
     // Loading and overlay state
-    const [isLoading, setIsLoading] = useState(true); // Show overlay on initial load
+    const [isLoading, setIsLoading] = useState(true);
     const [loadingMsg, setLoadingMsg] = useState('Loading...');
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [fadingOut, setFadingOut] = useState(false);
@@ -25,7 +25,6 @@ const CanvasPage = () => {
     const config = location.state as GameSessionConfig | null;
 
     useEffect(() => {
-        // Overlay shown as soon as page mounts
         setIsLoading(true);
         setFadingOut(false);
         setLoadingMsg('Loading...');
@@ -38,7 +37,6 @@ const CanvasPage = () => {
             return;
         }
 
-        // Prevent double initialization (React StrictMode)
         if (initializedRef.current || initLockRef.current) {
             return;
         }
@@ -48,28 +46,26 @@ const CanvasPage = () => {
         let retryTimeout: ReturnType<typeof setTimeout> | null = null;
 
         function handleReady() {
-            console.log('[CanvasPage] handleReady called - starting fade out');
-            // Start fade out and remove overlay after animation
             setFadingOut(true);
             setTimeout(() => {
-                console.log('[CanvasPage] Fade out complete - hiding overlay');
                 setIsLoading(false);
                 setFadingOut(false);
             }, 700);
         }
+
         function handleError(err: string) {
             setErrorMsg(err);
             setLoadingMsg('');
             setIsLoading(true);
             setFadingOut(false);
         }
+
         if (isTestScene) {
             try {
                 testSceneRef.current = new TestScene(canvasRef.current);
                 initializedRef.current = true;
-                // Simulate load for demo/testing
                 setTimeout(handleReady, 1200);
-            } catch (e) {
+            } catch {
                 handleError('Failed to load visualization.');
             }
         } else {
@@ -88,12 +84,8 @@ const CanvasPage = () => {
                 config,
                 // onGameReady callback, called when all assets/network/game is ready
                 (onLaunch, isWaitingForOpponent = false) => {
-                    console.log('[CanvasPage] onGameReady callback invoked, waitingForOpponent:', isWaitingForOpponent);
-
                     if (isWaitingForOpponent) {
-                        // For PvP mode, update message but keep overlay visible
                         setLoadingMsg('Waiting for opponent...');
-                        // Store the onLaunch callback for later (will be called when both ready)
                         return;
                     }
 
@@ -104,26 +96,22 @@ const CanvasPage = () => {
                         : 'Ready!');
                     // Fade out overlay
                     handleReady();
-                    // After overlay starts fading, trigger the game launch (countdown)
+
                     setTimeout(() => {
-                        console.log('[CanvasPage] Calling onLaunch to start countdown');
                         if (onLaunch) {
                             onLaunch();
                         }
-                    }, 200); // Small delay to let fade start
+                    }, 200);
                 },
-                // onBackToMenu (triggered on network fail or quit)
                 () => {
                     handleError('Connection failed or room closed.');
                     setTimeout(() => navigate('/'), 2000);
                 },
             );
-            // Only mark as initialized if game actually started (not skipped due to lock)
+
             if (dispose !== null) {
                 initializedRef.current = true;
             } else {
-                // Game was skipped because another instance is running/cleaning up
-                // Schedule a retry after a short delay
                 setLoadingMsg('Waiting for game cleanup...');
                 initLockRef.current = false;
                 retryTimeout = setTimeout(() => {
@@ -159,16 +147,17 @@ const CanvasPage = () => {
                 message={loadingMsg}
                 error={errorMsg}
             />
-            {/* Minimal HTML overlay - only dev controls and back button */}
-            <div style={{
-                position: 'absolute',
-                top: '20px',
-                left: '20px',
-                zIndex: 10,
-                display: 'flex',
-                gap: '10px',
-                flexDirection: 'column'
-            }}>
+            <div
+                style={{
+                    position: 'absolute',
+                    top: '20px',
+                    left: '20px',
+                    zIndex: 10,
+                    display: 'flex',
+                    gap: '10px',
+                    flexDirection: 'column',
+                }}
+            >
                 <button
                     onClick={toggleScene}
                     style={{
@@ -178,7 +167,7 @@ const CanvasPage = () => {
                         color: 'white',
                         border: 'none',
                         borderRadius: '4px',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
                     }}
                 >
                     {isTestScene ? 'Load Game' : 'Load Test Scene'}
@@ -192,7 +181,7 @@ const CanvasPage = () => {
                         color: 'white',
                         border: 'none',
                         borderRadius: '4px',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
                     }}
                 >
                     Back to Menu

@@ -1,3 +1,8 @@
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN || 'secret'; // INFO temporary
+const STATS_SERVICE_URL = process.env.STATS_SERVICE_URL ?? 'http://statistics-service:6000'; // INFO temporary
+
+import axios from 'axios';
+
 interface PlayerResult {
     user_id: string;
     user_score: number;
@@ -85,5 +90,34 @@ export class GameStats {
         }
 
         return payload;
+    }
+
+    // ILYA
+
+    async send(): Promise<void> {
+        const payload = this.toPayload();
+        // const url = `${process.env.STATS_SERVICE_URL}/internal/statistics/gameresult/`; // TODO use the ones in .env in the future
+        const url = `${STATS_SERVICE_URL}/internal/statistics/gameresult/update`;
+        // const token = process.env.SERVICE_TOKEN; // TODO use the ones in .env in the future
+        const token = SERVICE_TOKEN;
+
+        try {
+            const res = await axios.post(url, payload, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    'X-Service-Name': 'game-service'
+                },
+//                body: JSON.stringify(payload)
+            });
+
+            if (res.status < 200 || res.status >= 300) {
+                throw new Error('[FAILED] game results -> statistics')
+            }
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 }

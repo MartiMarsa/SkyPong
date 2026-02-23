@@ -1,16 +1,22 @@
+import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
 
-const dbPath = path.resolve(__dirname, '../profile.db');
+const profileDataDir =  process.env.PROFILE_DATA_DIR?.trim() || path.resolve(process.cwd(), 'data');
 
-const db = new sqlite3.Database(dbPath, err => {
+const profileDbPath = process.env.PROFILE_DB_PATH?.trim() || path.join(profileDataDir, 'profile.db');
+
+fs.mkdirSync(path.dirname(profileDbPath), { recursive: true });
+
+
+const db = new sqlite3.Database(profileDbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, err => {
 	if (err) {
 		console.error('Failed to connect to SQLite', err);
 	} else {
-		console.log('Connected to SQLite', dbPath);
+		console.log('Connected to SQLite', profileDbPath);
 	}
-});
-
+})
+;
 export function initProfileDB(): Promise<void> {
 
 	return new Promise((resolve, reject) => {
