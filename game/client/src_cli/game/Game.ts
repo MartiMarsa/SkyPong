@@ -3,6 +3,9 @@ import {
     Vector3,
     Observer,
     Color3,
+    DeviceSourceManager,
+    DeviceType,
+    Logger,
 } from "@babylonjs/core";
 import * as Colyseus from "colyseus.js";
 import { InputController } from "../input/InputController";
@@ -17,6 +20,8 @@ import { GameUIManager } from '../ui/GameUIManager';
 import { SERVER_CONNECTION, VISUAL, CLIENT_TIMING, RENDERING, CAMERA } from '../config';
 import { adjustCamera } from '../utils/Camera';
 import { GameSessionConfig } from '../types/GameSessionConfig';
+import { TouchControls } from '../ui/TouchControls';
+import { touchDetection } from '../utils/touchDetection';
 
 interface GameState {
     ball: any; paddle: any; paddle2: any;
@@ -72,6 +77,10 @@ export class Game {
         const client = new Colyseus.Client(SERVER_CONNECTION.WS_URL);
         let activeScene: Scene | null = null;
 
+        const deviceSourceManager = new DeviceSourceManager(engine);
+        console.log(deviceSourceManager.getDeviceSource); // DEBUG
+        const hasTouch = touchDetection();
+
         const createScene = async () => {
             const scene = engineSetup.scene;
             engineSetup.camera.setTarget(Vector3.Zero());
@@ -103,6 +112,15 @@ export class Game {
                 }
             });
             this._gui = gui;
+            const touchControls = new TouchControls(this._gui.texture);
+            if (hasTouch) {
+                // touchControls.showText("Touch [YES]") // DEBUG
+                touchControls.showControls();
+                console.log('[TOUCH DETECTED]') // DEBUG
+            } else {
+                // touchControls.showText("Touch [NO]") // DEBUG
+                console.log('[TOUCH NOT AVAILABLE]') // DEBUG
+            }
             // For PvP modes, show "Waiting..." for Player 2 until they join
             const isPvPMode = gameMode === 'local-2p' || gameMode === 'online-create' || gameMode === 'online-join';
             const isAIMode = gameMode.startsWith('ai-');
@@ -170,11 +188,10 @@ export class Game {
                     cam.setTarget(center);
                     cameraSetupComplete = true;
                 };
-                
+
                 const updatePlayerColorsFromState = () => {
                     if (!room.state || !this._gui) return;
 
-                    // For online PvP, wait until player2 has joined (both colors are set)
                     // For local 2P, colors are available immediately from joinOptions
                     const isOnlineMode = gameMode === 'online-create' || gameMode === 'online-join';
                     if (isOnlineMode && !room.state.player2Joined) {
@@ -242,10 +259,8 @@ export class Game {
                         updatePlayerColorsFromState();
                     }
 
-                    // Store the countdown callback to call when both are ready
                     let countdownCallback: (() => void) | null = null;
 
-                    // Callback for when both clients/network are ready, before countdown
                     const signalGameReady = () => {
                         // For online PvP, send "client_ready" message to server
                         if (isOnlineMode) {
@@ -281,7 +296,6 @@ export class Game {
                         }
                     }
 
-                    // Listen for gameStarted to become true (when both clients are ready)
                     (room.state as any).listen('gameStarted', (value: boolean) => {
                         if (value && countdownCallback && this._onGameReady) {
                             // Both clients are ready, fade out and start countdown
@@ -407,7 +421,9 @@ export class Game {
                 this._input = input;
 
                 let speed = 0;
-                let inputSendCounter = 0;
+                let inputSendCounter = 0; // TODO remove
+                
+                touchControls.setInputController(input);
 
                 this._renderObservable = scene.onBeforeRenderObservable;
                 this._renderObserver = this._renderObservable.add(() => {
@@ -441,9 +457,14 @@ export class Game {
                     );
 
                     if (++inputSendCounter >= NETWORK.SYNC.INPUT_SEND_INTERVAL_FRAMES && !this._isGameOver) {
-                        room.send('input', isOnlineMode
-                            ? { a: !!input.inputMap['a'], d: !!input.inputMap['d'] }
-                            : input.inputMap);
+                        if (isOnlineMode) {
+                            room.send('input', input.getPaddle1InputState());
+                        } else {
+                            room.send('input', {
+                                ...input.getPaddle1InputState(),
+                                ...input.getPaddle2InputState()
+                            });
+                        }
                         inputSendCounter = 0;
                     }
                 });
