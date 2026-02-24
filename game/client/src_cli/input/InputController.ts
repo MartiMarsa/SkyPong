@@ -1,23 +1,43 @@
 import { Scene, KeyboardEventTypes, Observer, KeyboardInfo } from "@babylonjs/core";
 
 export class InputController {
-    public inputMap: { [key: string]: boolean } = {};
+    private inputMap: { [key: string]: boolean } = {};
     private _keyboardObserver: Observer<KeyboardInfo> | null = null;
+
+    public pressLeft() { this.inputMap['a'] = true; }
+    public releaseLeft() { this.inputMap['a'] = false; }
+    public pressRight() { this.inputMap['d'] = true; }
+    public releaseRight() { this.inputMap['d'] = false; }
 
     constructor(scene: Scene) {
         this.inputMap = {};
 
         this._keyboardObserver = scene.onKeyboardObservable.add((kbInfo) => {
             const key = kbInfo.event.key.toLowerCase();
-            switch (kbInfo.type) {
-                case KeyboardEventTypes.KEYDOWN:
-                    this.inputMap[key] = true;
+            switch (key) {
+                case 'a':
+                    kbInfo.type == KeyboardEventTypes.KEYDOWN ? this.pressLeft() : this.releaseLeft();
                     break;
-                case KeyboardEventTypes.KEYUP:
-                    this.inputMap[key] = false;
+                case 'd':
+                    kbInfo.type == KeyboardEventTypes.KEYDOWN ? this.pressRight() : this.releaseRight();
+                    break;
+                case 'j':
+                case 'k':
+                    this.inputMap[key] = kbInfo.type === KeyboardEventTypes.KEYDOWN;
                     break;
             }
         });
+    }
+
+    public getPaddle1InputState() {
+        return {
+            a: !!this.inputMap['a'], d: !!this.inputMap['d']
+        };
+    }
+    public getPaddle2InputState() {
+        return {
+            j: !!this.inputMap['j'], k: !!this.inputMap['k']
+        };
     }
 
     public dispose(): void {
