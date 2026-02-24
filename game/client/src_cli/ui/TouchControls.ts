@@ -10,23 +10,23 @@ export class TouchControls {
         this.texture = texture;
     }
 
-    showText(message: string) {
-        if (this.textBlock) {
-            this.textBlock.text = message;
-            return;
-        }
+    // showText(message: string) {
+    //     if (this.textBlock) {
+    //         this.textBlock.text = message;
+    //         return;
+    //     }
 
-        const textBlock = new TextBlock();
-        textBlock.text = message;
-        textBlock.color = "white";
-        textBlock.fontSize = 32;
-        textBlock.fontWeight = "bold";
-        textBlock.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
-        textBlock.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
-        textBlock.top = "24px";
-        this.texture.addControl(textBlock);
-        this.textBlock = textBlock;
-    }
+    //     const textBlock = new TextBlock();
+    //     textBlock.text = message;
+    //     textBlock.color = "white";
+    //     textBlock.fontSize = 32;
+    //     textBlock.fontWeight = "bold";
+    //     textBlock.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
+    //     textBlock.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+    //     textBlock.top = "24px";
+    //     this.texture.addControl(textBlock);
+    //     this.textBlock = textBlock;
+    // }
 
     hideText() {
         if (this.textBlock) {
@@ -43,7 +43,7 @@ export class TouchControls {
         const container = new StackPanel();
         container.isVertical = false;
         container.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
-        container.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
+        container.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
         container.height = "60px";
 
         const buttonLeft = Button.CreateSimpleButton("btnLeft", "Left Button");

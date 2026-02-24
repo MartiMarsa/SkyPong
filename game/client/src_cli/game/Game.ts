@@ -114,11 +114,11 @@ export class Game {
             this._gui = gui;
             const touchControls = new TouchControls(this._gui.texture);
             if (hasTouch) {
-                touchControls.showText("Touch [YES]")
+                // touchControls.showText("Touch [YES]") // DEBUG
                 touchControls.showControls();
                 console.log('[TOUCH DETECTED]') // DEBUG
             } else {
-                touchControls.showText("Touch [NO]")
+                // touchControls.showText("Touch [NO]") // DEBUG
                 console.log('[TOUCH NOT AVAILABLE]') // DEBUG
             }
             // For PvP modes, show "Waiting..." for Player 2 until they join
