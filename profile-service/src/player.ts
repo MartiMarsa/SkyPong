@@ -32,7 +32,7 @@ interface PlayerStats {
 }
 
 interface PlayerInfo {
-    user_id: string;
+    id: string;
     nickname: string;
     avatarUrl: string | null;
     winPhrase: string | null;
@@ -120,7 +120,7 @@ export async function getPlayerById(userId: string): Promise<PlayerInfo | null> 
 	if (!row) return null;
 
   	return {
-			user_id: row.user_id,
+			id: row.user_id,
 			nickname: row.nickname,
 			avatarUrl: row.avatarUrl ?? null,
 			winPhrase: row.winPhrase ?? null,
@@ -142,12 +142,13 @@ export async function getPlayerById(userId: string): Promise<PlayerInfo | null> 
 // CREATE PLAYER
 // --------------------------------------------------
 
-export async function createPlayer(userId: string): Promise<PlayerInfo> {
+export async function createPlayer(userId: string) {
+
   for (let i = 1; i <= MAX_RETRIES; i++) {
+
     const nickname = generateNickname(false);
 
     try {
-      await db.run('BEGIN');
 
       await db.run(
         `INSERT INTO players (user_id, nickname)
@@ -155,29 +156,33 @@ export async function createPlayer(userId: string): Promise<PlayerInfo> {
         [userId, nickname]
       );
 
-      await db.run(
-        `INSERT INTO player_stats (user_id)
-         VALUES (?)`,
-        [userId]
-      );
-
-      await db.run('COMMIT');
+      await db.run(`
+		   INSERT OR IGNORE INTO player_stats
+		   (user_id, played, wins, losses, winrate, rate, updated_at)
+		   VALUES
+		   (?, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
+		   `, 
+		   [userId]
+		  );
 
       const player = await getPlayerById(userId);
+
       if (!player) {
         throw new Error('Player not found after create');
       }
 
       console.log('[createPlayer]', userId, nickname);
+
       return player;
 
     } catch (err: any) {
-      await db.run('ROLLBACK');
 
       if (err?.code === 'SQLITE_CONSTRAINT') {
+
         if (i === MAX_RETRIES) {
           throw new Error('Nickname collision limit');
         }
+
         continue;
       }
 
@@ -185,7 +190,7 @@ export async function createPlayer(userId: string): Promise<PlayerInfo> {
     }
   }
 
-  throw new Error('Failed to create player');
+  throw new Error('createPlayer failed');
 }
 
 // --------------------------------------------------
@@ -313,14 +318,11 @@ export async function updatePlayerStats(
       [p1.user_id, p2.user_id]
     );
 
-/*    console.log('-------------> gameid: ', gameId);
-    console.log('-------------> user_1: ', p1.user_id, p1.result);
-    console.log('------------->', p1.user_id, p2.user_id);
-    console.log('------------->', players.length)
-*/
     if (players.length !== 2) {
-      throw new Error('Players not found');
-    }
+
+		await db.exec('ROLLBACK');
+  		return { applied: false };
+	}
 
     const A = players.find(p => p.user_id === p1.user_id)!;
     const B = players.find(p => p.user_id === p2.user_id)!;
@@ -420,7 +422,7 @@ export async function getUserPublicProfile(userId: string): Promise<PlayerInfo |
     if (!row) return null;
 
     return {
-            user_id: row.user_id,
+            id: row.user_id,
             nickname: row.nickname,
             avatarUrl: row.avatarUrl ?? null,
             winPhrase: row.winPhrase ?? null,

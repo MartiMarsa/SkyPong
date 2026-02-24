@@ -5,21 +5,39 @@ import { useRouter } from 'next/navigation';
 import NavigationAppUI from '../ui/navigation-app-ui';
 import { useTranslation } from '../hooks/use-translation';
 import { useAuth } from '../context/auth-context';
+import { useStyles } from '../hooks/use-styles';
+import Link from 'next/link';
 import AvatarUpload from '../ui/player-private-profile/avatar-ui'
 import PlayerUI from '../ui/player-private-profile/player-ui';
 import PlayerCredentialsUI from '../ui/player-private-profile/player-credentials-ui';
+import PlayerDeleteUI from '../ui/player-private-profile/player-delete-account-ui';
 
 // import { useSearchParams } from 'next/navigation'
+const mobileStyles = {
+    goMyProfileWrapper: "flex-row justify-center",
+    goMyProfileBtn: "p-4 gb-blue-400"
+};
 
+const desktopStyles = {
+    goMyProfileWrapper: "flex-row center",
+    goMyProfileBtn: "p-4 bg-blue-400 rounded-sm text-blue-900"
+};
 
+const getCsrfToken = () => {
+    return document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf_token='))
+        ?.split('=')[1];
+};
 export default function ProfilePagePrivate()
 {
-    const t = useTranslation();
+const { t } = useTranslation();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const { user, authloading, checkAuth } = useAuth();
     const [player, setPlayer] = useState(null);
     const [serverError, setServerError ] = useState(''); 
+    const { styles } = useStyles(mobileStyles, desktopStyles);
     
     // const searchParams = useSearchParams()
     // const id = searchParams.get('id') // Obtiene "123"
@@ -39,13 +57,19 @@ export default function ProfilePagePrivate()
         setServerError('');
 
         try {
+            
+             const csrfToken = getCsrfToken();
             console.log("Solicitando perfil para ID:", user.id);
             
-            const response = await fetch(`/api/profile/users/${user.id}`, {
+            const response = await fetch(`/api/profile/me`, {
                 method: 'GET',
                 credentials: 'include',
+                headers: {
+                    'x-csrf-token': csrfToken || '',
+                },
             });
 
+            console.info("Response: ", response);
             if (!response.ok) {
                 if (response.status === 404)
                     setServerError(t.serverError.notFound);
@@ -58,7 +82,7 @@ export default function ProfilePagePrivate()
             console.log("Datos recibidos:", data);
             
             // Seteamos el player con los datos de la API
-            setPlayer(data.user); 
+            setPlayer(data); 
 
         } catch (error)
         {
@@ -89,11 +113,15 @@ export default function ProfilePagePrivate()
         { serverError ? (serverError) : (
         <main className=''>
             <NavigationAppUI  />
-            <h1>{t.profilePage}</h1>
+            <h1>{t?.profilePage?.title}</h1>
             {console.info("Player in component: ", player)}
-            <AvatarUpload currentAvatar={ `/api/profile/avatars/${user?.id}.webp` || ""} />
+            <AvatarUpload />
             <PlayerUI />
             <PlayerCredentialsUI />
+            <div className={styles.goProfileWrapper}>
+                <Link href="/me" className={styles.goMyProfileBtn}>Go my Profile</Link>
+            </div>
+            <PlayerDeleteUI />
 
         </main>
         )}

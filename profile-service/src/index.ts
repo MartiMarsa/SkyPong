@@ -48,6 +48,13 @@ const ALLOWED_MIME = [
 ]
 
 // --- TYPES ---
+interface Player {
+		id: string;
+		nickname: string;
+		avatar?: string;
+}
+
+
 fastify.register(fastifyStatic, {
       	root: path.join(process.cwd(), 'uploads'),
       	prefix: '/static/'
@@ -119,16 +126,15 @@ async function verifyToken(req: any, reply: any) {
 		}
 	}
 }
-
 // --- INTERNAL PROFILE ROUTE ---
 fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { preHandler: requireServiceAuth }, async (req, reply) => {
 	try {
 			const userId = req.params.id;
 
-			let player = await getPlayerById(userId);
+			let player: Player | null = await getPlayerById(userId) as Player | null;
 
 			if (!player) {
-				player = await createPlayer(userId);
+				player = await createPlayer(userId) as Player;
 				}
 
 		  	return reply.send({ nickname: player.nickname, });
@@ -139,10 +145,11 @@ fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { p
 				}
 });
 
-// --- PRIVATE PROFILE ---
-fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
+
+// --- PRIVATE PROFILE OTHER PLAYER ---
+fastify.get<{Params: {id: string}}>('/profile/me/:id', { preHandler: verifyToken }, async (req, reply) => {
 	try {
-	      	const userId = req.user.sub;
+	      	const userId = req.params.id;
 
 	      	if (!userId) {
 		    	return reply.status(401).send();
@@ -167,7 +174,67 @@ fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
 	  }
 });
 
-// --- CHANGE PROFILE ---
+
+// --- PUBLIC PROFILE USER ---
+fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
+	try {
+	      	const userId = req.user.sub;
+
+        if (!userId) {
+            return reply.status(401).send();
+        }
+
+		if (typeof userId !== 'string') {
+			return reply.status(401).send();
+		}
+	
+        //This is private user info so can return all info
+		let player = await getPlayerById(userId);
+
+	  // create new player if it was authorized (signup), but no profile in database
+		if (!player) {
+      			player = await createPlayer(userId);
+      		}
+
+		return reply.send(player);
+	} catch (err: any) {
+
+		fastify.log.error(err);
+		reply.status(500).send();
+	  }
+});
+
+// --- PUBLIC PROFILE USER ---
+fastify.get('/profile/:id(^u_[a-zA-Z0-0-]+)', { preHandler: verifyToken }, async (req, reply) => {
+	try {
+	      	const userId = (req.params as any).id;
+
+	      	if (!userId) {
+		    	return reply.status(401).send();
+	      	}
+
+		if (typeof userId !== 'string') {
+			return reply.status(401).send();
+		}
+
+        //This is public user info only
+		let player = await getPlayerById(userId);
+
+	  // create new player if it was authorized (signup), but no profile in database
+		if (!player) {
+      			player = await createPlayer(userId);
+      		}
+
+		return reply.send(player);
+	} catch (err: any) {
+
+		fastify.log.error(err);
+		reply.status(500).send();
+	  }
+});
+
+
+// --- PRIVATE CHANGE PROFILE ---
 fastify.patch('/profile/updateme', { preHandler: verifyToken }, async (req, reply) => {
     try {
         const userId = req.user.sub;
@@ -220,8 +287,14 @@ fastify.post('/internal/profile/gameresult/update', { preHandler: requireService
     	}
 
 	try {
-		await updatePlayerStats(res.game_id, p1, p2);
-		reply.send({ status: 'ok'});
+		const result = await updatePlayerStats(res.game_id, p1, p2);
+		
+		if (!result.applied) {
+	  		return reply.status(400).send({ error: 'One or both players not found in profile' });
+		}
+
+		reply.send({ status: 'ok', rate: result.rate });
+
 	} catch (err) {
 		req.log.error(err);
 		reply.status(500).send({ error: 'PROFILE_STATS_UPDATE_FAILED'});
@@ -252,15 +325,23 @@ fastify.post('/internal/profile/delete', { preHandler: requireServiceAuth }, asy
 	  	return reply.status(400).send({ error: 'userId required' });
     	}
 
-	const avatarUrl = `/static/avatars/${userId}.webp`;
+        const path = require('path');
+        const AVATAR_DIR = '/app/uploads/avatars/'; // O la ruta donde guardes físicamente los archivos
 
-    	try {
-		await softdeletePlayer(userId);
+        const filePath = path.join(AVATAR_DIR, `${userId}.webp`);
+        try {
+            await softdeletePlayer(userId);
 
-		await access(avatarUrl, constants.F_OK);
-		await unlink(avatarUrl);
+            // Verificamos si el archivo existe antes de intentar borrarlo
+            try {
+                await access(filePath, constants.F_OK);
+                await unlink(filePath);
+            } catch (fsErr) {
+                // Si el archivo no existe, simplemente ignoramos el error y seguimos
+                req.log.warn(`No avatar found for user ${userId}, skipping file deletion.`);
+            }
 
-	  	reply.send({ status: 'profile_deleted' });
+            reply.send({ status: 'profile_deleted' });
 
     	} catch (err) {
 
@@ -503,6 +584,7 @@ fastify.get('/profile/users/:id', async (req, reply) => {
 
       	return { user };
 });
+
 
 // --- SEND FRIEND REQUEST ---
 fastify.post('/profile/friends/:toId', async (req, reply) => {

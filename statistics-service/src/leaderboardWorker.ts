@@ -4,7 +4,7 @@ import { sleep, getDbHelpers } from './helpers';
 
 // --- CONFIG ---
 //const PROFILE_API = 'http://profile-service:8082/internal/profile/leaderboard/updates';
-const PROFILE_API ='http://127.0.0.1:5000/internal/profile/leaderboard/updates';
+const PROFILE_API = process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:5000/internal/profile/leaderboard/updates';
 
 const TOKEN = process.env.SERVICE_TOKEN || 'secret'; // process.env.SERVICE_TOKEN;
 let interval = 2000;

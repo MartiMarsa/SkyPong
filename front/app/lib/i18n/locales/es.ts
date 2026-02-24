@@ -12,6 +12,8 @@ const es = {
         hi: "hola!",
         nickname: "Nickname",
         winphrase: "Frase de Victoria",
+        deleteBtn: "Eliminar Cuenta",
+        deleteAccountWarning: "Esto eliminará tu cuenta permanente mente. Esta acción es irreversible. ¿Estás seugor?",
         errors: {
             nicknameRequired: "Nickname vacío",
             nicknameMinLength: (len: number)=>{ return (`La Frase de la vitoria debe contener ${len}`)},

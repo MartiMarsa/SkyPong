@@ -2,8 +2,6 @@ import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
 
-//const dbPath = path.resolve(__dirname, '../leaderboard.db');
-
 const liderboardDataDir =  process.env.STATS_DATA_DIR?.trim() || path.resolve(process.cwd(), 'data');
 
 const liderboardDbPath = process.env.STATS_DB_PATH?.trim() || path.join(liderboardDataDir, 'leaderboard.db');

@@ -44,7 +44,7 @@ function readPublicKeyOrExit(): string {
 		console.log(`[profile] JWT public key loaded from ${publicKeyPath} after ${attempts} attempt(s)`);
 	}
 
-    return fs.readFileSync(publicKeyPath, 'utf-8');
+    return fs.readFileSync(publicKeyPath, 'utf-8').trim();
 }
 
 const publicKey = readPublicKeyOrExit();
