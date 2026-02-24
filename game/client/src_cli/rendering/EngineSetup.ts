@@ -2,6 +2,8 @@ import { Engine, Scene, FreeCamera, Vector3, Color4, Mesh } from "@babylonjs/cor
 import { RENDERING, CAMERA } from '../config';
 import { adjustCamera } from "../utils/Camera";
 
+export type CameraViewType = 'angled' | 'top-down';
+
 export class EngineSetup {
     public engine: Engine;
     public scene: Scene;
@@ -10,11 +12,13 @@ export class EngineSetup {
     private _resizeTarget: Mesh | null = null;
     private _resizeHandler: (() => void) | null = null;
     private _isPlayer2: boolean = false; // Track if this is Player 2 (for camera flip)
+    private _cameraView: CameraViewType = 'angled';
 
-    constructor(canvas: HTMLCanvasElement, isFPV: boolean = false) {
+    constructor(canvas: HTMLCanvasElement, isFPV: boolean = false, cameraView: CameraViewType = 'angled') {
         this.engine = this.createEngine(canvas);
         this.scene = this.createScene();
         this.camera = this.createCamera(isFPV);
+        this._cameraView = cameraView;
     }
 
     public setResizeTarget(mesh: Mesh): void {
@@ -55,7 +59,7 @@ export class EngineSetup {
             if (!this._resizeTarget.isDisposed()) {
                 const center = this._resizeTarget.getBoundingInfo().boundingBox.centerWorld;
                 adjustCamera(this.camera, this._resizeTarget, this.engine);
-                
+
                 // If Player 2, flip camera after adjust
                 if (this._isPlayer2) {
                     this.camera.position = new Vector3(this.camera.position.x, this.camera.position.y, -this.camera.position.z);
@@ -72,7 +76,7 @@ export class EngineSetup {
     }
 
     private createCamera(isFPV: boolean = false): FreeCamera {
-        const cameraPos = CAMERA.DEFAULT_POSITION;
+        const cameraPos = this._cameraView === 'top-down' ? CAMERA.TOP_DOWN_POSITION : CAMERA.DEFAULT_POSITION;
 
         const camera = new FreeCamera(
             "camera",
