@@ -1,4 +1,4 @@
-import { AdvancedDynamicTexture, TextBlock, Control } from "@babylonjs/gui";
+import { AdvancedDynamicTexture, TextBlock, Control, StackPanel, Button } from "@babylonjs/gui";
 
 export class TouchControls {
     private texture: AdvancedDynamicTexture;
@@ -31,5 +31,32 @@ export class TouchControls {
             this.texture.removeControl(this.textBlock);
             this.textBlock = null;
         }
+    }
+
+    showControls() {
+        const container = new StackPanel();
+        container.isVertical = false;
+        container.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
+        container.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
+        container.height = "60px";
+
+        const buttonLeft = Button.CreateSimpleButton("btnLeft", "Left Button");
+        buttonLeft.width = "150px";
+        buttonLeft.height = "40px";
+        buttonLeft.color = "white";
+        buttonLeft.background = "red";
+        buttonLeft.paddingRight = "10px";
+
+        const buttonRight = Button.CreateSimpleButton("btnRight", "Right Button");
+        buttonRight.width = "150px";
+        buttonRight.height = "40px";
+        buttonRight.color = "white";
+        buttonRight.background = "red";
+        buttonRight.paddingLeft= "10px";
+
+        container.addControl(buttonLeft);
+        container.addControl(buttonRight);
+
+        this.texture.addControl(container);
     }
 }

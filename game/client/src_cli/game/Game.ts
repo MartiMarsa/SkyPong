@@ -116,6 +116,7 @@ export class Game {
             if (hasTouch) {
                 touchControls.showText("Touch [YES]")
                 console.log('[TOUCH DETECTED]') // DEBUG
+                touchControls.showControls();
             } else {
                 touchControls.showText("Touch [NO]")
                 console.log('[TOUCH NOT AVAILABLE]') // DEBUG
