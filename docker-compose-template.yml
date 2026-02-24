@@ -14,12 +14,12 @@ networks:
 # VOLUMES
 # ──────────────────────────────────────────────
 volumes:
-  # sqlite_auth_vol:
-  #   driver: local
-  #   driver_opts:
-  #     type: none
-  #     o: bind
-  #     device: PLACEHOLDER_SQLITE_AUTH
+  sqlite_auth_vol:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: PLACEHOLDER_SQLITE_AUTH
   front-dev_vol:
     driver: local
     driver_opts:
@@ -196,7 +196,7 @@ services:
       - PROFILE_DATA_DIR=/app/data
       - JWT_PUBLIC_KEY_PATH=/app/keys/jwt-public.pem
     volumes:
-      - profile-service_vol:/app/data
+      - PLACEHOLDER_PROFILE:/app/data
       - keys:/app/keys:ro
       - uploads:/app/uploads
     healthcheck:
@@ -220,12 +220,42 @@ services:
       - SERVICE_NAME=statistics-service
       - STATS_DATA_DIR=/app/data
     volumes:
-      - statistics-service_vol:/app/data
+      - PLACEHOLDER_STATISTICS:/app/data
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:6000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
       interval: 10s
       timeout: 3s
       retries: 10
+  
+  # ────────────────────────────────────────────
+  # DB SEED (one-shot)
+  # ────────────────────────────────────────────
+  db-seed:
+    container_name: db-seed
+    build: ./seed
+    networks:
+      - backend
+    volumes:
+    # auth-service sqlite
+      - PLACEHOLDER_SQLITE_AUTH:/auth-data
+
+    # profile-service sqlite
+      - PLACEHOLDER_PROFILE:/profile-data
+
+    # statistics-service sqlite
+      - PLACEHOLDER_STATISTICS:/stats-data
+    environment:
+      - NODE_ENV=development
+      - SEED_MODE=dev
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      profile-service:
+        condition: service_healthy
+      statistics-service:
+        condition: service_healthy
+    command: ["node", "/app/seed.js"]
+#    restart: "no"
 
   # ────────────────────────────────────────────
   # EXPORTERS / MONITORING
