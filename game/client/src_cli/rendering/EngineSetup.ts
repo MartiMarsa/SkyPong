@@ -15,10 +15,10 @@ export class EngineSetup {
     private _cameraView: CameraViewType = 'angled';
 
     constructor(canvas: HTMLCanvasElement, isFPV: boolean = false, cameraView: CameraViewType = 'angled') {
+        this._cameraView = cameraView;
         this.engine = this.createEngine(canvas);
         this.scene = this.createScene();
         this.camera = this.createCamera(isFPV);
-        this._cameraView = cameraView;
     }
 
     public setResizeTarget(mesh: Mesh): void {
@@ -92,6 +92,9 @@ export class EngineSetup {
             camera.setTarget(new Vector3(0, 0, 10));
         } else {
             camera.setTarget(Vector3.Zero());
+            if (this._cameraView === 'top-down') {
+                camera.upVector = new Vector3(0, 0, -1);
+            }
         }
 
         camera.attachControl();
