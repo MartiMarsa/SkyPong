@@ -1,8 +1,10 @@
-import { AdvancedDynamicTexture, TextBlock, Control, StackPanel, Button } from "@babylonjs/gui";
+import { AdvancedDynamicTexture, TextBlock, Control, StackPanel, Button, CornerHandle } from "@babylonjs/gui";
+import { InputController } from "src_cli/input/InputController";
 
 export class TouchControls {
     private texture: AdvancedDynamicTexture;
     private textBlock: TextBlock | null = null;
+    private controller: InputController | null = null;
 
     constructor(texture: AdvancedDynamicTexture) {
         this.texture = texture;
@@ -33,6 +35,10 @@ export class TouchControls {
         }
     }
 
+    setInputController(controller: InputController) {
+        this.controller = controller;
+    }
+
     showControls() {
         const container = new StackPanel();
         container.isVertical = false;
@@ -46,13 +52,25 @@ export class TouchControls {
         buttonLeft.color = "white";
         buttonLeft.background = "red";
         buttonLeft.paddingRight = "10px";
+        buttonLeft.onPointerDownObservable.add(() => {
+            this.controller?.pressLeft();
+        })
+        buttonLeft.onPointerUpObservable.add(() => {
+            this.controller?.releaseLeft();
+        })
 
         const buttonRight = Button.CreateSimpleButton("btnRight", "Right Button");
         buttonRight.width = "150px";
         buttonRight.height = "40px";
         buttonRight.color = "white";
         buttonRight.background = "red";
-        buttonRight.paddingLeft= "10px";
+        buttonRight.paddingLeft = "10px";
+        buttonRight.onPointerDownObservable.add(() => {
+            this.controller?.pressRight();
+        })
+        buttonRight.onPointerUpObservable.add(() => {
+            this.controller?.releaseRight();
+        })
 
         container.addControl(buttonLeft);
         container.addControl(buttonRight);

@@ -115,8 +115,8 @@ export class Game {
             const touchControls = new TouchControls(this._gui.texture);
             if (hasTouch) {
                 touchControls.showText("Touch [YES]")
-                console.log('[TOUCH DETECTED]') // DEBUG
                 touchControls.showControls();
+                console.log('[TOUCH DETECTED]') // DEBUG
             } else {
                 touchControls.showText("Touch [NO]")
                 console.log('[TOUCH NOT AVAILABLE]') // DEBUG
@@ -192,7 +192,6 @@ export class Game {
                 const updatePlayerColorsFromState = () => {
                     if (!room.state || !this._gui) return;
 
-                    // For online PvP, wait until player2 has joined (both colors are set)
                     // For local 2P, colors are available immediately from joinOptions
                     const isOnlineMode = gameMode === 'online-create' || gameMode === 'online-join';
                     if (isOnlineMode && !room.state.player2Joined) {
@@ -260,10 +259,8 @@ export class Game {
                         updatePlayerColorsFromState();
                     }
 
-                    // Store the countdown callback to call when both are ready
                     let countdownCallback: (() => void) | null = null;
 
-                    // Callback for when both clients/network are ready, before countdown
                     const signalGameReady = () => {
                         // For online PvP, send "client_ready" message to server
                         if (isOnlineMode) {
@@ -299,7 +296,6 @@ export class Game {
                         }
                     }
 
-                    // Listen for gameStarted to become true (when both clients are ready)
                     (room.state as any).listen('gameStarted', (value: boolean) => {
                         if (value && countdownCallback && this._onGameReady) {
                             // Both clients are ready, fade out and start countdown
@@ -425,7 +421,9 @@ export class Game {
                 this._input = input;
 
                 let speed = 0;
-                let inputSendCounter = 0;
+                let inputSendCounter = 0; // TODO remove
+                
+                touchControls.setInputController(input);
 
                 this._renderObservable = scene.onBeforeRenderObservable;
                 this._renderObserver = this._renderObservable.add(() => {
@@ -459,9 +457,14 @@ export class Game {
                     );
 
                     if (++inputSendCounter >= NETWORK.SYNC.INPUT_SEND_INTERVAL_FRAMES && !this._isGameOver) {
-                        room.send('input', isOnlineMode
-                            ? { a: !!input.inputMap['a'], d: !!input.inputMap['d'] }
-                            : input.inputMap);
+                        if (isOnlineMode) {
+                            room.send('input', input.getPaddle1InputState());
+                        } else {
+                            room.send('input', {
+                                ...input.getPaddle1InputState(),
+                                ...input.getPaddle2InputState()
+                            });
+                        }
                         inputSendCounter = 0;
                     }
                 });
