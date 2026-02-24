@@ -21,7 +21,8 @@ export async function seedAuthUsers(db) {
     );
 
     if (exists) {
-      result.push(exists);
+      console.log('⚠️  User already exists, skipped:', u.email);
+	  result.push({ id: exists.id, email: u.email });
       continue;
     }
 
@@ -35,6 +36,7 @@ export async function seedAuthUsers(db) {
       [id, u.email, hash]
     );
 
+    console.log('✅ Created user:', u.email);
     result.push({ id, email: u.email });
   }
 

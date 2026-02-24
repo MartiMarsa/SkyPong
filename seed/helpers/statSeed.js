@@ -36,6 +36,11 @@ export async function seedGames(db, users) {
 
 function run(db, sql, params = []) {
   return new Promise((resolve, reject) =>
-    db.run(sql, params, err => (err ? reject(err) : resolve()))
+    db.run(sql, params, function(err) {
+      if (err) return reject(err);
+      if (this.changes === 0) console.log('⚠️  Game record exists, skipped:', params);
+      else console.log('✅ Game inserted:', params);
+      resolve();
+    })
   );
 }
