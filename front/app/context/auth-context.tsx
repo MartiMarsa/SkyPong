@@ -12,12 +12,12 @@ const AuthContext = createContext({
   logout: async () => {},
   checkAuth: async () => { return false; } // Útil para re-validar tras login
 });
-
-   const csrfToken = document.cookie
+/*
+const csrfToken = document.cookie
         .split('; ')
         .find(row => row.startsWith('csrf_token='))
         ?.split('=')[1];
-
+*/
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(null);
@@ -27,7 +27,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = useCallback(async () => {
     try {
-         console.info("Checking auth credentials...")
+	const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf_token='))
+        ?.split('=')[1];
+
+        console.info("Checking auth credentials...");
+
+		if (!csrfToken) return;
+		
         const res = await fetch('/api/auth/verify', { 
             credentials: 'include', 
             headers: {
@@ -78,6 +86,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
+		const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf_token='))
+        ?.split('=')[1];
+
       // 1. Obtener el CSRF token de las cookies (document.cookie)
       // Tu backend Fastify lo guarda en una cookie no httpOnly llamada 'csrf_token'
     
