@@ -28,24 +28,8 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import api from "../../api/api";
 
-// ─── API helper ───────────────────────────────────────────────────────────────
-async function api(url, { csrf, method = "GET", body } = {}) {
-  const res = await fetch(url, {
-    method,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      "x-csrf-token": csrf || "",
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.error?.code || `HTTP ${res.status}`);
-  }
-  return res.json();
-}
 
 // ─── Relation states ──────────────────────────────────────────────────────────
 // null          → no relation
@@ -197,9 +181,13 @@ export default function AddFriendButton({ currentUserId, targetId, csrfToken }) 
 
   // ── Fetch current relation status ──
   const fetchStatus = useCallback(async () => {
-    if (!currentUserId || !targetId || currentUserId === targetId) return;
+    if (!currentUserId || !targetId || currentUserId === targetId) 
+    {
+        setRelation("me");
+        return;
+    }
     try {
-      const data = await api(`/api/profile/friends/status/${targetId}`, { csrf });
+      const data = await api(`/api/profile/friends/status/${targetId}`, { headers: {'x-csrf-token': csrf} });
       // data: { status: 'accepted'|'pending'|'blocked'|null, requester_id, blocked_by }
       if (!data || !data.status) {
         setRelation(null);
@@ -232,17 +220,22 @@ export default function AddFriendButton({ currentUserId, targetId, csrfToken }) 
     }
   };
 
-  const sendRequest   = () => act(() => api(`/api/profile/friends/${targetId}`, { csrf, method: "POST" }), "Solicitud enviada");
-  const cancelRequest = () => act(() => api(`/api/profile/friends/${targetId}/cancel`, { csrf, method: "POST" }), "Solicitud cancelada");
-  const acceptRequest = () => act(() => api(`/api/profile/friends/${targetId}/accept`, { csrf, method: "POST" }), "✓ ¡Ahora sois amigos!");
-  const rejectRequest = () => act(() => api(`/api/profile/friends/${targetId}/reject`, { csrf, method: "POST" }), "Solicitud rechazada");
-  const removeFriend  = () => act(() => api(`/api/profile/friends/${targetId}`, { csrf, method: "DELETE" }), "Amigo eliminado");
-  const blockUser     = () => act(() => api(`/api/profile/friends/${targetId}/block`, { csrf, method: "POST" }), "Usuario bloqueado");
-  const unblockUser   = () => act(() => api(`/api/profile/friends/${targetId}/unblock`, { csrf, method: "POST" }), "Usuario desbloqueado");
+  const sendRequest   = () => act(() => api(`/api/profile/friends/${targetId}`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId} }), "Solicitud enviada");
+  const cancelRequest = () => act(() => api(`/api/profile/friends/${targetId}/cancel`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId}  }), "Solicitud cancelada");
+  const acceptRequest = () => act(() => api(`/api/profile/friends/${targetId}/accept`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf },  body: { userId: currentUserId, targetId: targetId} }), "✓ ¡Ahora sois amigos!");
+  const rejectRequest = () => act(() => api(`/api/profile/friends/${targetId}/reject`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId} }), "Solicitud rechazada");
+  const removeFriend  = () => act(() => api(`/api/profile/friends/${targetId}`, { method: "DELETE", headers: { 'x-csrf-token': csrf } }), "Amigo eliminado");
+  const blockUser     = () => act(() => api(`/api/profile/friends/${targetId}/block`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId} }), "Usuario bloqueado");
+  const unblockUser   = () => act(() => api(`/api/profile/friends/${targetId}/unblock`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId} }), "Usuario desbloqueado");
 
-  // ── Don't render if viewing own profile ──
-  if (!currentUserId || !targetId || currentUserId === targetId) return null;
 
+  if (relation === "me") {
+    return (
+        <div style={{ fontFamily: mono, fontSize: "11px", backgroundColor:"rgb(21 29 42)", color: "#92994a", letterSpacing: "0.1em", border: "1px dashed #687d8b ", borderRadius: "5px", padding: "7px" }}>
+           {"<--- It's me Mario!"}
+        </div>
+    );
+  }
   // ── Loading ──
   if (relation === undefined) {
     return (

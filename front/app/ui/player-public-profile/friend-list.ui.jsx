@@ -13,21 +13,11 @@
 
 import { useState, useEffect } from "react";
 import AddFriendButton from "./AddFriendButton";
+import api from "../../api/api";
 
 const mono = "'Courier New', monospace";
 
-async function api(url, { csrf, method = "GET" } = {}) {
-  const res = await fetch(url, {
-    method,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      "x-csrf-token": csrf || "",
-    },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
-}
+
 
 function FriendCard({ friend, currentUserId, csrfToken, onVisit }) {
     console.info("Show friend info: ", friend);
@@ -123,15 +113,17 @@ export default function FriendsList({ currentUserId, targetId, csrfToken, onVisi
   useEffect(() => {
     if (!targetId) return;
     setLoading(true);
-    api(`/api/profile/friends/${targetId}`, { csrf: csrfToken })
+    api(`/api/profile/friends/${targetId}`, {headers: { 'x-csrf.token': csrfToken} })
       .then(data => setFriends(Array.isArray(data) ? data : []))
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, [targetId, csrfToken]);
 
   const handleVisit = (id) => {
+    
+    const url = id === currentUserId ? "/me" : `/${id}`;
     if (onVisitProfile) onVisitProfile(id);
-    else window.location.href = `/${id}`;
+    else window.location.href = url;
   };
 
   if (loading) return (

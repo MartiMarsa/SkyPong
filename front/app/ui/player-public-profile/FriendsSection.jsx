@@ -21,6 +21,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import api from "../../api/api";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const ACTIVE_DAYS = 7;
@@ -42,34 +43,23 @@ const C = {
   pendingDim: "rgba(167,139,250,0.1)",
   text: "#c9d8e0",
   textDim: "#4a6070",
+  textDimRed: "#383030",
   muted: "#2a3d4a",
 };
 
 const mono = "'Courier New', monospace";
 
-// ─── API helper ───────────────────────────────────────────────────────────────
-async function api(url, { csrf, method = "GET", body } = {}) {
-  const res = await fetch(url, {
-    method,
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json",
-      "x-csrf-token": csrf || "",
-    },
-    ...(body ? { body: JSON.stringify(body) } : {}),
-  });
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data?.error?.code || `HTTP ${res.status}`);
-  }
-  return res.json();
-}
+
 
 function isActive(lastLogin) {
   if (!lastLogin) return false;
   return (Date.now() - new Date(lastLogin).getTime()) / 86400000 <= ACTIVE_DAYS;
 }
 
+function isBlocked(status) {
+    if (status === "blocked") return true;
+    return false;
+}
 // ─── Avatar ───────────────────────────────────────────────────────────────────
 function Avatar({ url, nickname, size = 40, showDot, active }) {
   const [imgErr, setImgErr] = useState(false);
@@ -153,7 +143,7 @@ function Pill({ onClick, disabled, color, bgColor, borderColor, children }) {
 }
 
 // ─── Friend row ───────────────────────────────────────────────────────────────
-function FriendRow({ friend, onRemove, onBlock, onProfile, busy }) {
+function FriendRow({ friend, onRemove, onBlock, onProfile, onUnblock, busy, blocked }) {
   const active = isActive(friend.last_login);
   return (
     <div style={{
@@ -177,8 +167,13 @@ function FriendRow({ friend, onRemove, onBlock, onProfile, busy }) {
       <div style={{ display: "flex", gap: "4px" }}>
         {console.info("Friend id: ", friend.user_id)}
         <Pill onClick={() => onProfile(friend.user_id)} color={C.accent} bgColor={C.accentDim}>👤 perfil</Pill>
-        <Pill onClick={() => onRemove(friend.user_id)} disabled={busy} color={C.danger} bgColor={C.dangerDim}>✕ quitar</Pill>
-        <Pill onClick={() => onBlock(friend.user_id)} disabled={busy} color={C.warn} bgColor="rgba(245,158,11,0.1)">🚫</Pill>
+        { !blocked ? (<>
+            <Pill onClick={() => onRemove(friend.user_id)} disabled={busy} color={C.danger} bgColor={C.dangerDim}>✕ quitar</Pill>
+            <Pill onClick={() => onBlock(friend.user_id)} disabled={busy} color={C.warn} bgColor="rgba(245,158,11,0.1)">🚫</Pill>
+            </>
+        ) : (
+            <Pill onClick={() => onUnblock(friend.user_id)} disabled={busy} color={C.warn} bgColor="rgba(245,158,11,0.1)">✅</Pill>
+        )} 
       </div>
     </div>
   );
@@ -328,14 +323,16 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
     finally { setBusy(false); }
   };
 
-  const handleAccept  = id => act(() => api(`/api/profile/friends/${id}/accept`, { csrf, method: "POST" }), "✓ Solicitud aceptada");
-  const handleReject  = id => act(() => api(`/api/profile/friends/${id}/reject`, { csrf, method: "POST" }), "Solicitud rechazada");
-  const handleCancel  = id => act(() => api(`/api/profile/friends/${id}/cancel`, { csrf, method: "POST" }), "Solicitud cancelada");
-  const handleRemove  = id => act(() => api(`/api/profile/friends/${id}`, { csrf, method: "DELETE" }), "Amigo eliminado");
-  const handleBlock   = id => act(() => api(`/api/profile/friends/${id}/block`, { csrf, method: "POST" }), "Usuario bloqueado");
+  const handleAccept    = id => act(() => api(`/api/profile/friends/${id}/accept`, { method: "POST", headers: {'x-csrf-token': csrf } }), "✓ Solicitud aceptada");
+  const handleReject    = id => act(() => api(`/api/profile/friends/${id}/reject`, { method: "POST" }), "Solicitud rechazada");
+  const handleCancel    = id => act(() => api(`/api/profile/friends/${id}/cancel`, { method: "POST" }), "Solicitud cancelada");
+  const handleRemove    = id => act(() => api(`/api/profile/friends/${id}`, { method: "DELETE", headers: {'x-csrf-token': csrf } }), "Amigo eliminado");
+  const handleBlock     = id => act(() => api(`/api/profile/friends/${id}/block`, { method: "POST", headers: { 'x-csrf-token': csrf }, body: { userId: currentUserId}}), "Usuario bloqueado");
+  const handleUnblock   = id => act(() => api(`/api/profile/friends/${id}/unblock`, { method: "POST", headers: { 'x-csrf-token': csrf }, body: { userId: currentUserId}}), "Usuario desbloqueado");
 
-  const activeFriends   = friends.filter(f => isActive(f.last_login));
-  const inactiveFriends = friends.filter(f => !isActive(f.last_login));
+  const activeFriends   = friends.filter(f => (isActive(f.last_login) && !isBlocked(f.status)));
+  const inactiveFriends = friends.filter(f => (!isActive(f.last_login) && !isBlocked(f.status)));
+  const blockedFriends  = friends.filter(f => isBlocked(f.status));
 
   const tabs = [
     { key: "friends",  label: "Amigos",    count: friends.length },
@@ -386,7 +383,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
                     {activeFriends.map(f => (
                       <FriendRow key={f.user_id} friend={f}
                         onRemove={handleRemove} onBlock={handleBlock}
-                        onProfile={id => onNavigateProfile?.(id)} busy={busy} />
+                        onProfile={id => onNavigateProfile?.(id)} busy={busy} blocked={false} />
                     ))}
                   </>}
                   {inactiveFriends.length > 0 && <>
@@ -394,7 +391,15 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
                     {inactiveFriends.map(f => (
                       <FriendRow key={f.user_id} friend={f}
                         onRemove={handleRemove} onBlock={handleBlock}
-                        onProfile={id => onNavigateProfile?.(id)} busy={busy} />
+                        onProfile={id => onNavigateProfile?.(id)} busy={busy} blocked={false} />
+                    ))}
+                  </>}
+                {blockedFriends.length > 0 && <>
+                    <SectionLabel label={`Bloqueados — ${blockedFriends.length}`} color={C.textDimRed} />
+                    {blockedFriends.map(f => (
+                      <FriendRow key={f.user_id} friend={f}
+                        onRemove={handleRemove} onUnblock={handleUnblock}
+                        onProfile={id => onNavigateProfile?.(id)} busy={busy} blocked={true}/>
                     ))}
                   </>}
                 </>

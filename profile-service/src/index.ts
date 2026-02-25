@@ -179,39 +179,6 @@ fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
 	  }
 });
 
-// --- PUBLIC PROFILE USER ---
-// fastify.get('/profile/:id)', { preHandler: verifyToken }, async (req, reply) => {
-// 	try {
-// 	      	const userId = (req.params as string).id;
-
-//             console.info("------>> User profile id:", userId);
-// 	      	if (!userId) {
-// 		    	return reply.status(401).send();
-// 	      	}
-
-// 		if (typeof userId !== 'string') {
-// 			return reply.status(401).send();
-// 		}
-
-//         //This is public user info only
-// 		let player = await getPlayerById(userId);
-
-//         console.info("----->> Player retireved: ", player);
-// 	  // create new player if it was authorized (signup), but no profile in database
-// 		if (!player) {
-//             player = await createPlayer(userId);
-//       	}
-
-// 		return reply.send({
-//             status: 'Player profile found', 
-//             user: player 
-//         });
-// 	} catch (err: any) {
-
-// 		fastify.log.error(err);
-//         return reply.status(500).send({ error: "Internal Server Error" });
-// 	  }
-// });
 
 // --- PUBLIC PROFILE ---
 fastify.get('/profile/:id', {preHandler: verifyToken }, async (req, reply) => {
@@ -569,6 +536,7 @@ fastify.post('/profile/friends/:requesterId/cancel', { preHandler: verifyToken }
 fastify.delete('/profile/friends/:friendId', { preHandler: verifyToken }, async (req, reply) => {
     const userId = req.user.sub;
     const { friendId } = req.params as { friendId: string };
+    console.info("For Player ", userId, " remove ", friendId);
     try {
         await friendService.removeFriendService(userId, friendId);
         return { success: true };
@@ -581,6 +549,7 @@ fastify.delete('/profile/friends/:friendId', { preHandler: verifyToken }, async 
 fastify.post('/profile/friends/:targetId/block', { preHandler: verifyToken }, async (req, reply) => {
     const userId = req.user.sub;
     const { targetId } = req.params as { targetId: string };
+    console.info("---->>> For Player ", userId, " blocks ", targetId);
     try {
         await friendService.blockUserService(userId, targetId);
         return { success: true };

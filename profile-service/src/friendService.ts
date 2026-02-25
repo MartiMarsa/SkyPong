@@ -48,6 +48,7 @@ export async function cancelFriendRequestService(userId: string, requesterId: st
 export async function removeFriendService(userId: string, friendId: string): Promise<void> {
 
 	const status = await repo.getFriendStatus(userId, friendId);
+    console.info("Friend status for removal: ", status);
 	if (!status || status.status !== 'accepted') throw new Error('NOT_FRIENDS');
 
 	await repo.removeFriend(userId, friendId);
@@ -57,7 +58,7 @@ export async function removeFriendService(userId: string, friendId: string): Pro
 export async function blockUserService(userId: string, targetId: string): Promise<void> {
 
 	if (userId === targetId) throw new Error('CANNOT_BLOCK_SELF');
-
+    console.info("!!!==>>For user ", userId, "block enemy ", targetId);
 	await repo.blockUser(userId, targetId);
 }
 

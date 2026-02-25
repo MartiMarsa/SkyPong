@@ -4,11 +4,15 @@ import sqlite3 from 'sqlite3';
 
 export async function seedAuthUsers(db) {
   const users = [
-    { email: 'aliceCooper@test.com', password: 'Qwerty@123456' },
-    { email: 'bobTeylor@test.com', password: 'Qwerty@123456' },
-    { email: 'carolGemenez@test.com', password: 'Qwerty@123456' },
-    { email: 'daveBarbacoa@test.com', password: 'Qwerty@123456' },
-    { email: 'evePecadora@test.com', password: 'Qwerty@123456' },
+    { email: 'aliceCooper@test.com', password: 'qwer1234!' },
+    { email: 'bobTeylor@test.com', password: 'qwer1234!' },
+    { email: 'carolGemenez@test.com', password: 'qwer1234!' },
+    { email: 'daveBarbacoa@test.com', password: 'qwer1234!' },
+    { email: 'evePecadora@test.com', password: 'qwer1234!' },
+    { email: 'diskard@test.com', password: 'qwer1234!' },
+    { email: 'randalthor@test.com', password: 'qwer1234!' },
+    { email: 'morain@test.com', password: 'qwer1234!' },
+    { email:  'ishamael@test.com', password: 'qwer1234!' },
   ];
 
   const result = [];
