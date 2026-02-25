@@ -496,6 +496,15 @@ fastify.get('/profile/friends', { preHandler: verifyToken }, async (req, reply) 
     return friendService.getFriendsService(userId);
 });
 
+// GET friends list from other user
+fastify.get('/profile/friends/:id', { preHandler: verifyToken }, async (req, reply) => {
+	const { id } = req.params as { id: string};
+    console.info("------>> Friend target id: ", id);
+    const result = friendService.getFriendsService(id);
+    console.info("------>> Friends list: ", result);
+    return (result);
+});
+
 // GET incoming requests
 fastify.get('/profile/friends/requests/incoming', { preHandler: verifyToken }, async (req, reply) => {
     const userId = req.user.sub;
@@ -592,6 +601,8 @@ fastify.post('/profile/friends/:targetId/unblock', { preHandler: verifyToken }, 
     }
 });
 
+
+// Get Friend Status
 fastify.get('/profile/friends/status/:targetId', { preHandler: verifyToken }, async (req, reply) => {
     const userId = req.user.sub;
     const { targetId } = req.params as { targetId: string };

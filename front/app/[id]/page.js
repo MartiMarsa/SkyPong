@@ -11,6 +11,7 @@ import AchievementsSection from '../ui/player-public-profile/AchievementsSection
 import FriendsSection from '../ui/player-public-profile/FriendsSection';
 import AddFriendButton from '../ui/player-public-profile/AddFriendButton';
 import { useParams } from 'next/navigation'
+import FriendsList from '../ui/player-public-profile/friend-list.ui';
 
 export default function ProfilePagePublic()
 {
@@ -63,7 +64,7 @@ export default function ProfilePagePublic()
             <NavigationAppUI  />
             <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
             {profile && <PlayerInfo avatarURL={profile?.avatarUrl || "/avatar/default-avatar.png"} nickname={profile?.nickname || "Pongo Dio"} winPhrase={profile?.winPhrase || "I'm a bad ass win phrase"} />}
-            {profile && <AddFriendButton currentUserId={user?.id} csrfToken={csrfToken} targetId={profile?.id}/>}
+            {profile && <FriendsList currentUserId={user?.id} targetId={profile?.id} csrfToken={csrfToken}/>}
             {/* { profile && <FriendsSection
                 currentUserId={profile.id}
                 csrfToken={getCookie()}
