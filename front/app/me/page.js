@@ -43,9 +43,9 @@ export default function ProfilePagePublic()
             <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
             {profile && <PlayerInfo avatarURL={profile?.avatarUrl || "/avatar/default-avatar.png"} nickname={profile?.nickname || "Pongo Dio"} winPhrase={profile?.winPhrase || "I'm a bad ass win phrase"} />}
             { profile && <FriendsSection
-                currentUserId={user.id}
+                currentUserId={profile.id}
                 csrfToken={getCookie()}
-                onNavigateProfile={(id) => router.push(`/api/profile/${id}`)}
+                onNavigateProfile={(id) => router.push(`/${id}`)}
                 />}
             { profile && <AchievementsSection t={t.t} stats={profile?.stats} /> }
         </main>

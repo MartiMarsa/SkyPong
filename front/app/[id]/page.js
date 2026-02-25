@@ -9,16 +9,19 @@ import PlayerInfo from '../ui/player-public-profile/player-info-ui';
 import PlayerAchievementsUI from '../ui/player-public-profile/player-achievements-ui';
 import AchievementsSection from '../ui/player-public-profile/AchievementsSection';
 import FriendsSection from '../ui/player-public-profile/FriendsSection';
+import AddFriendButton from '../ui/player-public-profile/AddFriendButton';
+import { useParams } from 'next/navigation'
 
 export default function ProfilePagePublic()
 {
-    const { id } = params;  
+    const { id } = useParams();  
     const t = useTranslation();
     const router = useRouter();
     const [profile, setProfile] = useState(null);
     const { user, authloading} = useAuth();
     const [isLoading, setIsLoading] = useState(true);
     const [serverError, setServerError] = useState('');
+    const [csrfToken, setCsrfToken] = useState('');
     const getCookie = (name) => {
         return document.cookie
             .split('; ')
@@ -26,7 +29,7 @@ export default function ProfilePagePublic()
             ?.split('=')[1];
     };
     
-    console.info("Friend id:", id , " is not ", user.id);
+    console.info("Friend id:", id);
     useEffect(() => {
         console.info("User session: ", user);
         if (authloading) return;
@@ -37,31 +40,36 @@ export default function ProfilePagePublic()
             return;
         }
 
+        const csrfToken = getCookie();
+    
         fetch(`/api/profile/${id}`, {
-            method: 'POST',
+            method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
+                'x-csrf-token': csrfToken || '',
             },
             credentials: 'include',
-            body: JSON.stringify({...data, avatarURL: 'default-avatar.webp'}),
         })
         .then(res => res.json())
         .then(data => setProfile(data.user))
         .catch((err) => {
             console.error("Error:", err)
             setServerError(err);
-        });
-    }, [id, profile, authloading]);
+        }).finally(setCsrfToken(csrfToken));
+    }, [id, authloading]);
     return (
         <main>
+            { console.info("Public profile data:", profile) }
             <NavigationAppUI  />
             <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
             {profile && <PlayerInfo avatarURL={profile?.avatarUrl || "/avatar/default-avatar.png"} nickname={profile?.nickname || "Pongo Dio"} winPhrase={profile?.winPhrase || "I'm a bad ass win phrase"} />}
-            { profile && <FriendsSection
-                currentUserId={user.id}
+            {profile && <AddFriendButton currentUserId={user?.id} csrfToken={csrfToken} targetId={profile?.id}/>}
+            {/* { profile && <FriendsSection
+                currentUserId={profile.id}
                 csrfToken={getCookie()}
-                onNavigateProfile={(id) => router.push(`/api/profile/me/${id}`)}
-                />}
+                onNavigateProfile={(id) => router.push(`/${id}`)}
+                />} */}
+
             { profile && <AchievementsSection t={t.t} stats={profile?.stats} /> }
         </main>
     );

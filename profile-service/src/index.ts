@@ -180,38 +180,57 @@ fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
 });
 
 // --- PUBLIC PROFILE USER ---
-fastify.get('/profile/:id)', { preHandler: verifyToken }, async (req, reply) => {
-	try {
-	      	const userId = req.user?.sub;
+// fastify.get('/profile/:id)', { preHandler: verifyToken }, async (req, reply) => {
+// 	try {
+// 	      	const userId = (req.params as string).id;
 
-            console.info("------>> User profile id:", userId);
-	      	if (!userId) {
-		    	return reply.status(401).send();
-	      	}
+//             console.info("------>> User profile id:", userId);
+// 	      	if (!userId) {
+// 		    	return reply.status(401).send();
+// 	      	}
 
-		if (typeof userId !== 'string') {
-			return reply.status(401).send();
-		}
+// 		if (typeof userId !== 'string') {
+// 			return reply.status(401).send();
+// 		}
 
-        //This is public user info only
-		let player = await getPlayerById(userId);
+//         //This is public user info only
+// 		let player = await getPlayerById(userId);
 
-	  // create new player if it was authorized (signup), but no profile in database
-		if (!player) {
-      			player = await createPlayer(userId);
-      		}
+//         console.info("----->> Player retireved: ", player);
+// 	  // create new player if it was authorized (signup), but no profile in database
+// 		if (!player) {
+//             player = await createPlayer(userId);
+//       	}
 
-		return reply.send({
-            status: 'Player profile found', 
-            user: player 
-        });
-	} catch (err: any) {
+// 		return reply.send({
+//             status: 'Player profile found', 
+//             user: player 
+//         });
+// 	} catch (err: any) {
 
-		fastify.log.error(err);
-        return reply.status(500).send({ error: "Internal Server Error" });
-	  }
+// 		fastify.log.error(err);
+//         return reply.status(500).send({ error: "Internal Server Error" });
+// 	  }
+// });
+
+// --- PUBLIC PROFILE ---
+fastify.get('/profile/:id', {preHandler: verifyToken }, async (req, reply) => {
+
+	const { id } = req.params as { id: string};
+
+	const user = await getUserPublicProfile(id);
+
+	if (!user) {
+	    	return reply.status(404).send({
+		  	error: { 
+				code: "USER_NOT_FOUND", 
+				message: "User not found" 
+			}
+	    	});
+      	}
+
+      	return { user };
 });
-
 
 // --- PRIVATE CHANGE PROFILE ---
 fastify.patch('/profile/updateme', { preHandler: verifyToken }, async (req, reply) => {
@@ -469,24 +488,7 @@ fastify.addHook('onRequest', async (request, reply) => {
   console.log(`Recibida petición: ${request.method} ${request.url}`);
 });
 
-// --- PUBLIC PROFILE ---
-fastify.get('/profile/users/:id', async (req, reply) => {
 
-	const { id } = req.params as { id: string};
-
-	const user = await getUserPublicProfile(id);
-
-	if (!user) {
-	    	return reply.status(404).send({
-		  	error: { 
-				code: "USER_NOT_FOUND", 
-				message: "User not found" 
-			}
-	    	});
-      	}
-
-      	return { user };
-});
 
 // GET friends
 fastify.get('/profile/friends', { preHandler: verifyToken }, async (req, reply) => {
@@ -590,6 +592,12 @@ fastify.post('/profile/friends/:targetId/unblock', { preHandler: verifyToken }, 
     }
 });
 
+fastify.get('/profile/friends/status/:targetId', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { targetId } = req.params as { targetId: string };
+    const status = await friendService.getFriendStatusService(userId, targetId);
+    return status ?? { status: null };
+});
 // // --- SEND FRIEND REQUEST ---
 // fastify.post('/profile/friends/:toId', async (req, reply) => {
 //     	const fromId = req.headers['x-user-id'] as string;
