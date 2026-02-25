@@ -12,20 +12,21 @@ import FriendsSection from '../ui/player-public-profile/FriendsSection';
 
 export default function ProfilePagePublic()
 {
+    const { id } = params;  
     const t = useTranslation();
     const router = useRouter();
     const [profile, setProfile] = useState(null);
     const { user, authloading} = useAuth();
     const [isLoading, setIsLoading] = useState(true);
     const [serverError, setServerError] = useState('');
-
     const getCookie = (name) => {
         return document.cookie
             .split('; ')
             .find(row => row.startsWith(name + '='))
             ?.split('=')[1];
     };
-
+    
+    console.info("Friend id:", id , " is not ", user.id);
     useEffect(() => {
         console.info("User session: ", user);
         if (authloading) return;
@@ -35,8 +36,22 @@ export default function ProfilePagePublic()
             router.push('/');
             return;
         }
-        setProfile(user);
-    }, [user, authloading, profile, router]);
+
+        fetch(`/api/profile/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({...data, avatarURL: 'default-avatar.webp'}),
+        })
+        .then(res => res.json())
+        .then(data => setProfile(data.user))
+        .catch((err) => {
+            console.error("Error:", err)
+            setServerError(err);
+        });
+    }, [id, profile, authloading]);
     return (
         <main>
             <NavigationAppUI  />
@@ -45,7 +60,7 @@ export default function ProfilePagePublic()
             { profile && <FriendsSection
                 currentUserId={user.id}
                 csrfToken={getCookie()}
-                onNavigateProfile={(id) => router.push(`/api/profile/${id}`)}
+                onNavigateProfile={(id) => router.push(`/api/profile/me/${id}`)}
                 />}
             { profile && <AchievementsSection t={t.t} stats={profile?.stats} /> }
         </main>
