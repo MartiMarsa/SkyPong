@@ -24,8 +24,13 @@ export async function seedProfiles(db, users) {
   await friend(db, users[0].id, users[1].id, 'accepted', users[0].id);
   await friend(db, users[0].id, users[2].id, 'pending', users[0].id);
   await friend(db, users[0].id, users[3].id, 'accepted', users[0].id);
-  await friend(db, users[0].id, users[4].id, 'accepted', users[0].id);
   await friend(db, users[3].id, users[4].id, 'blocked', users[3].id);
+  await friend(db, users[3].id, users[1].id, 'accepted', users[3].id);
+  await friend(db, users[3].id, users[4].id, 'pending', users[3].id);
+  await friend(db, users[3].id, users[2].id, 'accpeted', users[3].id);
+  await friend(db, users[2].id, users[1].id, 'accepted', users[2].id);
+  await friend(db, users[4].id, users[5].id, 'accepted', users[2].id);
+  await friend(db, users[4].id, users[6].id, 'blocked', users[2].id);
 }
 
 async function friend(db, a, b, status, requester) {

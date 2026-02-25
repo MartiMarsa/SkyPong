@@ -103,28 +103,28 @@ async function verifyToken(req: any, reply: any) {
 
 	const accessToken = req.cookies?.access_token;
 
+    console.info("------> Verifiying accestoken:", accessToken);
 	if (!accessToken) {
-		return reply.status(401).send();
+		return reply.status(401).send({error: "No access token"});
     }
 
-	if (accessToken) {
-		try {
-			const verified = jwt.verify(accessToken, 
-										publicKey, 
-										{ 
-											algorithms: ['RS256'],
-											issuer: 'auth-service',
-											audience: 'transcendence',
-											}) as any;
+    try {
+        const verified = jwt.verify(accessToken, 
+                                    publicKey, 
+                                    { 
+                                        algorithms: ['RS256'],
+                                        issuer: 'auth-service',
+                                        audience: 'transcendence',
+                                        }) as any;
 
-			req.user = verified;
-			return;
-
-		} catch (err) {
-			console.error('Error verifying access token:', err);
-			return reply.status(403).send();
-		}
-	}
+        req.user = verified;
+        console.info("----> Access Token Verified:", verified);
+        console.info("----> req.user set to:", req.user); 
+        return;
+    } catch (err) {
+        console.error('Error verifying access token:', err);
+        return reply.status(403).send({ error: "Invalid Token"});
+    }
 }
 // --- INTERNAL PROFILE ROUTE ---
 fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { preHandler: requireServiceAuth }, async (req, reply) => {
@@ -146,93 +146,58 @@ fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { p
 });
 
 
-// --- PRIVATE PROFILE OTHER PLAYER ---
-fastify.get<{Params: {id: string}}>('/profile/me/:id', { preHandler: verifyToken }, async (req, reply) => {
-	try {
-	      	const userId = req.params.id;
-
-	      	if (!userId) {
-		    	return reply.status(401).send();
-	      	}
-
-		if (typeof userId !== 'string') {
-			return reply.status(401).send();
-		}
-		
-		let player = await getPlayerById(userId);
-
-	  // create new player if it was authorized (signup), but no profile in database
-		if (!player) {
-      			player = await createPlayer(userId);
-      		}
-
-		return reply.send(player);
-	} catch (err: any) {
-
-		fastify.log.error(err);
-		reply.status(500).send();
-	  }
-});
-
 
 // --- PUBLIC PROFILE USER ---
 fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
+    console.info("!!!!! HANDLER REACHED !!!!!"); // ¿aparece esto en los logs?
+    console.info("----> req.user in handler:", req.user);
 	try {
-	      	const userId = req.user.sub;
+        const userId = req.user?.sub;
 
+        console.info("User /me:", req.user);
         if (!userId) {
-            return reply.status(401).send();
+            return reply.status(401).send("User not found.");
         }
 
-		if (typeof userId !== 'string') {
-			return reply.status(401).send();
-		}
-	
         //This is private user info so can return all info
 		let player = await getPlayerById(userId);
+        console.info("Player /me:", player);
 
 	  // create new player if it was authorized (signup), but no profile in database
 		if (!player) {
-      			player = await createPlayer(userId);
-      		}
-
-		return reply.send(player);
+            console.info("Creating new player for user:", userId);
+            player = await createPlayer(userId);
+      	}
+        console.info("----> Sending player profile info: ", player);
+		return reply.send(player 
+        );
 	} catch (err: any) {
 
 		fastify.log.error(err);
-		reply.status(500).send();
+        req.log.error(err);
+        return reply.status(500).send({ error: "Internal Server Error" });
 	  }
 });
 
-// --- PUBLIC PROFILE USER ---
-fastify.get('/profile/:id(^u_[a-zA-Z0-0-]+)', { preHandler: verifyToken }, async (req, reply) => {
-	try {
-	      	const userId = (req.params as any).id;
 
-	      	if (!userId) {
-		    	return reply.status(401).send();
-	      	}
+// --- PUBLIC PROFILE ---
+fastify.get('/profile/:id', {preHandler: verifyToken }, async (req, reply) => {
 
-		if (typeof userId !== 'string') {
-			return reply.status(401).send();
-		}
+	const { id } = req.params as { id: string};
 
-        //This is public user info only
-		let player = await getPlayerById(userId);
+	const user = await getUserPublicProfile(id);
 
-	  // create new player if it was authorized (signup), but no profile in database
-		if (!player) {
-      			player = await createPlayer(userId);
-      		}
+	if (!user) {
+	    	return reply.status(404).send({
+		  	error: { 
+				code: "USER_NOT_FOUND", 
+				message: "User not found" 
+			}
+	    	});
+      	}
 
-		return reply.send(player);
-	} catch (err: any) {
-
-		fastify.log.error(err);
-		reply.status(500).send();
-	  }
+      	return { user };
 });
-
 
 // --- PRIVATE CHANGE PROFILE ---
 fastify.patch('/profile/updateme', { preHandler: verifyToken }, async (req, reply) => {
@@ -485,253 +450,280 @@ fastify.get('/profile/avatars/:filename', async (req, reply) => {
     }
 });
 
-// // --- CHANGE PROFILE AVATAR ---
-// fastify.post('/profile/me/avatar', { preHandler: verifyToken }, async (req, reply) => {
-// 			 try {
-// 			 const userId = req?.user.sub;
-//                 console.info("Trying to uplaod avatar from ", userId);
-// 	 		 if (!userId) {
-//                 return reply.status(401).send();
-// 	 		 }
-
-// 	 		 if (typeof userId !== 'string') {
-//                 return reply.status(401).send();
-// 	 		 }
-
-// 	 		 const file = await req.file();
-//              console.info("File: ", file);
-// 	 		 if (!file) {
-//                     return reply.status(400).send();
-//                 }
-		
-// 		if (!ALLOWED_MIME.includes(file.mimetype)) {
-//                 return reply.status(400).send({
-//                     error: 'Only PNG, JPG, WebP allowed'
-//                 });
-// 	    	}
-		
-// 		const buffer = await file.toBuffer();
-
-// 		let meta;
-
-// 	    	try {
-// 		  	meta = await sharp(buffer).metadata();
-// 	    	} catch {
-// 		  	return reply.status(400).send({
-// 				error: 'Invalid image file'
-// 		  	});
-// 	    	}
-
-// 	    	if (!meta.format || !['png', 'jpeg', 'webp'].includes(meta.format)) {
-// 		  	return reply.status(400).send({
-// 				error: 'Invalid image format'
-// 		  	});
-// 	    	}
-
-// 		const avatar = await sharp(buffer)
-// 	  	.resize(256, 256, {
-// 			fit: 'cover',
-// 			position: 'center'
-// 	  	})
-// 	  	.toFormat('webp', {
-// 			quality: 80
-// 	  	})
-// 	  	.toBuffer();
-
-
-// 		const uploadDir = path.join(
-// 		  	process.cwd(),
-// 		  	'uploads',
-// 		  	'avatars'
-// 	    	);
-//             console.log("Uploading Avatar...");
-// 	    	await fs.mkdir(uploadDir, { recursive: true });
-
-// 	    	const filePath = path.join(uploadDir, `${userId}.webp`);
-
-// 	    	await fs.writeFile(filePath, avatar);
-
-// 		const avatarUrl = `/static/avatars/${userId}.webp`;
-
-// 	    	await updatePlayerAvatar(userId, avatarUrl);
-
-// 			return reply.status(200).send({
-// 											success: true,
-// 											avatar: avatarUrl
-// 											});
-// 		 	 } catch (err: any) {
-// 		 		 reply.send({ error: err.code, message: err.message });
-
-// 	 		 }
-// });
 
 fastify.addHook('onRequest', async (request, reply) => {
   console.log(`Recibida petición: ${request.method} ${request.url}`);
 });
 
-// --- PUBLIC PROFILE ---
-fastify.get('/profile/users/:id', async (req, reply) => {
 
+
+// GET friends
+fastify.get('/profile/friends', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+    return friendService.getFriendsService(userId);
+});
+
+// GET friends list from other user
+fastify.get('/profile/friends/:id', { preHandler: verifyToken }, async (req, reply) => {
 	const { id } = req.params as { id: string};
-
-	const user = await getUserPublicProfile(id);
-
-	if (!user) {
-	    	return reply.status(404).send({
-		  	error: { 
-				code: "USER_NOT_FOUND", 
-				message: "User not found" 
-			}
-	    	});
-      	}
-
-      	return { user };
+    console.info("------>> Friend target id: ", id);
+    const result = friendService.getFriendsService(id);
+    console.info("------>> Friends list: ", result);
+    return (result);
 });
 
-
-// --- SEND FRIEND REQUEST ---
-fastify.post('/profile/friends/:toId', async (req, reply) => {
-    	const fromId = req.headers['x-user-id'] as string;
-    	const { toId } = req.params as { toId: string };
-    	try {
-	  	await friendService.sendFriendRequestService(fromId, toId);
-	  	return { success: true };
-    	} catch (err: any) {
-	  	return reply.status(400).send({ 
-			error: { 
-				code: err.message, 
-				message: err.message } 
-		
-		});
-    	}
+// GET incoming requests
+fastify.get('/profile/friends/requests/incoming', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+    return friendService.getIncomingRequestsService(userId);
 });
 
-// --- ACCEPT FRIEND REQUEST ---
-fastify.post('/profile/friends/:requesterId/accept', async (req, reply) => {
-    	const userId = req.headers['x-user-id'] as string;
-    	const { requesterId } = req.params as { requesterId: string };
-    	try {
-	  	await friendService.acceptFriendRequestService(userId, requesterId);
-	  	return { success: true };
-    	} catch (err: any) {
-	  	return reply.status(400).send({ 
-			error: { 
-				code: err.message, 
-				message: err.message }
-		});
-    	}
+// GET outgoing requests
+fastify.get('/profile/friends/requests/outgoing', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+    return friendService.getOutgoingRequestsService(userId);
 });
 
-// --- REJECT FRIEND REQUEST ---
-fastify.post('/profile/friends/:requesterId/reject', async (req, reply) => {
-    	const userId = req.headers['x-user-id'] as string;
-    	const { requesterId } = req.params as { requesterId: string };
-    	try {
-	  	await friendService.rejectFriendRequestService(userId, requesterId);
-	  	return { success: true };
-    	} catch (err: any) {
-	  	return reply.status(400).send({ 
-			error: { 
-				code: err.message, 
-				message: err.message } 
-		});
-    	}
-});
-
-// --- CANCEL OUTGOING FRIEND REQUEST ---
-fastify.post('/profile/friends/:requesterId/cancel', async (req, reply) => {
-    	const userId = req.headers['x-user-id'] as string;
-    	const { requesterId } = req.params as { requesterId: string };
+// SEND request
+fastify.post('/profile/friends/:toId', { preHandler: verifyToken }, async (req, reply) => {
+    const fromId = req.user.sub;
+    const { toId } = req.params as { toId: string };
     try {
-	    await friendService.cancelFriendRequestService(userId, requesterId);
-      	    return { success: true };
+        await friendService.sendFriendRequestService(fromId, toId);
+        return { success: true };
     } catch (err: any) {
-      	    return reply.status(400).send({ 
-		    error: { 
-			    code: err.message, 
-			    message: err.message }
-	    });
+        return reply.status(400).send({ error: { code: err.message, message: err.message } });
     }
 });
 
-// --- REMOVE FRIEND ---
-fastify.delete('/profile/friends/:friendId', async (req, reply) => {
-    	const userId = req.headers['x-user-id'] as string;
-    	const { friendId } = req.params as { friendId: string };
-    	try {
-	  	await friendService.removeFriendService(userId, friendId);
-	  	return { success: true };
-	} catch (err: any) {
-	  	return reply.status(400).send({ 
-			error: { 
-				code: err.message, 
-				message: err.message }
-		});
-    	}
+// ACCEPT
+fastify.post('/profile/friends/:requesterId/accept', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { requesterId } = req.params as { requesterId: string };
+    try {
+        await friendService.acceptFriendRequestService(userId, requesterId);
+        return { success: true };
+    } catch (err: any) {
+        return reply.status(400).send({ error: { code: err.message, message: err.message } });
+    }
 });
 
-// --- BLOCK USER ---
-fastify.post('/profile/friends/:targetId/block', async (req, reply) => {
-    	const userId = req.headers['x-user-id'] as string;
-    	const { targetId } = req.params as { targetId: string };
-    	try {
-	  	await friendService.blockUserService(userId, targetId);
-	  	return { success: true };
-    	} catch (err: any) {
-	  	return reply.status(400).send({ 
-			error: { 
-				code: err.message, 
-				message: err.message }
-		});
-    	}
+// REJECT
+fastify.post('/profile/friends/:requesterId/reject', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { requesterId } = req.params as { requesterId: string };
+    try {
+        await friendService.rejectFriendRequestService(userId, requesterId);
+        return { success: true };
+    } catch (err: any) {
+        return reply.status(400).send({ error: { code: err.message, message: err.message } });
+    }
 });
 
-// --- UNBLOCK USER ---
-fastify.post('/profile/friends/:targetId/unblock', async (req, reply) => {
-    	const userId = req.headers['x-user-id'] as string;
-    	const { targetId } = req.params as { targetId: string };
-    	try {
-	  	await friendService.unblockUserService(userId, targetId);
-	  	return { success: true };
-    	} catch (err: any) {
-	  	return reply.status(400).send({ 
-			error: { 
-				code: err.message, 
-				message: err.message }
-		});
-    	}
+// CANCEL
+fastify.post('/profile/friends/:requesterId/cancel', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { requesterId } = req.params as { requesterId: string };
+    try {
+        await friendService.cancelFriendRequestService(userId, requesterId);
+        return { success: true };
+    } catch (err: any) {
+        return reply.status(400).send({ error: { code: err.message, message: err.message } });
+    }
 });
 
-// --- GET FRIEND LIST ---
-fastify.get('/profile/friends', async (req, reply) => {
-    	const userId = req.headers['x-user-id'] as string;
-    	return friendService.getFriendsService(userId);
+// REMOVE
+fastify.delete('/profile/friends/:friendId', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { friendId } = req.params as { friendId: string };
+    console.info("For Player ", userId, " remove ", friendId);
+    try {
+        await friendService.removeFriendService(userId, friendId);
+        return { success: true };
+    } catch (err: any) {
+        return reply.status(400).send({ error: { code: err.message, message: err.message } });
+    }
 });
 
-// --- GET INCOMING FRIEND REQUESTS ---
-fastify.get('/profile/friends/requests/incoming', async (req, reply) => {
-    	const userId = req.headers['x-user-id'] as string;
-    	return friendService.getIncomingRequestsService(userId);
+// BLOCK
+fastify.post('/profile/friends/:targetId/block', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { targetId } = req.params as { targetId: string };
+    console.info("---->>> For Player ", userId, " blocks ", targetId);
+    try {
+        await friendService.blockUserService(userId, targetId);
+        return { success: true };
+    } catch (err: any) {
+        return reply.status(400).send({ error: { code: err.message, message: err.message } });
+    }
 });
 
-// --- GET OUTGOING FRIEND REQUESTS ---
-fastify.get('/profile/friends/requests/outgoing', async (req, reply) => {
-    	const userId = req.headers['x-user-id'] as string;
-    	return friendService.getOutgoingRequestsService(userId);
+// UNBLOCK
+fastify.post('/profile/friends/:targetId/unblock', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { targetId } = req.params as { targetId: string };
+    try {
+        await friendService.unblockUserService(userId, targetId);
+        return { success: true };
+    } catch (err: any) {
+        return reply.status(400).send({ error: { code: err.message, message: err.message } });
+    }
 });
 
-// --- GET BLOCK LIST ---
-fastify.get('/profile/friends/blocked', async (req, reply) => {
-    	const userId = req.headers['x-user-id'] as string;
-    	return friendService.getBlocklistService(userId);
-});
 
-// --- GET FRIEND STATUS ---
-fastify.get('/profile/friends/:otherId/status', async (req, reply) => {
-    	const userId = req.headers['x-user-id'] as string;
-    	const { otherId } = req.params as { otherId: string };
-    	return friendService.getFriendStatusService(userId, otherId);
+// Get Friend Status
+fastify.get('/profile/friends/status/:targetId', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+    const { targetId } = req.params as { targetId: string };
+    const status = await friendService.getFriendStatusService(userId, targetId);
+    return status ?? { status: null };
 });
+// // --- SEND FRIEND REQUEST ---
+// fastify.post('/profile/friends/:toId', async (req, reply) => {
+//     	const fromId = req.headers['x-user-id'] as string;
+//     	const { toId } = req.params as { toId: string };
+//     	try {
+// 	  	await friendService.sendFriendRequestService(fromId, toId);
+// 	  	return { success: true };
+//     	} catch (err: any) {
+// 	  	return reply.status(400).send({ 
+// 			error: { 
+// 				code: err.message, 
+// 				message: err.message } 
+		
+// 		});
+//     	}
+// });
+
+// // --- ACCEPT FRIEND REQUEST ---
+// fastify.post('/profile/friends/:requesterId/accept', async (req, reply) => {
+//     	const userId = req.headers['x-user-id'] as string;
+//     	const { requesterId } = req.params as { requesterId: string };
+//     	try {
+// 	  	await friendService.acceptFriendRequestService(userId, requesterId);
+// 	  	return { success: true };
+//     	} catch (err: any) {
+// 	  	return reply.status(400).send({ 
+// 			error: { 
+// 				code: err.message, 
+// 				message: err.message }
+// 		});
+//     	}
+// });
+
+// // --- REJECT FRIEND REQUEST ---
+// fastify.post('/profile/friends/:requesterId/reject', async (req, reply) => {
+//     	const userId = req.headers['x-user-id'] as string;
+//     	const { requesterId } = req.params as { requesterId: string };
+//     	try {
+// 	  	await friendService.rejectFriendRequestService(userId, requesterId);
+// 	  	return { success: true };
+//     	} catch (err: any) {
+// 	  	return reply.status(400).send({ 
+// 			error: { 
+// 				code: err.message, 
+// 				message: err.message } 
+// 		});
+//     	}
+// });
+
+// // --- CANCEL OUTGOING FRIEND REQUEST ---
+// fastify.post('/profile/friends/:requesterId/cancel', async (req, reply) => {
+//     	const userId = req.headers['x-user-id'] as string;
+//     	const { requesterId } = req.params as { requesterId: string };
+//     try {
+// 	    await friendService.cancelFriendRequestService(userId, requesterId);
+//       	    return { success: true };
+//     } catch (err: any) {
+//       	    return reply.status(400).send({ 
+// 		    error: { 
+// 			    code: err.message, 
+// 			    message: err.message }
+// 	    });
+//     }
+// });
+
+// // --- REMOVE FRIEND ---
+// fastify.delete('/profile/friends/:friendId', async (req, reply) => {
+//     	const userId = req.headers['x-user-id'] as string;
+//     	const { friendId } = req.params as { friendId: string };
+//     	try {
+// 	  	await friendService.removeFriendService(userId, friendId);
+// 	  	return { success: true };
+// 	} catch (err: any) {
+// 	  	return reply.status(400).send({ 
+// 			error: { 
+// 				code: err.message, 
+// 				message: err.message }
+// 		});
+//     	}
+// });
+
+// // --- BLOCK USER ---
+// fastify.post('/profile/friends/:targetId/block', async (req, reply) => {
+//     	const userId = req.headers['x-user-id'] as string;
+//     	const { targetId } = req.params as { targetId: string };
+//     	try {
+// 	  	await friendService.blockUserService(userId, targetId);
+// 	  	return { success: true };
+//     	} catch (err: any) {
+// 	  	return reply.status(400).send({ 
+// 			error: { 
+// 				code: err.message, 
+// 				message: err.message }
+// 		});
+//     	}
+// });
+
+// // --- UNBLOCK USER ---
+// fastify.post('/profile/friends/:targetId/unblock', async (req, reply) => {
+//     	const userId = req.headers['x-user-id'] as string;
+//     	const { targetId } = req.params as { targetId: string };
+//     	try {
+// 	  	await friendService.unblockUserService(userId, targetId);
+// 	  	return { success: true };
+//     	} catch (err: any) {
+// 	  	return reply.status(400).send({ 
+// 			error: { 
+// 				code: err.message, 
+// 				message: err.message }
+// 		});
+//     	}
+// });
+
+// // --- GET FRIEND LIST ---
+// fastify.get('/profile/friends', async (req, reply) => {
+//         const userId = req.user.sub;
+//         console.info("GET /friends for userId:", userId);
+//     	const result = await friendService.getFriendsService(userId);
+//         console.info("Friends result:", result); 
+//         return result;
+// });
+
+// // --- GET INCOMING FRIEND REQUESTS ---
+// fastify.get('/profile/friends/requests/incoming', async (req, reply) => {
+//     	const userId = req.headers['x-user-id'] as string;
+//     	return friendService.getIncomingRequestsService(userId);
+// });
+
+// // --- GET OUTGOING FRIEND REQUESTS ---
+// fastify.get('/profile/friends/requests/outgoing', async (req, reply) => {
+//     	const userId = req.headers['x-user-id'] as string;
+//     	return friendService.getOutgoingRequestsService(userId);
+// });
+
+// // --- GET BLOCK LIST ---
+// fastify.get('/profile/friends/blocked', async (req, reply) => {
+//     	const userId = req.headers['x-user-id'] as string;
+//     	return friendService.getBlocklistService(userId);
+// });
+
+// // --- GET FRIEND STATUS ---
+// fastify.get('/profile/friends/:otherId/status', async (req, reply) => {
+//     	const userId = req.headers['x-user-id'] as string;
+//     	const { otherId } = req.params as { otherId: string };
+//     	return friendService.getFriendStatusService(userId, otherId);
+// });
 
 // --- START SERVER ---
 const start = async () => {

@@ -105,7 +105,7 @@ export default function SignUpPage() {
             if (hasCredentials)
             {
                 console.log('Signup successful:', result);
-                router.push('/me');
+                router.push('/updateme');
             }
             else
                 setServerError("Error validating credentials");

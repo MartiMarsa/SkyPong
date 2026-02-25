@@ -109,7 +109,7 @@ export default function SignInPage() {
             const hasCredentials = await checkAuth();
             console.log("Has Credentials: ", hasCredentials);
             if (hasCredentials)
-                router.push('/')
+                router.push('/updateme')
             else
                 setServerError("Error validating credentials");
         } catch (error) {
