@@ -1,6 +1,7 @@
 import { Engine, Scene, FreeCamera, Vector3, Color4, Mesh } from "@babylonjs/core";
 import { RENDERING, CAMERA } from '../config';
 import { adjustCamera } from "../utils/Camera";
+import { touchDetection } from "src_cli/utils/touchDetection";
 
 export type CameraViewType = 'angled' | 'top-down';
 
@@ -93,7 +94,10 @@ export class EngineSetup {
         } else {
             camera.setTarget(Vector3.Zero());
             if (this._cameraView === 'top-down') {
-                camera.upVector = new Vector3(0, 0, -1);
+                // if (touchDetection() === true) { // INFO eventually if we decide for mobile local pvp
+                //     camera.upVector = new Vector3(0, 0, 10);
+                // } else {
+                    camera.upVector = new Vector3(-10, 0, 0);
             }
         }
 
