@@ -43,7 +43,7 @@ export class SceneLights {
             scene,
         );
 
-      const cloudPos = new Vector3(1, -10, 1);
+      const cloudPos = new Vector3(1, -5, 0);
       const cloudObject = new CloudObject(scene, cloudPos);
 
         dirLight.position = RENDERING.LIGHTS.DIRECTIONAL.POSITION;

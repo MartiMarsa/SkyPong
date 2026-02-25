@@ -25,7 +25,7 @@ export class CloudObject {
     this.sprite.color = new Color4(1, 1, 1, 1); // Last number is opacity
     
     // this.sprite.size = Math.random() * 20 + 10; 
-    this.sprite.size = 50; 
+    this.sprite.size = 20; 
     // this.sprite.width = Math.random() * 50 + 30;
     // this.sprite.height = Math.random() * 15 + 50;
     // this.sprite.width = 30;
