@@ -83,6 +83,8 @@ services:
         condition: service_started
       statistics-service:
         condition: service_started
+      sqlite-web:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/nginx_status >/dev/null 2>&1 || exit 1"]
       interval: 10s
@@ -256,6 +258,31 @@ services:
         condition: service_healthy
     command: ["node", "/app/seed.js"]
 #    restart: "no"
+
+  # ────────────────────────────────────────────
+  # DB WEB
+  # ────────────────────────────────────────────
+  sqlite-web:
+    container_name: sqlite-web
+    build: ./sqlite-web
+    restart: unless-stopped
+    ports:
+     - "8978:8080"
+    environment:
+      - PORT=8080
+    volumes:
+      - ./volumes:/data:ro
+    networks:
+      - internal
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      profile-service:
+        condition: service_healthy
+      statistics-service:
+        condition: service_healthy
+      db-seed:
+        condition: service_completed_successfully
 
   # ────────────────────────────────────────────
   # EXPORTERS / MONITORING
