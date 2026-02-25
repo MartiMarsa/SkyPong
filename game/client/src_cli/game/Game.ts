@@ -69,8 +69,10 @@ export class Game {
         const player2Name = config.player2Name || 'Player 2';
         const player1Color = config.playerColor || '#00A6ED';
         const player2Color = config.player2Color || '#F6511D';
-        const { gameMode } = config;
-        const engineSetup = new EngineSetup(canvas);
+        const { gameMode, cameraView } = config;
+        console.log('DEBUG cameraView:', cameraView, 'gameMode:', gameMode);
+        const isLocal2P = gameMode === 'local-2p';
+        const engineSetup = new EngineSetup(canvas, false, cameraView || (isLocal2P ? 'top-down' : 'angled'));
         this._engineSetup = engineSetup;
         const engine = engineSetup.engine;
 

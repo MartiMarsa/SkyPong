@@ -22,6 +22,7 @@ export interface GameSessionConfig {
   player2Name?: string;          // Required for local-2p mode
   player2Color?: string;         // Optional for local-2p (defaults to "#F6511D")
   roomId?: string;               // Required for online-join mode
+  cameraView?: 'angled' | 'top-down';
 }
 
 export interface ValidationError {
