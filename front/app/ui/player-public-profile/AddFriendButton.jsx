@@ -29,7 +29,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import api from "../../api/api";
-
+import Toast from "../messaging/toast";
 
 // ─── Relation states ──────────────────────────────────────────────────────────
 // null          → no relation
@@ -148,26 +148,6 @@ function DropdownMenu({ items, onClose }) {
   );
 }
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
-function Toast({ msg, type, clear }) {
-  useEffect(() => {
-    const t = setTimeout(clear, 2600);
-    return () => clearTimeout(t);
-  }, [msg]);
-
-  return (
-    <div style={{
-      position: "fixed", bottom: "24px", right: "24px", zIndex: 9999,
-      background: type === "err" ? "#ef4444" : "#00d2be",
-      color: "#050810", fontFamily: mono, fontSize: "12px", fontWeight: 700,
-      letterSpacing: "0.06em", padding: "10px 18px", borderRadius: "8px",
-      boxShadow: `0 4px 24px ${type === "err" ? "#ef444466" : "#00d2be66"}`,
-    }}>
-      {msg}
-    </div>
-  );
-}
-
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function AddFriendButton({ currentUserId, targetId, csrfToken }) {
   const [relation, setRelation] = useState(undefined); // undefined = loading
@@ -232,7 +212,7 @@ export default function AddFriendButton({ currentUserId, targetId, csrfToken }) 
   if (relation === "me") {
     return (
         <div style={{ fontFamily: mono, fontSize: "11px", backgroundColor:"rgb(21 29 42)", color: "#92994a", letterSpacing: "0.1em", border: "1px dashed #687d8b ", borderRadius: "5px", padding: "7px" }}>
-           {"<--- It's me Mario!"}
+           {"<-⭐ It's me Mario! 🍄"}
         </div>
     );
   }

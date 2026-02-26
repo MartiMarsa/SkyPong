@@ -153,9 +153,9 @@ export async function unblockUser(userId: string, targetId: string): Promise<voi
   const [u1, u2] = normalizeId(userId, targetId);
 
   return new Promise((resolve, reject) => {
+    // En lugar de UPDATE, hacemos DELETE
     db.run(
-      `UPDATE friends 
-       SET status = 'accepted', blocked_by = NULL
+      `DELETE FROM friends 
        WHERE status = 'blocked' 
          AND blocked_by = ? 
          AND user1_id = ? 
@@ -163,7 +163,7 @@ export async function unblockUser(userId: string, targetId: string): Promise<voi
       [userId, u1, u2],
       function(err) {
         if (err) return reject(err);
-        if (this.changes === 0) return reject(new Error('NOT_BLOCKED'));
+        if (this.changes === 0) return reject(new Error('NOT_BLOCKED_BY_YOU'));
         resolve();
       }
     );
@@ -229,7 +229,11 @@ export async function getIncomingRequests(userId: string): Promise<any[]> {
 // 	const db = getProfileDB();
 
 // 	return new Promise((resolve, reject) => {
-// 		db.all(`SELECT p.user_id, p.nickname, p.avatarUrl, f.created_at FROM friends f JOIN players p ON p.user_id = f.requester_id WHERE f.status = 'pending' AND requester_id = ? AND (f.user1_id = ? OR f.user2_id = ?)`,
+// 		db.all(`SELECT p.user_id, p.nickname, p.avatarUrl, f.created_at
+//          FROM friends f
+//          JOIN players p ON p.user_id = f.requester_id 
+//              WHERE f.status = 'pending' 
+//              AND requester_id = ? AND (f.user1_id = ? OR f.user2_id = ?)`,
 // 			[userId, userId, userId],
 // 			(err, rows) => {
 // 				if (err) return reject(err);
