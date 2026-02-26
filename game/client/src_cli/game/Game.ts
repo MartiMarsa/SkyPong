@@ -3,25 +3,15 @@ import {
     Vector3,
     Observer,
     Color3,
-    DeviceSourceManager,
-    DeviceType,
-    Logger,
 } from "@babylonjs/core";
 import * as Colyseus from "colyseus.js";
 import { InputController } from "../input/InputController";
-import { ClientBall } from "../entities/ClientBall";
-import { ClientTable } from "../entities/ClientTable";
-import { ClientPaddle } from "../entities/ClientPaddle";
-import { SceneLights } from "../rendering/SceneLights";
 import { DebugMonitor } from "../utils/DebugMonitor";
-import { EngineSetup } from "../rendering/EngineSetup";
+import { ClientEngine } from "./ClientEngine";
 import { GMCN, INTERPOLATION, NETWORK } from '@skypong/common/constants';
-import { GameUIManager } from '../ui/GameUIManager';
-import { SERVER_CONNECTION, VISUAL, CLIENT_TIMING, RENDERING, CAMERA } from '../config';
+import { SERVER_CONNECTION, VISUAL, CLIENT_TIMING } from '../config';
 import { adjustCamera } from '../utils/Camera';
 import { GameSessionConfig } from '../types/GameSessionConfig';
-import { TouchControls } from '../ui/TouchControls';
-import { touchDetection } from '../utils/touchDetection';
 
 interface GameState {
     ball: any; paddle: any; paddle2: any;
@@ -38,7 +28,6 @@ interface GameState {
 let gameInstanceLock = false;
 
 export class Game {
-    private _engineSetup: EngineSetup | null = null;
     private _debugMonitor: DebugMonitor | null = null;
     private _input: InputController | null = null;
     private _room: Colyseus.Room<GameState> | null = null;
@@ -47,10 +36,11 @@ export class Game {
     private _config: GameSessionConfig | null = null;
     private _onGameReady: ((onLaunch: () => void, isWaitingForOpponent?: boolean) => void) | null = null;
     private _onBackToMenu: (() => void) | null = null;
-    private _gui: GameUIManager | null = null;
+    private _gui: any = null;
     private _isGameOver: boolean = false;
     private _intervals: number[] = [];
     private _isPlayer2: boolean = false;
+    private _clientEngine: ClientEngine | null = null;
 
     startGame = (
         canvas: HTMLCanvasElement,
@@ -69,72 +59,36 @@ export class Game {
         const player2Name = config.player2Name || 'Player 2';
         const player1Color = config.playerColor || '#00A6ED';
         const player2Color = config.player2Color || '#F6511D';
-        const { gameMode, cameraView } = config;
-        console.log('DEBUG cameraView:', cameraView, 'gameMode:', gameMode);
-        const isLocal2P = gameMode === 'local-2p';
-        const engineSetup = new EngineSetup(canvas, false, cameraView || (isLocal2P ? 'top-down' : 'angled'));
-        this._engineSetup = engineSetup;
-        const engine = engineSetup.engine;
+        const { gameMode } = config;
+
+        // Initialize ClientEngine (graphics & entities)
+        const clientEngine = new ClientEngine(canvas, config);
+        this._clientEngine = clientEngine;
+        const engine = clientEngine.engineSetup.engine;
+
+        // Determine initial player 2 name based on game mode
+        const isPvPMode = gameMode === 'local-2p' || gameMode === 'online-create' || gameMode === 'online-join';
+        const isAIMode = gameMode.startsWith('ai-');
+        const initialPlayer2Name = isPvPMode ? 'Waiting...' : (isAIMode ? 'AI' : player2Name);
+
+        // Initialize entities with back to menu callback
+        const onBackToMenuCallback = () => {
+            if (this._onBackToMenu) {
+                this._onBackToMenu();
+            }
+        };
+        const entities = clientEngine.init(player1Name, initialPlayer2Name, onBackToMenuCallback);
+        const { ball, table, paddle, paddle2, gui, touchControls } = entities;
+        this._gui = gui;
+
+        const debugMonitor = new DebugMonitor();
+        this._debugMonitor = debugMonitor;
 
         const client = new Colyseus.Client(SERVER_CONNECTION.WS_URL);
         let activeScene: Scene | null = null;
 
-        const deviceSourceManager = new DeviceSourceManager(engine);
-        console.log(deviceSourceManager.getDeviceSource); // DEBUG
-        const hasTouch = touchDetection();
-
         const createScene = async () => {
-            const scene = engineSetup.scene;
-            engineSetup.camera.setTarget(Vector3.Zero());
-
-            const shadowGenerator = SceneLights.Create(scene);
-
-            const ball = new ClientBall(scene);
-            const table = new ClientTable(scene);
-
-            const skybox = scene.getMeshByName("hdrSkyBox");
-            const refractionRenderList = skybox ? [table.mesh, skybox, ball.mesh] : [table.mesh];
-
-            const createPaddle = (name: string) => new ClientPaddle(scene, {
-                name, materialKey: "CLEARGLASS",
-                albedoColor: new Color3(0.5, 0.5, 0.5),
-                tintColor: new Color3(0.5, 0.5, 0.5),
-                refractionRenderList,
-            });
-            const paddle = createPaddle("paddle1");
-            const paddle2 = createPaddle("paddle2");
-
-            const debugMonitor = new DebugMonitor();
-            this._debugMonitor = debugMonitor;
-
-            // Create Babylon.js GUI for in-game UI
-            const gui = new GameUIManager(scene, () => {
-                if (this._onBackToMenu) {
-                    this._onBackToMenu();
-                }
-            });
-            this._gui = gui;
-            const touchControls = new TouchControls(this._gui.texture);
-            if (hasTouch) {
-                // touchControls.showText("Touch [YES]") // DEBUG
-                touchControls.showControls();
-                console.log('[TOUCH DETECTED]') // DEBUG
-            } else {
-                // touchControls.showText("Touch [NO]") // DEBUG
-                console.log('[TOUCH NOT AVAILABLE]') // DEBUG
-            }
-            // For PvP modes, show "Waiting..." for Player 2 until they join
-            const isPvPMode = gameMode === 'local-2p' || gameMode === 'online-create' || gameMode === 'online-join';
-            const isAIMode = gameMode.startsWith('ai-');
-            const initialPlayer2Name = isPvPMode ? 'Waiting...' : (isAIMode ? 'AI' : player2Name);
-            gui.showGameHUD(player1Name, initialPlayer2Name);
-
-            shadowGenerator.addShadowCaster(ball.mesh);
-            engineSetup.setResizeTarget(table.mesh);
-
-            [table.mesh, ball.mesh, paddle.mesh, paddle2.mesh].forEach(m => {
-                m.renderingGroupId = RENDERING.RENDERING_GROUPS.GAME_OBJECTS;
-            });
+            const scene = clientEngine.scene;
 
             try {
                 let room: Colyseus.Room<GameState>;
@@ -176,13 +130,13 @@ export class Game {
                 const checkPlayerAssignment = () => {
                     if (cameraSetupComplete) return;
 
-                    const cam = engineSetup.camera;
+                    const cam = clientEngine.engineSetup.camera;
                     const mesh = table.mesh;
                     const center = mesh.getBoundingInfo().boundingBox.centerWorld;
 
                     this._isPlayer2 = room.sessionId === room.state.player2Id;
-                    engineSetup.setIsPlayer2(this._isPlayer2);
-                    adjustCamera(cam, mesh, engineSetup.engine);
+                    clientEngine.engineSetup.setIsPlayer2(this._isPlayer2);
+                    adjustCamera(cam, mesh, clientEngine.engineSetup.engine);
 
                     if (this._isPlayer2) {
                         cam.position = new Vector3(cam.position.x, cam.position.y, -cam.position.z);
@@ -452,7 +406,7 @@ export class Game {
                     paddle2.update(targetPaddle2Position, paddleLerpFactor, room.state.paddle2.enabled);
                     debugMonitor.update(
                         ball.mesh.position,
-                        engineSetup.camera.position,
+                        clientEngine.engineSetup.camera.position,
                         room.state.ball.enabled,
                         collisionDetected,
                         speed,
@@ -511,9 +465,8 @@ export class Game {
         this._input = null;
         this._debugMonitor?.dispose();
         this._debugMonitor = null;
-        this._engineSetup?.dispose();
-        this._engineSetup = null;
-        this._gui?.dispose();
+        this._clientEngine?.dispose();
+        this._clientEngine = null;
         this._gui = null;
     }
 
