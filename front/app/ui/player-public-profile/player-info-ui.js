@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useStyles } from '../../hooks/use-styles';
 import { useRouter } from 'next/navigation';
-import { title } from 'process';
+import AddFriendButton from './AddFriendButton';
+import Loader from '../loader/loader-ui'
 
 const mobileStyles = {
     title: "",
@@ -23,7 +24,14 @@ const desktopStyles = {
     winPhrase: '',
 };
 
-export default function PlayerInfo({avatarURL, nickname, winPhrase})
+const getCookie = (name) => {
+    return document.cookie
+        .split('; ')
+        .find(row => row.startsWith(name + '='))
+        ?.split('=')[1];
+};
+
+export default function PlayerInfo({profile})
 {
     const router = useRouter();
     const { user, authloading, checkAuth } = useAuth();
@@ -31,16 +39,22 @@ export default function PlayerInfo({avatarURL, nickname, winPhrase})
     const { styles } = useStyles(mobileStyles, desktopStyles);
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [player, setPlayer] = useState('');
+
+    const csrfToken = getCookie();
     return (
         <>
+        { authloading ? (<Loader />) : (
             <section className={styles.playerIdentity}>
-                <img className={styles.avatar} src={avatarURL}/>
-                <p className={styles.nickname}>{nickname}</p>
+                <img className={styles.avatar} src={profile?.avatarUrl || '/avatar/default-avatar.webp'}/>
+                <p className={styles.nickname}>{profile?.nickname || 'PongoDio'}</p>
+                <p className={styles.winPhrase}>{profile?.winPhrase || 'Silence is golden, or Pongo Dio up to you'}</p>
+               { user?.id !== profile?.id ? (<AddFriendButton 
+                    currentUserId={user?.id}
+                    targetId={profile?.id}
+                    csrfToken={csrfToken}
+                />) : ('') } { /* /ui/player-public-profile/AddDriendButton */}
             </section>
-            <section className={styles.winPhrase}>
-                <p className={styles.winPhrase}>{winPhrase}</p>
-            </section>
+        )}
         </>
     );    
 }
