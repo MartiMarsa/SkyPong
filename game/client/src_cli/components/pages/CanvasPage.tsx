@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { decodeConfig } from '../../utils/configDecoder';
 import { startGame } from '../../game/Game';
 import { TestScene } from '../../game/TestScene';
@@ -22,8 +22,23 @@ const CanvasPage = () => {
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [fadingOut, setFadingOut] = useState(false);
 
-    // Get game config from navigation state
-    const config = location.state as GameSessionConfig | null;
+    const [searchParams] = useSearchParams();
+
+    const getConfig = (): GameSessionConfig | null => {
+        // 1. Try state first (from StartPage navigation)
+        const stateConfig = location.state as GameSessionConfig | null;
+        if (stateConfig) return stateConfig;
+
+        // 2. Fallback: decode from URL params (for iframe calls from /front)
+        const encoded = searchParams.get('config');
+        if (encoded) {
+            const result = decodeConfig(encoded);
+            return result.valid ? result.config : null;
+        }
+
+        return null;
+    };
+    const config = getConfig();
 
     useEffect(() => {
         setIsLoading(true);
