@@ -203,6 +203,7 @@ const StartPage = () => {
     const [debugConfig, setDebugConfig] = useState<GameSessionConfig | null>(null);
     const [debugUrl, setDebugUrl] = useState<string>('');
 
+    // HUGO implement to front for colyseus room creation
     const getClient = useCallback(() => {
         if (!colyseusClientRef.current) {
             colyseusClientRef.current = new Colyseus.Client(SERVER_CONNECTION.WS_URL);
@@ -223,6 +224,7 @@ const StartPage = () => {
         }
     }, [getClient]);
 
+    // HUGO implement in front
     useEffect(() => {
         if (selectedMode === '2p-online' && lobbyPhase === 'lobby') {
             fetchRooms();
@@ -258,9 +260,10 @@ const StartPage = () => {
         navigate(`/launch?config=${encoded}`);
     };
 
-    // FRONT this is where the data gets preparend this shows the modal with the debug
+    //HUGO DONT CONSIDER ->  FRONT this is where the data gets preparend this shows the modal with the debug
     const handleStartGame = () => {
         if (!selectedMode) return;
+        // HUGO if player exists use player nickname otherwise use player local name
         const p1Name = player1Name.trim() || 'Player 1';
         const p2Name = selectedMode === '2p-local' ? (player2Name.trim() || 'Player 2') : selectedMode === '2p-online' ? '' : 'AI';
         
@@ -283,7 +286,7 @@ const StartPage = () => {
 
         // FRONT this is where the GameSessionConfig gets encoded and sent
         const base64Config = encodeConfig(config);
-        const launchUrl = `${window.location.origin}${import.meta.env.BASE_URL || '/'}launch?config=${base64Config}`;
+        const launchUrl = `${window.location.origin}${import.meta.env.BASE_URL || '/'}launch?config=${base64Config}`; // HUGO Just use /launch in front
         
         setDebugConfig(config);
         setDebugUrl(launchUrl);

@@ -12,9 +12,7 @@ root.render(
     <BrowserRouter basename={import.meta.env.BASE_URL}>
         <Routes>
             <Route path="/" element={<StartPage />} />
-            <Route path="/launch" element={<GameLauncher />} />
             <Route path="/canvas" element={<CanvasPage />} />
-            <Route path="/launch" element={<GameLauncher />} />
         </Routes>
     </BrowserRouter>
 );

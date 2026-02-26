@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { decodeConfig } from '../../utils/configDecoder';
 import { startGame } from '../../game/Game';
 import { TestScene } from '../../game/TestScene';
 import LoadingOverlay from '../LoadingOverlay';
