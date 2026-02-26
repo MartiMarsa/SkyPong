@@ -299,9 +299,9 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
     setFetchError(null);
     try {
       const [f, inc, out] = await Promise.all([
-        api("/api/profile/friends", { csrf }),
-        api("/api/profile/friends/requests/incoming", { csrf }),
-        api("/api/profile/friends/requests/outgoing", { csrf }),
+        api("/api/profile/friends", { headers: { 'x-csrf-token': csrf }}),
+        api("/api/profile/friends/requests/incoming", { headers: { 'x-csrf-token': csrf }} ),
+        api("/api/profile/friends/requests/outgoing", { headers: { 'x-csrf-token': csrf }}),
       ]);
       console.info("Friends: ", f);
       setFriends(Array.isArray(f) ? f : []);

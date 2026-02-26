@@ -225,17 +225,39 @@ export async function getIncomingRequests(userId: string): Promise<any[]> {
 }
 
 // --- GET OUTGOING FRIEND REQUESTS ---
-export async function getOutgoingRequests(userId: string): Promise<any[]> {
-	const db = getProfileDB();
+// export async function getOutgoingRequests(userId: string): Promise<any[]> {
+// 	const db = getProfileDB();
 
-	return new Promise((resolve, reject) => {
-		db.all(`SELECT p.user_id, p.nickname, p.avatarUrl, f.created_at FROM friends f JOIN players p ON p.user_id = f.requester_id WHERE f.status = 'pending' AND requester_id = ? AND (f.user1_id = ? OR f.user2_id = ?)`,
-			[userId, userId, userId],
-			(err, rows) => {
-				if (err) return reject(err);
-				resolve(rows);
-			});
-	});
+// 	return new Promise((resolve, reject) => {
+// 		db.all(`SELECT p.user_id, p.nickname, p.avatarUrl, f.created_at FROM friends f JOIN players p ON p.user_id = f.requester_id WHERE f.status = 'pending' AND requester_id = ? AND (f.user1_id = ? OR f.user2_id = ?)`,
+// 			[userId, userId, userId],
+// 			(err, rows) => {
+// 				if (err) return reject(err);
+// 				resolve(rows);
+// 			});
+// 	});
+// }
+
+export async function getOutgoingRequests(userId: string): Promise<any[]> {
+  const db = getProfileDB();
+
+  return new Promise((resolve, reject) => {
+    db.all(
+      `SELECT p.user_id, p.nickname, p.avatarUrl, f.created_at 
+       FROM friends f 
+       JOIN players p ON p.user_id = CASE 
+         WHEN f.user1_id = ? THEN f.user2_id 
+         ELSE f.user1_id 
+       END
+       WHERE f.status = 'pending' 
+         AND f.requester_id = ?`,
+      [userId, userId],
+      (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows);
+      }
+    );
+  });
 }
 
 // --- GET BLOCK LIST ---
