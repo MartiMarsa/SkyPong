@@ -1,0 +1,21 @@
+FROM node:20-alpine
+
+# Necesario para módulos nativos como SQLite3
+RUN apk add --no-cache python3 make g++ libc-dev
+
+WORKDIR /app
+
+# Copiamos archivos de dependencias
+COPY package.json package-lock.json ./
+
+# Instalamos TODAS las dependencias (incluyendo devDependencies como ts-node-dev)
+RUN npm install
+
+# En desarrollo, no copiamos el código aquí mediante el Dockerfile,
+# sino que lo "montaremos" con un volumen, pero dejamos esto por seguridad
+COPY . .
+
+EXPOSE 5000
+
+# Usamos el script de desarrollo que ya tienes en tu package.json
+CMD ["npm", "run", "dev"]
