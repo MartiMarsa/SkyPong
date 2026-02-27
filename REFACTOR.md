@@ -17,7 +17,7 @@ This document provides step-by-step instructions to refactor the monolithic `Gam
 ### Line Count Progress
 | File | Original | After All Extractions | Current |
 |------|----------|----------------------|---------|
-| Game.ts | 509 | ~380 | ~330 |
+| Game.ts | 509 | ~380 | ~295 |
 | GameLoop.ts | - | ~185 | ~185 |
 | CountdownManager.ts | - | ~40 | ~40 |
 
@@ -26,7 +26,7 @@ This document provides step-by-step instructions to refactor the monolithic `Gam
 ## Architecture
 
 ```
-Game.ts (orchestrator ~330 lines)
+Game.ts (orchestrator ~295 lines)
 ├── ClientEngine.ts (graphics & entities)
 ├── RoomManager.ts (networking & state)
 ├── GameLoop.ts (render & input loop)
@@ -113,38 +113,69 @@ let isBallEnabled = roomManager.room?.state.ball.enabled ?? true;
 ### Completed
 - ✅ Create GameLoop.ts
 - ✅ Create CountdownManager.ts
+- ✅ Remove debug logs
+- ✅ Remove unused variables (_renderObserver, _renderObservable, _intervals)
+- ✅ Consolidate signalGameReady logic (extracted to _signalGameReady helper method)
+- ✅ Extract callback setup (extracted to _createRoomManagerCallbacks factory method)
 
 ### Remaining Refactoring Opportunities
 
-#### 1. Remove Debug Logs (Quick - 5 min)
-- **Location**: Lines 185-187 in Game.ts
-- **Issue**: console.log statements left in production code
-- **Action**: Remove debug console.log statements
-
-#### 2. Remove Unused Variables (Quick - 5 min)
-- **Location**: Game.ts class properties
-- **Issue**: 
-  - `_renderObserver` and `_renderObservable` - GameLoop handles rendering now
-  - `_intervals` - CountdownManager handles its own intervals
-- **Action**: Remove unused class properties and cleanup code
-
-#### 3. Consolidate signalGameReady Logic (Medium - 15 min)
-- **Location**: Lines 199-259 in Game.ts
-- **Issue**: PvP and non-PvP branches have duplicated `signalGameReady` logic
-- **Action**: Extract to a helper function or dedicated method
-
-#### 4. Extract Callback Setup (Medium - 20 min)
-- **Location**: Lines 85-157 in Game.ts
-- **Issue**: Large RoomManager callback object makes code hard to read
-- **Action**: Extract to a factory function or dedicated callback builder
-
 #### 5. Create GameReadyManager (Advanced - 30+ min)
-- **Issue**: Game-ready/countdown flow is complex and scattered
-- **Action**: Create a dedicated class that handles:
-  - Waiting for opponent (online mode)
-  - Game start detection
-  - Countdown triggering
-  - Player assignment callbacks
+
+**Location**: Current code scattered in `game/client/src_cli/game/Game.ts`:
+- Lines 188-210: PvP mode game ready logic (inside `createScene`)
+- Lines 212-223: CountdownManager instantiation with callbacks
+- Lines 269-284: `_signalGameReady()` helper method
+- Lines 300-362: `_createRoomManagerCallbacks()` - specifically `onPlayerAssignment` callback
+
+**Issue**: Game-ready/countdown flow is complex and scattered across multiple places in Game.ts. The flow involves:
+1. Waiting for opponent (online mode)
+2. Game start detection (`room.state.gameStarted`)
+3. Countdown triggering (3-2-1-GO!)
+4. Player assignment (camera adjustment based on player position)
+
+**Action**: Create a dedicated class `GameReadyManager.ts` that handles:
+
+```typescript
+// Proposed interface
+interface GameReadyManagerConfig {
+  roomManager: RoomManager;
+  countdownManager: CountdownManager;
+  gui: any;
+  isPvP: boolean;
+  isOnline: boolean;
+  onPlayerAssignment?: (params: { isPlayer2: boolean }) => void;
+}
+
+class GameReadyManager {
+  constructor(config: GameReadyManagerConfig);
+  
+  // Start the game ready flow (call after room joins)
+  start(): void;
+  
+  // Signal that client is ready (online mode)
+  signalReady(): void;
+  
+  // Check if game has started
+  isGameStarted(): boolean;
+  
+  // Cleanup
+  dispose(): void;
+}
+```
+
+**Methods to extract from Game.ts:**
+1. `_signalGameReady()` logic → `GameReadyManager.handleGameReady()`
+2. CountdownManager instantiation → move to GameReadyManager constructor
+3. `onPlayerAssignment` callback → pass as config option, handle inside GameReadyManager
+
+**Implementation steps:**
+1. Create `game/client/src_cli/game/GameReadyManager.ts`
+2. Move countdown-related code from Game.ts to new class
+3. Update Game.ts to use GameReadyManager
+4. Remove `_signalGameReady()` and related countdown code from Game.ts
+
+**Note**: After implementing, run `rm -f game/client/src_cli/**/*.js` to cleanup compiled JS files.
 
 ---
 
@@ -163,7 +194,7 @@ let isBallEnabled = roomManager.room?.state.ball.enabled ?? true;
 # Build the client
 cd game/client && npm run build
 
-# Clean compiled .js files
+# Clean compiled .js files (always do this after build!)
 rm -f game/client/src_cli/**/*.js
 ```
 
@@ -177,3 +208,5 @@ rm -f game/client/src_cli/**/*.js
 - Initial enabled state must be read from room state before setting up listeners
 - GameLoop sets default spawn positions until server state syncs
 - CountdownManager handles its own intervals (no longer uses Game._intervals)
+- Added `_signalGameReady()` helper method to consolidate PvP/non-PvP game ready logic
+- Added `_createRoomManagerCallbacks()` factory method to extract RoomManager callback setup

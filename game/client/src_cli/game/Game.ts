@@ -6,7 +6,7 @@ import {
 import { InputController } from "../input/InputController";
 import { DebugMonitor } from "../utils/DebugMonitor";
 import { ClientEngine } from "./ClientEngine";
-import { RoomManager } from "./RoomManager";
+import { RoomManager, RoomManagerCallbacks } from "./RoomManager";
 import { GameLoop } from "./GameLoop";
 import { CountdownManager } from "./CountdownManager";
 import { adjustCamera } from '../utils/Camera';
@@ -78,79 +78,16 @@ export class Game {
             const scene = clientEngine.scene;
 
             try {
-                const roomManager = new RoomManager({
-                    onPlayerAssignment: ({ isPlayer2, player1Id, player2Id }) => {
-                        this._isPlayer2 = isPlayer2;
-                        clientEngine.engineSetup.setIsPlayer2(isPlayer2);
-                        const cam = clientEngine.engineSetup.camera;
-                        const mesh = table.mesh;
-                        const center = mesh.getBoundingInfo().boundingBox.centerWorld;
-                        adjustCamera(cam, mesh, clientEngine.engineSetup.engine);
-                        if (isPlayer2) {
-                            cam.position = new Vector3(cam.position.x, cam.position.y, -cam.position.z);
-                        }
-                        cam.setTarget(center);
-                    },
-                    onPlayerColorUpdate: ({ p1Color, p2Color, isPlayer2 }) => {
-                        gui.hud.updatePlayerColors(isPlayer2 ? p2Color : p1Color, isPlayer2 ? p1Color : p2Color);
-                        [paddle, paddle2].forEach((p, i) => {
-                            const color = i === 0 ? p1Color : p2Color;
-                            const mat = p.mesh.material as any;
-                            if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
-                            if (mat?.subSurface?.tintColor) mat.subSurface.tintColor = Color3.FromHexString(color);
-                        });
-                    },
-                    onBallUpdate: ({ x, y, z }) => {
-                        this._gameLoop?.updateBallPosition(x, y, z);
-                    },
-                    onBallCollision: ({ lastImpactX, lastImpactZ, collisionTime }) => {
-                        ball.triggerBounce(lastImpactX, lastImpactZ, collisionTime);
-                    },
-                    onPaddleUpdate: ({ paddleIndex, x, z, enabled }) => {
-                        this._gameLoop?.updatePaddlePosition(paddleIndex, x, z);
-                    },
-                    onScoreUpdate: ({ player1Score, player2Score }) => {
-                        gui.hud.updateScores(player1Score, player2Score);
-                    },
-                    onGameOver: ({ winner, player1Name, player2Name, player1Score, player2Score }) => {
-                        if (!this._isGameOver) {
-                            this._isGameOver = true;
-                            this._gameLoop?.setGameOver(true);
-                            const room = roomManager.room;
-                            const isP1Winner = winner === room?.state.player1Id;
-                            gui.gameOverOverlay.show(
-                                isP1Winner ? player1Name : player2Name,
-                                isP1Winner, player1Score, player2Score,
-                                player1Name, player2Name
-                            );
-                        }
-                    },
-                    onPlayerNameUpdate: ({ player1Name, player2Name }) => {
-                        const room = roomManager.room;
-                        if (!room) return;
-                        let bottomLabel = player1Name;
-                        let topLabel = player2Name;
-                        if (room.sessionId === room.state.player1Id) {
-                            bottomLabel = player1Name;
-                            topLabel = player2Name;
-                        } else if (room.sessionId === room.state.player2Id) {
-                            bottomLabel = player2Name;
-                            topLabel = player1Name;
-                        }
-                        gui.hud.updatePlayerNames(bottomLabel, topLabel);
-                    },
-                    onRoomExpired: () => {
-                        if (this._onBackToMenu) {
-                            alert('Room expired — no opponent joined within 2 minutes.');
-                            this._onBackToMenu();
-                        }
-                    },
-                    onError: (error) => {
-                        console.error("Join error", error);
-                        alert('Failed to connect to game server. Please try again.');
-                        if (this._onBackToMenu) this._onBackToMenu();
-                    },
-                });
+                const roomManager = new RoomManager(
+                    this._createRoomManagerCallbacks(
+                        clientEngine,
+                        table,
+                        paddle,
+                        paddle2,
+                        ball,
+                        gui
+                    )
+                );
 
                 this._roomManager = roomManager;
                 const room = await roomManager.connect(gameMode, config, config.roomId);
@@ -200,51 +137,13 @@ export class Game {
                         this._gui.hud.updatePlayerNames(bottomLabel, topLabel);
                     }
 
-                    const signalGameReady = () => {
-                        if (isOnlineMode) {
-                            roomManager.signalClientReady();
-                        }
-
-                        if (room.state?.gameStarted) {
-                            if (this._onGameReady) {
-                                const callback = this._onGameReady;
-                                this._onGameReady = null;
-                                callback(() => this._countdownManager?.start(), false);
-                            } else {
-                                this._countdownManager?.start();
-                            }
-                        } else {
-                            if (this._onGameReady) {
-                                const countdownCallback = () => this._countdownManager?.start();
-                                this._onGameReady(countdownCallback, true);
-                            }
-                        }
-                    };
-
-                    if (isOnlineMode) {
-                        scene.executeWhenReady(() => signalGameReady());
-                    } else {
-                        if (this._gui) {
-                            scene.executeWhenReady(() => signalGameReady());
-                        }
-                    }
-
-                    if (room.state?.gameStarted && this._onGameReady) {
-                        const callback = this._onGameReady;
-                        this._onGameReady = null;
-                        callback(() => this._countdownManager?.start(), false);
-                    }
+                    scene.executeWhenReady(() => {
+                        this._signalGameReady(true, isOnlineMode, room.state?.gameStarted);
+                    });
                 } else {
-                    const signalGameReady = () => {
-                        if (this._onGameReady) {
-                            const cb = this._onGameReady;
-                            this._onGameReady = null;
-                            cb(() => this._countdownManager?.start());
-                        } else {
-                            this._countdownManager?.start();
-                        }
-                    };
-                    scene.executeWhenReady(() => signalGameReady());
+                    scene.executeWhenReady(() => {
+                        this._signalGameReady(false, false, true);
+                    });
                 }
 
                 this._countdownManager = new CountdownManager({
@@ -302,6 +201,106 @@ export class Game {
         this._gameLoop = null;
         this._countdownManager?.dispose();
         this._countdownManager = null;
+    }
+
+    private _signalGameReady(isPvP: boolean, isOnline: boolean, gameStarted: boolean): void {
+        if (isOnline) {
+            this._roomManager?.signalClientReady();
+        }
+
+        const isWaitingForOpponent = isPvP && !gameStarted;
+        const launchCallback = () => this._countdownManager?.start();
+
+        if (this._onGameReady) {
+            const cb = this._onGameReady;
+            this._onGameReady = null;
+            cb(launchCallback, isWaitingForOpponent);
+        } else {
+            launchCallback();
+        }
+    }
+
+    private _createRoomManagerCallbacks(
+        clientEngine: ClientEngine,
+        table: any,
+        paddle: any,
+        paddle2: any,
+        ball: any,
+        gui: any
+    ): RoomManagerCallbacks {
+        return {
+            onPlayerAssignment: ({ isPlayer2, player1Id, player2Id }) => {
+                this._isPlayer2 = isPlayer2;
+                clientEngine.engineSetup.setIsPlayer2(isPlayer2);
+                const cam = clientEngine.engineSetup.camera;
+                const mesh = table.mesh;
+                const center = mesh.getBoundingInfo().boundingBox.centerWorld;
+                adjustCamera(cam, mesh, clientEngine.engineSetup.engine);
+                if (isPlayer2) {
+                    cam.position = new Vector3(cam.position.x, cam.position.y, -cam.position.z);
+                }
+                cam.setTarget(center);
+            },
+            onPlayerColorUpdate: ({ p1Color, p2Color, isPlayer2 }) => {
+                gui.hud.updatePlayerColors(isPlayer2 ? p2Color : p1Color, isPlayer2 ? p1Color : p2Color);
+                [paddle, paddle2].forEach((p, i) => {
+                    const color = i === 0 ? p1Color : p2Color;
+                    const mat = p.mesh.material as any;
+                    if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
+                    if (mat?.subSurface?.tintColor) mat.subSurface.tintColor = Color3.FromHexString(color);
+                });
+            },
+            onBallUpdate: ({ x, y, z }) => {
+                this._gameLoop?.updateBallPosition(x, y, z);
+            },
+            onBallCollision: ({ lastImpactX, lastImpactZ, collisionTime }) => {
+                ball.triggerBounce(lastImpactX, lastImpactZ, collisionTime);
+            },
+            onPaddleUpdate: ({ paddleIndex, x, z, enabled }) => {
+                this._gameLoop?.updatePaddlePosition(paddleIndex, x, z);
+            },
+            onScoreUpdate: ({ player1Score, player2Score }) => {
+                gui.hud.updateScores(player1Score, player2Score);
+            },
+            onGameOver: ({ winner, player1Name, player2Name, player1Score, player2Score }) => {
+                if (!this._isGameOver) {
+                    this._isGameOver = true;
+                    this._gameLoop?.setGameOver(true);
+                    const room = this._roomManager?.room;
+                    const isP1Winner = winner === room?.state.player1Id;
+                    gui.gameOverOverlay.show(
+                        isP1Winner ? player1Name : player2Name,
+                        isP1Winner, player1Score, player2Score,
+                        player1Name, player2Name
+                    );
+                }
+            },
+            onPlayerNameUpdate: ({ player1Name, player2Name }) => {
+                const room = this._roomManager?.room;
+                if (!room) return;
+                let bottomLabel = player1Name;
+                let topLabel = player2Name;
+                if (room.sessionId === room.state.player1Id) {
+                    bottomLabel = player1Name;
+                    topLabel = player2Name;
+                } else if (room.sessionId === room.state.player2Id) {
+                    bottomLabel = player2Name;
+                    topLabel = player1Name;
+                }
+                gui.hud.updatePlayerNames(bottomLabel, topLabel);
+            },
+            onRoomExpired: () => {
+                if (this._onBackToMenu) {
+                    alert('Room expired — no opponent joined within 2 minutes.');
+                    this._onBackToMenu();
+                }
+            },
+            onError: (error) => {
+                console.error("Join error", error);
+                alert('Failed to connect to game server. Please try again.');
+                if (this._onBackToMenu) this._onBackToMenu();
+            },
+        };
     }
 }
 
