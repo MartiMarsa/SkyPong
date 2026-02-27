@@ -1,7 +1,6 @@
 import {
     Scene,
     Vector3,
-    Observer,
     Color3,
 } from "@babylonjs/core";
 import { InputController } from "../input/InputController";
@@ -20,14 +19,11 @@ export class Game {
     private _debugMonitor: DebugMonitor | null = null;
     private _input: InputController | null = null;
     private _room: any = null;
-    private _renderObserver: Observer<Scene> | null = null;
-    private _renderObservable: any = null;
     private _config: GameSessionConfig | null = null;
     private _onGameReady: ((onLaunch: () => void, isWaitingForOpponent?: boolean) => void) | null = null;
     private _onBackToMenu: (() => void) | null = null;
     private _gui: any = null;
     private _isGameOver: boolean = false;
-    private _intervals: number[] = [];
     private _isPlayer2: boolean = false;
     private _clientEngine: ClientEngine | null = null;
     private _roomManager: RoomManager | null = null;
@@ -181,13 +177,6 @@ export class Game {
                 });
                 this._gameLoop = gameLoop;
 
-                // Read initial positions from room state before setting up listeners
-                console.log('[DEBUG] Initial ball state:', { x: room.state.ball.x, y: room.state.ball.y, z: room.state.ball.z, enabled: room.state.ball.enabled });
-                console.log('[DEBUG] Initial paddle1 state:', { x: room.state.paddle.x, z: room.state.paddle.z, enabled: room.state.paddle.enabled });
-                console.log('[DEBUG] Initial paddle2 state:', { x: room.state.paddle2.x, z: room.state.paddle2.z, enabled: room.state.paddle2.enabled });
-
-                // Initialize GameLoop with default positions and enabled states
-                // The RoomManager callbacks (onBallUpdate, onPaddleUpdate) will update positions when state arrives
                 gameLoop.setInitialStates(
                     room.state.ball.enabled ?? true,
                     room.state.paddle.enabled ?? true,
@@ -299,14 +288,9 @@ export class Game {
     };
 
     private _cleanup(): void {
-        this._intervals.forEach(id => clearInterval(id));
-        this._intervals = [];
         this._roomManager?.disconnect();
         this._roomManager = null;
         this._room = null;
-        this._renderObserver && this._renderObservable?.remove(this._renderObserver);
-        this._renderObserver = null;
-        this._renderObservable = null;
         this._input?.dispose();
         this._input = null;
         this._debugMonitor?.dispose();
