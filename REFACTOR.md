@@ -4,267 +4,109 @@ This document provides step-by-step instructions to refactor the monolithic `Gam
 
 ---
 
-## Current State
+## Current State (COMPLETED)
 
-- **Game.ts**: 556 lines handling engine setup, scene creation, entity management, networking, state handling, render loop, and cleanup
-- **Problem**: Hard to maintain, test, and understand
+| Step | Status | Details |
+|------|--------|---------|
+| Step 1: ClientEngine.ts | ✅ Done | Graphics & entities initialization |
+| Step 2: RoomManager.ts | ✅ Done | Networking, state listeners, input handling |
+| Step 3: Game.ts integration | ✅ Done | Uses both modules |
+
+### Line Count Progress
+| File | Before | After | Reduction |
+|------|--------|-------|-----------|
+| Game.ts | 509 | ~380 | ~25% |
 
 ---
 
-## Target Architecture
+## Architecture
 
 ```
-Game.ts (orchestrator)
+Game.ts (orchestrator ~380 lines)
 ├── ClientEngine.ts (graphics & entities)
-├── RoomManager.ts (networking & state)
-└── GameLoop.ts (render & input loop)
+└── RoomManager.ts (networking & state)
+
+Remaining: GameLoop.ts (render & input loop) - NOT YET EXTRACTED
 ```
 
 ---
 
-## Step 1: Create ClientEngine.ts
+## Files Created
 
-### File: `src_cli/game/ClientEngine.ts`
+### 1. `game/client/src_cli/game/ClientEngine.ts`
+- Handles engine setup, scene creation
+- Creates ball, table, paddles
+- Sets up GUI and touch controls
+- Handles disposal
 
-Create a new file with the following structure:
+### 2. `game/client/src_cli/game/RoomManager.ts`
+- Colyseus client connection
+- Game mode switch (online-create, online-join, local-2p, AI modes)
+- State listeners (ball, paddle, scores, game over)
+- Input sending to server
+- Room cleanup
 
+---
+
+## Bug Fixes Applied
+
+### Paddle Y Position Issue
+**Problem**: Paddles appeared in middle of table on game start
+
+**Root Cause**: In Game.ts, the `enabled` state variables were initialized to `true` instead of reading from room state. The `.listen()` method only fires on changes, not with initial value.
+
+**Fix**: Read initial enabled values directly from room state:
 ```typescript
-import {
-    Scene,
-    Vector3,
-    Color3,
-} from "@babylonjs/core";
-import { ClientBall } from "../entities/ClientBall";
-import { ClientTable } from "../entities/ClientTable";
-import { ClientPaddle } from "../entities/ClientPaddle";
-import { SceneLights } from "../rendering/SceneLights";
-import { EngineSetup, CameraViewType } from "../rendering/EngineSetup";
-import { GameUIManager } from "../ui/GameUIManager";
-import { TouchControls } from "../ui/TouchControls";
-import { touchDetection } from "../utils/touchDetection";
-import { RENDERING } from "../config";
-import { GameSessionConfig } from "../types/GameSessionConfig";
+// Before (broken)
+let isBallEnabled = true;
 
-export interface GameEntities {
-    ball: ClientBall;
-    table: ClientTable;
-    paddle: ClientPaddle;
-    paddle2: ClientPaddle;
-    gui: GameUIManager;
-    touchControls: TouchControls;
-}
-
-export class ClientEngine {
-    public engineSetup: EngineSetup;
-    public scene: Scene;
-    private _entities: GameEntities | null = null;
-    private _touchControls: TouchControls | null = null;
-
-    constructor(canvas: HTMLCanvasElement, config: GameSessionConfig) {
-        const { gameMode, cameraView } = config;
-        const isLocal2P = gameMode === 'local-2p';
-        
-        this.engineSetup = new EngineSetup(
-            canvas, 
-            false, 
-            cameraView || (isLocal2P ? 'top-down' : 'angled')
-        );
-        this.scene = this.engineSetup.scene;
-    }
-
-    public init(player1Name: string, player2Name: string): GameEntities {
-        const scene = this.scene;
-        
-        // Setup camera
-        this.engineSetup.camera.setTarget(Vector3.Zero());
-        
-        // Create lights
-        const shadowGenerator = SceneLights.Create(scene);
-        
-        // Create entities
-        const ball = new ClientBall(scene);
-        const table = new ClientTable(scene);
-        
-        // Setup refraction render list
-        const skybox = scene.getMeshByName("hdrSkyBox");
-        const refractionRenderList = skybox 
-            ? [table.mesh, skybox, ball.mesh] 
-            : [table.mesh];
-        
-        // Create paddles
-        const createPaddle = (name: string) => new ClientPaddle(scene, {
-            name,
-            materialKey: "CLEARGLASS",
-            albedoColor: new Color3(0.5, 0.5, 0.5),
-            tintColor: new Color3(0.5, 0.5, 0.5),
-            refractionRenderList,
-        });
-        
-        const paddle = createPaddle("paddle1");
-        const paddle2 = createPaddle("paddle2");
-        
-        // Setup GUI
-        const gui = new GameUIManager(scene, () => {
-            // Callback handled by Game.ts
-        });
-        
-        // Setup touch controls
-        const hasTouch = touchDetection();
-        const touchControls = new TouchControls(gui.texture);
-        
-        if (hasTouch) {
-            touchControls.showControls();
-        }
-        
-        this._touchControls = touchControls;
-        
-        // Set rendering group
-        [table.mesh, ball.mesh, paddle.mesh, paddle2.mesh].forEach(m => {
-            m.renderingGroupId = RENDERING.RENDERING_GROUPS.GAME_OBJECTS;
-        });
-        
-        // Add shadow casters
-        shadowGenerator.addShadowCaster(ball.mesh);
-        
-        // Set resize target
-        this.engineSetup.setResizeTarget(table.mesh);
-        
-        // Initial HUD - Game.ts will update names later
-        gui.showGameHUD(player1Name, player2Name);
-        
-        this._entities = { ball, table, paddle, paddle2, gui, touchControls };
-        return this._entities;
-    }
-
-    public getEntities(): GameEntities | null {
-        return this._entities;
-    }
-
-    public dispose(): void {
-        this._touchControls?.dispose();
-        this._entities?.gui.dispose();
-        this._entities = null;
-        this.engineSetup.dispose();
-    }
-}
+// After (fixed)
+let isBallEnabled = roomManager.room?.state.ball.enabled ?? true;
 ```
 
 ---
 
-## Step 2: Update Game.ts to use ClientEngine
+## Next Steps
 
-### 2.1 Remove unused imports
+### 1. Create GameLoop.ts (RECOMMENDED)
+Extract the render loop and input handling from Game.ts:
 
-Delete these lines from the imports section (now handled by ClientEngine):
+- **Render loop**: Ball/paddle interpolation, debug monitor updates
+- **Input handling**: InputController integration, input sending throttling
+- **Interpolation**: Lerp factor calculations
 
-```typescript
-// DELETE these imports:
-import { ClientBall } from "../entities/ClientBall";
-import { ClientTable } from "../entities/ClientTable";
-import { ClientPaddle } from "../entities/ClientPaddle";
-import { SceneLights } from "../rendering/SceneLights";
-import { EngineSetup } from "../rendering/EngineSetup";
-import { GameUIManager } from '../ui/GameUIManager';
-import { TouchControls } from '../ui/TouchControls';
-import { touchDetection } from '../utils/touchDetection';
-import { RENDERING } from '../config';
-```
+### 2. Cleanup Opportunities
 
-### 2.2 Add new import
+Consider these additional optimizations:
 
-```typescript
-// ADD this import:
-import { ClientEngine } from "./ClientEngine";
-```
+- **Move `targetPosition` vectors** to RoomManager callbacks instead of Game.ts
+- **Extract countdown logic** to a separate `CountdownManager.ts` class
+- **Move initial HUD setup** (isPvP/isAI mode blocks) to a dedicated method
+- **DebugMonitor integration**: Could be moved to ClientEngine or a new DebugManager class
 
-### 2.3 Replace entity creation code
+### 3. Code Review Checklist
 
-Find this section in `startGame()` (around lines 75-137):
-
-```typescript
-// DELETE this entire block:
-const engineSetup = new EngineSetup(canvas, false, cameraView || (isLocal2P ? 'top-down' : 'angled'));
-this._engineSetup = engineSetup;
-const engine = engineSetup.engine;
-
-// ... (all entity creation code) ...
-
-gui.showGameHUD(player1Name, initialPlayer2Name);
-```
-
-**REPLACE with:**
-
-```typescript
-const clientEngine = new ClientEngine(canvas, config);
-const entities = clientEngine.init(player1Name, player2Name);
-const { ball, table, paddle, paddle2, gui, touchControls } = entities;
-const engine = clientEngine.engineSetup.engine;
-```
-
-### 2.4 Update references
-
-Throughout Game.ts, replace:
-
-| Old Reference | New Reference |
-|---------------|----------------|
-| `engineSetup` | `clientEngine.engineSetup` |
-| `this._engineSetup` | `clientEngine.engineSetup` |
-| `this._gui` | `gui` |
-
-### 2.5 Remove unused class properties
-
-In the `Game` class, remove properties that are now handled by ClientEngine:
-
-```typescript
-// REMOVE from class:
-private _engineSetup: EngineSetup | null = null;
-private _debugMonitor: DebugMonitor | null = null;
-// (keep debugMonitor for now, move later)
-```
-
-### 2.6 Update cleanup method
-
-Replace `this._engineSetup?.dispose()` with:
-
-```typescript
-clientEngine.dispose();
-```
+- [ ] Remove unused imports in ClientEngine.ts (currently has unused `Client` import from colyseus.js)
+- [ ] Review callback structure - consider if callbacks could be more type-safe
+- [ ] Consider adding JSDoc comments to RoomManager public methods
 
 ---
 
-## Step 3: Build and Test
-
-Run the build to check for errors:
+## Commands
 
 ```bash
+# Build the client
 cd game/client && npm run build
+
+# Clean compiled .js files
+rm -f game/client/src_cli/**/*.js
 ```
-
----
-
-## Next Steps (For Next Session)
-
-After ClientEngine is working, proceed to:
-
-1. **Create RoomManager.ts**
-   - Extract Colyseus client and room logic
-   - Move mode handling (switch statement)
-   - Move state listeners
-   - Handle room connection/disconnection
-
-2. **Create GameLoop.ts**
-   - Extract render loop
-   - Extract interpolation logic
-   - Extract input handling
-
-3. **Finalize Game.ts**
-   - Use all extracted classes
-   - Remove remaining duplicate code
 
 ---
 
 ## Notes
 
-- The `GameUIManager` callback for `onBackToMenu` needs to be wired up properly - consider passing it from Game.ts to ClientEngine
-- Player name/color updates happen after room join - these are handled in Game.ts after getting entities
-- Keep the DebugMonitor for now - it can be integrated into ClientEngine later
+- The `GameUIManager` callback for `onBackToMenu` is now properly wired through ClientEngine
+- Player name/color updates happen after room join - handled in Game.ts
+- DebugMonitor is kept in Game.ts for now (could be moved later)
+- Initial enabled state must be read from room state before setting up listeners

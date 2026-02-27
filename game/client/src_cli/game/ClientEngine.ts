@@ -9,7 +9,6 @@ import { TouchControls } from "../ui/TouchControls";
 import { touchDetection } from "../utils/touchDetection";
 import { RENDERING } from "../config";
 import { GameSessionConfig } from "../types/GameSessionConfig";
-import { Client } from "colyseus.js";
 
 export interface GameEntities {
     ball: ClientBall;
