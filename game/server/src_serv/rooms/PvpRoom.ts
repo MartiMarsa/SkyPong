@@ -128,6 +128,12 @@ export class PvpRoom extends Room<MyGameState> {
 
         // Handle launch message from client (when countdown completes)
         this.onMessage("launch", (client, data) => {
+            // Only allow launch when BOTH players have joined
+            if (!this.player1Client || !this.player2Client) {
+                Logger.info("[PvP] Launch ignored - waiting for both players");
+                return;
+            }
+
             if (!this.ballLaunched) {
                 this.serverBall.launch(this.physicsEngine);
                 this.ballLaunched = true;

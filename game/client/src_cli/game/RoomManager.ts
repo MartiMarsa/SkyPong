@@ -154,8 +154,10 @@ export class RoomManager {
         );
         (room.state as any).listen('player2Joined', () => this.notifyPlayerColorUpdate());
         (room.state as any).listen('player2Name', () => this.notifyPlayerNameUpdate());
-        (room.state as any).listen('gameStarted', () => {
-            this._callbacks.onGameStarted?.();
+        (room.state as any).listen('gameStarted', (value: boolean) => {
+            if (value === true) {
+                this._callbacks.onGameStarted?.();
+            }
         });
         room.state.ball.onChange(() => {
             this._callbacks.onBallUpdate?.({

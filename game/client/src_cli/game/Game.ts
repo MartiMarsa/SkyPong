@@ -9,6 +9,7 @@ import { ClientEngine } from "./ClientEngine";
 import { RoomManager, RoomManagerCallbacks } from "./RoomManager";
 import { GameLoop } from "./GameLoop";
 import { CountdownManager } from "./CountdownManager";
+import { GameReadyManager } from "./GameReadyManager";
 import { adjustCamera } from '../utils/Camera';
 import { GameSessionConfig } from '../types/GameSessionConfig';
 
@@ -24,11 +25,13 @@ export class Game {
     private _onBackToMenu: (() => void) | null = null;
     private _gui: any = null;
     private _isGameOver: boolean = false;
+    private _isCameraFlipped: boolean = false;
     private _isPlayer2: boolean = false;
     private _clientEngine: ClientEngine | null = null;
     private _roomManager: RoomManager | null = null;
     private _gameLoop: GameLoop | null = null;
     private _countdownManager: CountdownManager | null = null;
+    private _gameReadyManager: GameReadyManager | null = null;
 
     startGame = (
         canvas: HTMLCanvasElement,
@@ -95,6 +98,29 @@ export class Game {
 
                 const isOnlineMode = gameMode === 'online-create' || gameMode === 'online-join';
 
+                this._countdownManager = new CountdownManager({
+                    onCountdownUpdate: (count) => {
+                        if (count > 0) {
+                            gui.hud.updateCountdown(count.toString());
+                        } else {
+                            gui.hud.updateCountdown('');
+                        }
+                    },
+                    onCountdownComplete: () => {
+                        roomManager.sendLaunch();
+                    },
+                });
+
+                this._gameReadyManager = new GameReadyManager({
+                    roomManager,
+                    countdownManager: this._countdownManager,
+                    gui,
+                    isPvP: isPvPMode,
+                    isOnline: isOnlineMode,
+                    initialGameStarted: room.state?.gameStarted ?? false,
+                    onGameReady: this._onGameReady ?? undefined,
+                });
+
                 // Create GameLoop first with initial positions
                 const input = new InputController(scene);
                 this._input = input;
@@ -138,26 +164,13 @@ export class Game {
                     }
 
                     scene.executeWhenReady(() => {
-                        this._signalGameReady(true, isOnlineMode, room.state?.gameStarted);
+                        this._gameReadyManager?.start();
                     });
                 } else {
                     scene.executeWhenReady(() => {
-                        this._signalGameReady(false, false, true);
+                        this._gameReadyManager?.start();
                     });
                 }
-
-                this._countdownManager = new CountdownManager({
-                    onCountdownUpdate: (count) => {
-                        if (count > 0) {
-                            gui.hud.updateCountdown(count.toString());
-                        } else {
-                            gui.hud.updateCountdown('');
-                        }
-                    },
-                    onCountdownComplete: () => {
-                        roomManager.sendLaunch();
-                    },
-                });
             } catch (e) {
                 console.error("Join error", e);
                 alert('Failed to connect to game server. Please try again.');
@@ -201,6 +214,8 @@ export class Game {
         this._gameLoop = null;
         this._countdownManager?.dispose();
         this._countdownManager = null;
+        this._gameReadyManager?.dispose();
+        this._gameReadyManager = null;
     }
 
     private _signalGameReady(isPvP: boolean, isOnline: boolean, gameStarted: boolean): void {
@@ -235,10 +250,18 @@ export class Game {
                 const cam = clientEngine.engineSetup.camera;
                 const mesh = table.mesh;
                 const center = mesh.getBoundingInfo().boundingBox.centerWorld;
-                adjustCamera(cam, mesh, clientEngine.engineSetup.engine);
-                if (isPlayer2) {
+                
+                // Only apply flip once - on first assignment when isPlayer2 is true
+                // Don't re-adjust after opponent joins (prevents flip from being overwritten)
+                if (isPlayer2 && !this._isCameraFlipped) {
+                    // First set up camera for player 1, then flip
+                    adjustCamera(cam, mesh, clientEngine.engineSetup.engine);
                     cam.position = new Vector3(cam.position.x, cam.position.y, -cam.position.z);
+                    this._isCameraFlipped = true;
+                } else if (!isPlayer2) {
+                    adjustCamera(cam, mesh, clientEngine.engineSetup.engine);
                 }
+                
                 cam.setTarget(center);
             },
             onPlayerColorUpdate: ({ p1Color, p2Color, isPlayer2 }) => {
@@ -294,6 +317,9 @@ export class Game {
                     alert('Room expired — no opponent joined within 2 minutes.');
                     this._onBackToMenu();
                 }
+            },
+            onGameStarted: () => {
+                this._gameReadyManager?.updateGameStarted(true);
             },
             onError: (error) => {
                 console.error("Join error", error);
