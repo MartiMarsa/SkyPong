@@ -19,7 +19,7 @@ export default function PlayerAchievementsUI({ home, userURL, stats })
 
     return (
         <section className= { styles.nav }>
-            <AchievementUI icon={'/avatar/default-avatar.png'} achievement={t.achievements.logAchievements.firstLogin} description={t?.achievements?.logAchievements?.firstLoginDesc} />
+            <AchievementUI icon={'/avatar/default-avatar.webp'} achievement={t.achievements.logAchievements.firstLogin} description={t?.achievements?.logAchievements?.firstLoginDesc} />
         </section>
     );
 }

@@ -41,7 +41,7 @@ export default function ProfilePagePublic()
         <main>
             <NavigationAppUI  />
             <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
-            {profile && <PlayerInfo avatarURL={profile?.avatarUrl || "/avatar/default-avatar.png"} nickname={profile?.nickname || "Pongo Dio"} winPhrase={profile?.winPhrase || "I'm a bad ass win phrase"} />}
+            {profile && <PlayerInfo profile={profile} />}
             { profile && <FriendsSection
                 currentUserId={profile.id}
                 csrfToken={getCookie()}

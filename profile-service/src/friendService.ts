@@ -76,6 +76,11 @@ export async function getFriendsService(userId: string): Promise<FriendUser[]> {
 	return repo.getFriends(userId);
 }
 
+// --- GET FRIEND OF TARGET LIST ---
+export async function getFriendsOfTargetService(userId: string, targetId: string): Promise<FriendUser[]> {
+	return repo.getFriendsOfTarget(userId, targetId);
+}
+
 // --- GET INCOMING FRIEND REQUESTS ---
 export async function getIncomingRequestsService(userId: string): Promise<FriendUser[]> {
 	return repo.getIncomingRequests(userId);

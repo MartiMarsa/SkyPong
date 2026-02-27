@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext({
   user: null,
-  avartarURL: "/avatars/default-avatar.png",
+  avartarURL: "/avatars/default-avatar.webp",
   loading: true,
   hasCredentials: false,
   logout: async () => {},

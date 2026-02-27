@@ -447,7 +447,11 @@ fastify.get('/profile/avatars/:filename', async (req, reply) => {
         } catch {
             console.warn('Avatar not found:', filePath);
             
-            return reply.redirect('/api/profile/avatar/default-avatar.png');
+            const defaultFilePath = path.join(AVATARS_DIR, 'default-avatar.webp');
+            const defaultFileBuffer = await fs.readFile(defaultFilePath);
+            return reply.type('image/webp')
+            .header('Cache-Control', 'public, max-age=3600')
+            .send(defaultFileBuffer);
         }
 
         const fileBuffer = await fs.readFile(filePath);
@@ -476,13 +480,11 @@ fastify.get('/profile/friends', { preHandler: verifyToken }, async (req, reply) 
     return friendService.getFriendsService(userId);
 });
 
-// GET friends list from other user
-fastify.get('/profile/friends/:id', { preHandler: verifyToken }, async (req, reply) => {
-	const { id } = req.params as { id: string};
-    console.info("------>> Friend target id: ", id);
-    const result = friendService.getFriendsService(id);
-    console.info("------>> Friends list: ", result);
-    return (result);
+// GET friends of target
+fastify.get('/profile/friends/:targetId', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+	const { targetId } = req.params as { targetId: string};
+    return friendService.getFriendsOfTargetService(userId, targetId);
 });
 
 // GET incoming requests
