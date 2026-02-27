@@ -22,7 +22,7 @@ export default function UserMenuUI({ userURL })
                     <Link href={ !user ? (userURL) : (`/updateme`) } className="user-menu">
                         { user?.nickname || " SkyPong" }
                         <span className='overflow-hidden rounded-full inline-block aspect-square max-w-12'>
-                            <img src={user.avatarUrl || "/avatar/default-avatar.png"} />
+                            <img src={user.avatarUrl || "/avatar/default-avatar.webp"} />
                         </span>
                     </Link>
                 </div>

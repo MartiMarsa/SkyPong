@@ -63,7 +63,7 @@ export default function ProfilePagePublic()
             { console.info("Public profile data:", profile) }
             <NavigationAppUI  />
             <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
-            {profile && <PlayerInfo avatarURL={profile?.avatarUrl || "/avatar/default-avatar.png"} nickname={profile?.nickname || "Pongo Dio"} winPhrase={profile?.winPhrase || "I'm a bad ass win phrase"} />}
+            {profile && <PlayerInfo profile={profile} />}
             {profile && <FriendsList currentUserId={user?.id} targetId={profile?.id} csrfToken={csrfToken}/>}
             {/* { profile && <FriendsSection
                 currentUserId={profile.id}

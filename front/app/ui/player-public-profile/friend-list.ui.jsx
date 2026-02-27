@@ -14,6 +14,9 @@
 import { useState, useEffect } from "react";
 import AddFriendButton from "./AddFriendButton";
 import api from "../../api/api";
+import Loader from "../loader/loader-ui";
+import { useTranslation } from "../../hooks/use-translation";
+import ErrorBox from "../error/error-ui"
 
 const mono = "'Courier New', monospace";
 
@@ -39,7 +42,7 @@ function FriendCard({ friend, currentUserId, csrfToken, onVisit }) {
       {/* Avatar */}
       <div style={{ position: "relative", flexShrink: 0 }}>
         <img
-          src={friend.avatarUrl || "/avatar/default-avatar.png"}
+          src={friend.avatarUrl || "/avatar/default-avatar.webp"}
           alt={friend.nickname}
           style={{
             width: "38px", height: "38px",
@@ -105,18 +108,20 @@ function FriendCard({ friend, currentUserId, csrfToken, onVisit }) {
   );
 }
 
-export default function FriendsList({ currentUserId, targetId, csrfToken, onVisitProfile }) {
+export default function FriendsList({ currentUserId, targetId, csrfToken, onVisitProfile, other }) {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!targetId) return;
     setLoading(true);
     api(`/api/profile/friends/${targetId}`, {headers: { 'x-csrf.token': csrfToken} })
-      .then(data => setFriends(Array.isArray(data) ? data : []))
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false));
+    .then(data => setFriends(Array.isArray(data) ? data : []))
+    .catch(e => setError(e.message))
+    .finally(() => setLoading(false));
+ 
   }, [targetId, csrfToken]);
 
   const handleVisit = (id) => {
@@ -127,15 +132,11 @@ export default function FriendsList({ currentUserId, targetId, csrfToken, onVisi
   };
 
   if (loading) return (
-    <p style={{ fontFamily: mono, fontSize: "11px", color: "#3a5060", letterSpacing: "0.1em" }}>
-      CARGANDO AMIGOS...
-    </p>
+    <Loader message={t?.loading?.friends} />
   );
 
   if (error) return (
-    <p style={{ fontFamily: mono, fontSize: "11px", color: "#ef4444" }}>
-      Error: {error}
-    </p>
+    <ErrorBox msg={error || "unknown error"} />
   );
 
   if (!friends.length) return (
@@ -143,7 +144,6 @@ export default function FriendsList({ currentUserId, targetId, csrfToken, onVisi
       ESTE JUGADOR AÚN NO TIENE AMIGOS.
     </p>
   );
-
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

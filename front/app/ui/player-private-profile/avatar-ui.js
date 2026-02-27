@@ -2,16 +2,17 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/auth-context'; // Ajusta la ruta a tu contexto
 import { useTranslation } from '../../hooks/use-translation';
+import Loader from '../loader/loader-ui';
 
 export default function AvatarUpload() {
-  const { user } = useAuth();
+  const { user, authLoading } = useAuth();
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [serverError, setServerError] = useState('');
   const { t } = useTranslation(); 
   
   // Imagen por defecto si no hay una previa ni una nueva seleccionada
-  const defaultAvatar =  user?.avatarUrl || "/avatar/default-avatar.png"; 
+  const defaultAvatar =  user?.avatarUrl || "/avatar/default-avatar.webp"; 
   const displayImage = preview || defaultAvatar;
 
 const getCookie = (name) => {
@@ -81,9 +82,10 @@ const getCookie = (name) => {
   };
 
   return (
+    <>
+    { authLoading ? (<Loader />) : (
     <div className="flex flex-col items-center gap-4">
       <div className="relative w-32 h-32 overflow-hidden rounded-full border-2 border-gray-300">
-        { console.info("Displayed image: ", displayImage)}
         <img 
           src={displayImage} 
           alt="Avatar" 
@@ -112,5 +114,7 @@ const getCookie = (name) => {
             </div>
         )}
     </div>
+    )}
+  </>
   );
 }

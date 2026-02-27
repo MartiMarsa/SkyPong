@@ -209,6 +209,38 @@ export async function getFriends(userId: string): Promise<any[]> {
   });
 }
 
+// retrieves the friends of targetId and omits the player that blocked logued user
+export async function getFriendsOfTarget(currentUserId: string, targetId: string): Promise<any[]> {
+  const db = getProfileDB();
+
+  return new Promise((resolve, reject) => {
+    db.all(
+      `SELECT 
+        p.user_id, 
+        p.nickname, 
+        p.avatarUrl
+       FROM friends f
+       JOIN players p ON p.user_id = CASE 
+         WHEN f.user1_id = ? THEN f.user2_id 
+         ELSE f.user1_id 
+       END
+       WHERE (f.user1_id = ? OR f.user2_id = ?)
+         AND f.status = 'accepted'
+         AND p.user_id NOT IN (
+           SELECT blocked_by FROM friends
+           WHERE status = 'blocked'
+             AND (user1_id = ? OR user2_id = ?)
+             AND blocked_by != ?
+         )`,
+      [targetId, targetId, targetId, currentUserId, currentUserId, currentUserId],
+      (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows);
+      }
+    );
+  });
+}
+
 
 // --- GET INCOMING FRIEND REQUESTS ---
 export async function getIncomingRequests(userId: string): Promise<any[]> {

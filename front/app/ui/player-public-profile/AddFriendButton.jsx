@@ -87,7 +87,7 @@ const STATES = {
   },
 };
 
-// ─── Dropdown menu ────────────────────────────────────────────────────────────
+// ─── Dropdown menu ──────────────────) : (router.push('/')) }──────────────────────────────────────────
 function DropdownMenu({ items, onClose }) {
   useEffect(() => {
     const handler = () => onClose();
