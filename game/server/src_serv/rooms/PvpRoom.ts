@@ -46,6 +46,9 @@ export class PvpRoom extends Room<MyGameState> {
         this.maxClients = 2;
         this.startAt = new Date().toISOString();
         this.setState(new MyGameState());
+        if (options.winningScore) {
+            this.state.winningScore = options.winningScore;
+        }
         this.engine = new NullEngine();
         this.scene = new Scene(this.engine);
         this.physicsEngine = new PhysicsEngine(this.scene);
@@ -363,12 +366,12 @@ export class PvpRoom extends Room<MyGameState> {
     onJoin(client: Client, options: any): void | Promise<any> {
         if (!this.player1Client) {
             this.player1Client = client;
-            this.state.player1Id = client.sessionId;
+            this.state.player1Id = options.playerId || client.sessionId;
             this.state.player1Name = options.playerName || "Player 1";
             this.state.player1Color = options.playerColor || "#00A6ED";
             this.gameStats?.setPlayer1Id(this.state.player1Id);
             this.gameStats?.setPlayer1Name(this.state.player1Name);
-            Logger.info(`[PvP] Player 1 joined: ${client.sessionId} (${this.state.player1Name}, color: ${this.state.player1Color})`);
+            Logger.info(`[PvP] Player 1 joined: ${this.state.player1Id} (${this.state.player1Name}, color: ${this.state.player1Color})`);
 
             // Update metadata with player color for lobby listing
             this.setMetadata({
@@ -378,12 +381,12 @@ export class PvpRoom extends Room<MyGameState> {
             });
         } else if (!this.player2Client) {
             this.player2Client = client;
-            this.state.player2Id = client.sessionId;
+            this.state.player2Id = options.playerId || client.sessionId;
             this.state.player2Name = options.playerName || "Player 2";
             this.state.player2Color = options.playerColor || "#F6511D";
             this.gameStats?.setPlayer2Id(this.state.player2Id);
             this.gameStats?.setPlayer2Name(this.state.player2Name);
-            Logger.info(`[PvP] Player 2 joined: ${client.sessionId} (${this.state.player2Name}, color: ${this.state.player2Color})`);
+            Logger.info(`[PvP] Player 2 joined: ${this.state.player2Id} (${this.state.player2Name}, color: ${this.state.player2Color})`);
 
             // Set player2Joined flag so clients know both colors are available
             this.state.player2Joined = true;

@@ -101,6 +101,9 @@ export class RoomManager {
             player2Name: this._playerConfig.player2Name,
             playerColor: this._playerConfig.playerColor,
             player2Color: this._playerConfig.player2Color,
+            winningScore: config.winningScore,
+            playerId: config.playerId,
+            player2Id: config.player2Id,
         };
         let room: Colyseus.Room<GameState>;
         switch (gameMode) {
@@ -109,12 +112,16 @@ export class RoomManager {
                 room = await client.joinById<GameState>(roomId, {
                     playerName: this._playerConfig.playerName,
                     playerColor: this._playerConfig.playerColor,
+                    winningScore: config.winningScore,
+                    playerId: config.playerId,
                 });
                 break;
             case 'online-create':
                 room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.PVP_ROOM, {
                     playerName: this._playerConfig.playerName,
                     playerColor: this._playerConfig.playerColor,
+                    winningScore: config.winningScore,
+                    playerId: config.playerId,
                 });
                 break;
             case 'local-2p':
