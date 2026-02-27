@@ -61,7 +61,7 @@ export default function PlayerUI({ userURL })
         try {
             console.log("Solicitando perfil para ID:", user.id);
             
-            const response = await fetch(`/api/profile/users/${user.id}`, {
+            const response = await fetch(`/api/profile/${user.id}`, {
                 method: 'GET',
                 credentials: 'include',
             });

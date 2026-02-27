@@ -1,3 +1,4 @@
+import { resolve } from 'dns';
 import { getProfileDB } from './dbPlayers';
 
 export type RelationRow = {
@@ -98,50 +99,116 @@ export async function removeFriend(userId: string, friendId: string): Promise<vo
 	});
 }
 
-// --- BLOCK USER ---
-export async function blockUser(userId: string, targetId: string): Promise<void> {
-	const db = getProfileDB();
-	const [u1, u2] = normalizeId(userId, targetId);
+// // --- BLOCK USER ---
+// export async function blockUser(userId: string, targetId: string): Promise<void> {
+// 	const db = getProfileDB();
+// 	const [u1, u2] = normalizeId(userId, targetId);
 
-	return new Promise((resolve, reject) => {
-		db.run(`INSERT INTO friends (user1_id, user2_id, status, blocked_by) VALUES (?, ?, 'blocked', ?) ON CONFLICT(user1_id, user2_id) DO UPDATE SET status = 'blocked', blocked_by = excluded.blocked_by`,
-			[u1, u2, userId],
-			err => {
-				if (err) return reject(err);
-				resolve();
-			});
-	});
+// 	const result = new Promise((resolve : any, reject: any) => {
+// 		db.run(`INSERT INTO friends (user1_id, user2_id, status, blocked_by) VALUES (?, ?, 'blocked', ?) ON CONFLICT(user1_id, user2_id) DO UPDATE SET status = 'blocked', blocked_by = excluded.blocked_by`,
+// 			[u1, u2, userId],
+// 			err => {
+// 				if (err) return reject(err);
+// 				resolve();
+// 			});
+// 	});
+//     console.info("Bloked user result: ", result);
+// }
+
+export async function blockUser(userId: string, targetId: string): Promise<void> {
+    const db = getProfileDB();
+    const [u1, u2] = normalizeId(userId, targetId);
+
+    // 1. Retornamos y esperamos la promesa
+    try {
+        await new Promise<void>((resolve, reject) => {
+            // 2. Añadimos 'requester_id' a la consulta si la tabla lo exige
+            const sql = `
+                INSERT INTO friends (user1_id, user2_id, status, blocked_by, requester_id) 
+                VALUES (?, ?, 'blocked', ?, ?) 
+                ON CONFLICT(user1_id, user2_id) 
+                DO UPDATE SET 
+                    status = 'blocked', 
+                    blocked_by = excluded.blocked_by,
+                    requester_id = excluded.requester_id
+            `;
+            
+            // Pasamos userId también para requester_id (o el valor que corresponda)
+            db.run(sql, [u1, u2, userId, userId], (err) => {
+                if (err) return reject(err);
+                resolve();
+            });
+        });
+        console.info(`User ${userId} blocked ${targetId} successfully`);
+    } catch (error) {
+        console.error("Error blocking user:", error);
+        throw error; // Es importante re-lanzar el error para que el controlador lo capture
+    }
 }
+
 
 // --- UNBLOCK USER ---
 export async function unblockUser(userId: string, targetId: string): Promise<void> {
-	const db = getProfileDB();
-	const [u1, u2] = normalizeId(userId, targetId);
+  const db = getProfileDB();
+  const [u1, u2] = normalizeId(userId, targetId);
 
-	return new Promise((resolve, reject) => {
-		db.run(`DELETE FROM friends WHERE status = 'blocked' AND blocked_by = ? AND user1_id = ? AND user2_id = ?`,
-			[userId, u1, u2],
-			function (err) {
-				if (err) return reject(err);
-				if (this.changes === 0) return reject(new Error('NOT_BLOCKED'));
-				resolve();
-			});
-	});
+  return new Promise((resolve, reject) => {
+    db.run(
+      `UPDATE friends 
+       SET status = 'accepted', blocked_by = NULL
+       WHERE status = 'blocked' 
+         AND blocked_by = ? 
+         AND user1_id = ? 
+         AND user2_id = ?`,
+      [userId, u1, u2],
+      function(err) {
+        if (err) return reject(err);
+        if (this.changes === 0) return reject(new Error('NOT_BLOCKED'));
+        resolve();
+      }
+    );
+  });
 }
 
 // --- GET FRIEND LIST ---
-export async function getFriends(userId: string): Promise<any[]> {
-	const db = getProfileDB();
+// export async function getFriends(userId: string): Promise<any[]> {
+// 	const db = getProfileDB();
 
-	return new Promise((resolve, reject) => {
-		db.all(`SELECT p.user_id, p.nickname, p.avatarUrl FROM friends f JOIN players p ON (p.user_id = f.user1_id OR p.user_id = f.user2_id) WHERE f.status = 'accepted' AND (f.user1_id = ? OR f.user2_id = ?) AND p.user_id != ?`,
-			[userId, userId, userId],
-			(err, rows) => {
-				if (err) return reject(err);
-				resolve(rows);
-			});
-	});
+// 	return new Promise((resolve, reject) => {
+// 		db.all(`SELECT p.user_id, p.nickname, p.avatarUrl FROM friends f JOIN players p ON (p.user_id = f.user1_id OR p.user_id = f.user2_id) WHERE f.status = 'accepted' AND (f.user1_id = ? OR f.user2_id = ?) AND p.user_id != ?`,
+// 			[userId, userId, userId],
+// 			(err, rows) => {
+// 				if (err) return reject(err);
+// 				resolve(rows);
+// 			});
+// 	});
+// }
+
+export async function getFriends(userId: string): Promise<any[]> {
+  const db = getProfileDB();
+
+  return new Promise((resolve, reject) => {
+    db.all(
+      `SELECT 
+        p.user_id, 
+        p.nickname, 
+        p.avatarUrl,
+        f.status,
+        CASE WHEN f.blocked_by = ? THEN 1 ELSE 0 END AS blocked_by_me
+       FROM friends f
+       JOIN players p ON (p.user_id = f.user1_id OR p.user_id = f.user2_id)
+       WHERE (f.user1_id = ? OR f.user2_id = ?)
+         AND f.status IN ('accepted', 'blocked')
+         AND p.user_id != ?`,
+      [userId, userId, userId, userId],
+      (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows);
+      }
+    );
+  });
 }
+
 
 // --- GET INCOMING FRIEND REQUESTS ---
 export async function getIncomingRequests(userId: string): Promise<any[]> {
