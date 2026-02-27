@@ -172,7 +172,7 @@ async function requireAuth(req: any, reply: any) {
 		return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
     }
     
-    // --- VERIFICATION IF USER IS OLREADY LOGGED ---
+    // --- VERIFICATION IF USER IS ALREADY LOGGED ---
     fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
         
         const controller = new AbortController();
@@ -347,8 +347,14 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
 });
 
 //Logout less strinct accepts to logut even if token is not correct. 
-fastify.post('/auth/logout', async (req: any, reply) => {
+fastify.post('/auth/logout', { preHandler: requireAuth }, async (req: any, reply) => {
     // Definimos las opciones exactas que usas en el login
+
+	const controller = new AbortController();
+	setTimeout(() => controller.abort(), 5000);
+
+	const user = req.user;
+
     const cookieOptions = {
         path: '/',
         secure: true, 
@@ -362,6 +368,9 @@ fastify.post('/auth/logout', async (req: any, reply) => {
             const payload = await verifyRefreshToken(refreshToken).catch(() => null);
             if (payload) await revokeRefreshToken(payload.tokenId).catch(() => {});
         }
+
+		const res = await fetch(`${PROFILE_SERVICE_URL}/internal/profile/logout/${user.id}`, { headers: { Authorization: `Bearer ${SERVICE_TOKEN}`, }, signal: controller.signal, });
+
     } catch (err) { /* ignore */ }
 
     return reply
@@ -410,6 +419,9 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
       	const dbToken = getTokenDB();
 		const mockEmail = generateEmail();
 
+		const controller = new AbortController();
+        setTimeout(() => controller.abort(), 5000);
+
         console.info("DB Token: ", dbToken);
       	try {
             // 1. Llamar al Profile Service para el borrado interno
@@ -449,6 +461,8 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
                 });
             });
         });
+
+		const res = await fetch(`${PROFILE_SERVICE_URL}/internal/profile/logout/${userId}`, { headers: { Authorization: `Bearer ${SERVICE_TOKEN}`, }, signal: controller.signal, });
 		// 4. Clear cookies
 	    	reply
 	  	.clearCookie('access_token', { path: '/' })
