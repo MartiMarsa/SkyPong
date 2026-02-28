@@ -59,9 +59,6 @@ export function decodeConfig(base64String: string | null): DecodeResult {
   // Validate required fields
   const missingFields: string[] = [];
 
-  // TODO: Add playerId validation when auth is integrated
-  // if (!config.playerId) missingFields.push('playerId');
-
   if (!config.playerName) missingFields.push('playerName');
   if (!config.playerColor) missingFields.push('playerColor');
   if (!config.gameMode) missingFields.push('gameMode');
@@ -71,6 +68,22 @@ export function decodeConfig(base64String: string | null): DecodeResult {
       valid: false,
       error: `Missing required fields: ${missingFields.join(', ')}`,
       missingFields,
+    };
+  }
+
+  // Validate optional playerId - if provided, must be non-empty string
+  if (config.playerId !== undefined && typeof config.playerId !== 'string') {
+    return {
+      valid: false,
+      error: 'playerId must be a string if provided',
+    };
+  }
+
+  // Validate optional player2Id - if provided, must be non-empty string
+  if (config.player2Id !== undefined && typeof config.player2Id !== 'string') {
+    return {
+      valid: false,
+      error: 'player2Id must be a string if provided',
     };
   }
 
@@ -98,6 +111,17 @@ export function decodeConfig(base64String: string | null): DecodeResult {
       error: 'roomId is required for online-join mode',
       missingFields: ['roomId'],
     };
+  }
+
+  // Validate optional winningScore
+  if (config.winningScore !== undefined) {
+    const validScores = [3, 5, 7, 9, 11];
+    if (!validScores.includes(config.winningScore)) {
+      return {
+        valid: false,
+        error: `Invalid winningScore: '${config.winningScore}'. Must be one of: ${validScores.join(', ')}`,
+      };
+    }
   }
 
   // All validations passed

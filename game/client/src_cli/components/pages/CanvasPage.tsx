@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { decodeConfig } from '../../utils/configDecoder';
 import { startGame } from '../../game/Game';
 import { TestScene } from '../../game/TestScene';
 import LoadingOverlay from '../LoadingOverlay';
@@ -21,8 +22,21 @@ const CanvasPage = () => {
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const [fadingOut, setFadingOut] = useState(false);
 
-    // Get game config from navigation state
-    const config = location.state as GameSessionConfig | null;
+    const [searchParams] = useSearchParams();
+
+    const getConfig = (): GameSessionConfig | null => {
+        // 1. First: decode from URL params (for iframe calls from /front)
+        const encoded = searchParams.get('config');
+        if (encoded) {
+            const result = decodeConfig(encoded);
+            if (result.valid) return result.config;
+        }
+
+        // 2. Fallback: try state (from StartPage navigation within game client)
+        const stateConfig = location.state as GameSessionConfig | null;
+        return stateConfig;
+    };
+    const config = useMemo(() => getConfig(), [location.state, searchParams]);
 
     useEffect(() => {
         setIsLoading(true);

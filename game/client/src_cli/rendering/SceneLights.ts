@@ -9,6 +9,7 @@ import {
     EXRCubeTexture,
 } from "@babylonjs/core";
 import { RENDERING } from '../config';
+import { CloudObject } from "./CloudObject";
 
 export class SceneLights {
     public static Create(scene: Scene): ShadowGenerator {
@@ -41,6 +42,9 @@ export class SceneLights {
             RENDERING.LIGHTS.DIRECTIONAL.DIRECTION,
             scene,
         );
+
+      const cloudPos = new Vector3(1, -5, 0);
+      const cloudObject = new CloudObject(scene, cloudPos);
 
         dirLight.position = RENDERING.LIGHTS.DIRECTIONAL.POSITION;
         dirLight.intensity = RENDERING.LIGHTS.DIRECTIONAL.INTENSITY;
