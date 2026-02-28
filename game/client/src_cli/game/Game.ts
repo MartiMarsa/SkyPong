@@ -10,8 +10,10 @@ import { RoomManager, RoomManagerCallbacks } from "./RoomManager";
 import { GameLoop } from "./GameLoop";
 import { CountdownManager } from "./CountdownManager";
 import { GameReadyManager } from "./GameReadyManager";
+import { LoadingManager } from "./LoadingManager";
 import { adjustCamera } from '../utils/Camera';
 import { GameSessionConfig } from '../types/GameSessionConfig';
+import { LoadingState } from '../types/LoadingTypes';
 
 // Module-level lock to prevent duplicate game instances (React StrictMode)
 let gameInstanceLock = false;
@@ -32,12 +34,14 @@ export class Game {
     private _gameLoop: GameLoop | null = null;
     private _countdownManager: CountdownManager | null = null;
     private _gameReadyManager: GameReadyManager | null = null;
+    private _loadingManager: LoadingManager | null = null;
 
     startGame = (
         canvas: HTMLCanvasElement,
         config: GameSessionConfig,
         onGameReady?: (onLaunch: () => void, isWaitingForOpponent?: boolean) => void,
         onBackToMenu?: () => void,
+        onLoadingManagerReady?: (loadingManager: LoadingManager) => void,
     ) => {
         if (gameInstanceLock) return null;
         gameInstanceLock = true;
@@ -120,6 +124,16 @@ export class Game {
                     initialGameStarted: room.state?.gameStarted ?? false,
                     onGameReady: this._onGameReady ?? undefined,
                 });
+
+                this._loadingManager = new LoadingManager({
+                    roomManager,
+                    isOnline: isOnlineMode,
+                    isPvP: isPvPMode,
+                });
+
+                if (onLoadingManagerReady) {
+                    onLoadingManagerReady(this._loadingManager);
+                }
 
                 // Create GameLoop first with initial positions
                 const input = new InputController(scene);
@@ -216,6 +230,8 @@ export class Game {
         this._countdownManager = null;
         this._gameReadyManager?.dispose();
         this._gameReadyManager = null;
+        this._loadingManager?.dispose();
+        this._loadingManager = null;
     }
 
     private _signalGameReady(isPvP: boolean, isOnline: boolean, gameStarted: boolean): void {
@@ -313,6 +329,7 @@ export class Game {
                 gui.hud.updatePlayerNames(bottomLabel, topLabel);
             },
             onRoomExpired: () => {
+                this._loadingManager?.handleRoomExpired();
                 if (this._onBackToMenu) {
                     alert('Room expired — no opponent joined within 2 minutes.');
                     this._onBackToMenu();
@@ -320,6 +337,7 @@ export class Game {
             },
             onGameStarted: () => {
                 this._gameReadyManager?.updateGameStarted(true);
+                this._loadingManager?.handleGameStarted();
             },
             onError: (error) => {
                 console.error("Join error", error);
@@ -335,7 +353,8 @@ export const startGame = (
     config: GameSessionConfig,
     onGameReady?: (onLaunch: () => void, isWaitingForOpponent?: boolean) => void,
     onBackToMenu?: () => void,
+    onLoadingManagerReady?: (loadingManager: LoadingManager) => void,
 ) => {
     const game = new Game();
-    return game.startGame(canvas, config, onGameReady, onBackToMenu);
+    return game.startGame(canvas, config, onGameReady, onBackToMenu, onLoadingManagerReady);
 };

@@ -12,6 +12,7 @@
         "moduleResolution": "bundler",
         "strict": true,
         "skipLibCheck": true,
+        "noEmit": true,
         "baseUrl": ".",
         "paths": {
             "@skypong/common/*": [
