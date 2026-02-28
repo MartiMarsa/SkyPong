@@ -477,51 +477,10 @@ fastify.get('/profile/avatars/:filename', async (req, reply) => {
   }
 });
 
-/*
-fastify.get('/profile/avatars/:filename', async (req, reply) => {
-    try {
-        const { filename } = req.params as { filename: string };
-
-        if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-            return reply.status(400).send({ error: 'Invalid filename' });
-        }
-
-        if (!filename.endsWith('.webp')) {
-            return reply.status(400).send({ error: 'Invalid file type' });
-        }
-
-        const filePath = path.join(AVATARS_DIR, filename);
-
-        try {
-            await fs.access(filePath);
-        } catch {
-            console.warn('Avatar not found:', filePath);
-            
-            const defaultFilePath = path.join(AVATARS_DIR, 'default-avatar.webp');
-            const defaultFileBuffer = await fs.readFile(defaultFilePath);
-            return reply.type('image/webp')
-            .header('Cache-Control', 'public, max-age=3600')
-            .send(defaultFileBuffer);
-        }
-
-        const fileBuffer = await fs.readFile(filePath);
-        
-        return reply
-            .type('image/webp')
-            .header('Cache-Control', 'public, max-age=3600') // Cache 1 hora
-            .send(fileBuffer);
-            
-    } catch (error) {
-        console.error('Error serving avatar:', error);
-        return reply.status(500).send({ error: 'Failed to serve avatar' });
-    }
-});
-*/
 
 fastify.addHook('onRequest', async (request, reply) => {
   console.log(`Recibida petición: ${request.method} ${request.url}`);
 });
-
 
 
 // GET friends

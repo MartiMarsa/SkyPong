@@ -12,6 +12,7 @@ import LocalSetup from '../ui/game-front/LocalSetup';
 import OnlineLobby from '../ui/game-front/OnlineLobby';
 import RoomWaiting from '../ui/game-front/RoomWaiting';
 import { encodeGameConfig } from '../lib/game/launch-config';
+import { useAuth } from '../context/auth-context';
 
 const STATES = {
   SELECT_MODE: 'SELECT_MODE',
@@ -44,10 +45,13 @@ export default function PlayPage() {
   const [rooms, setRooms] = useState([]);
   const [currentRoomName, setCurrentRoomName] = useState('');
   const [loadingRooms, setLoadingRooms] = useState(false);
+//   const [hasCredentials, setHasCredentials ] = useState(false);
 
+  const {checkAuth , hasCredentials} = useAuth();
   const error = useMemo(() => searchParams.get('error'), [searchParams]);
 
   useEffect(() => {
+    console.log("Has creds: ", hasCredentials);
     if (state !== STATES.LOADING) {
       return undefined;
     }
@@ -68,7 +72,8 @@ export default function PlayPage() {
     const readyTimer = window.setTimeout(() => {
       setState(STATES.CONFIGURE_GAME);
     }, 1500);
-
+    
+    (async () => (await checkAuth()));
     return () => window.clearTimeout(readyTimer);
   }, [state]);
 
@@ -96,8 +101,10 @@ export default function PlayPage() {
     <main>
       {error ? <p>{`Error: ${error}`}</p> : null}
 
+      {console.log("User hascredentials in play: ", hasCredentials)}
       {state === STATES.SELECT_MODE ? (
         <GameModeSelection
+          isLogged={hasCredentials}
           onSelectAI={() => {
             setConfig((prev) => ({ ...prev, mode: 'AI', roomId: undefined, onlineRole: undefined }));
             setState(STATES.AI_SELECT_DIFFICULTY);
@@ -116,7 +123,7 @@ export default function PlayPage() {
         />
       ) : null}
 
-      {state === STATES.MULTIPLAYER_MENU ? (
+      {state === STATES.MULTIPLAYER_MENU && hasCredentials ? (
         <section>
           <h2>Multiplayer</h2>
           <button type="button" onClick={() => setState(STATES.ONLINE_LOBBY)}>
