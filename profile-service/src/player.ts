@@ -283,18 +283,34 @@ export async function softdeletePlayer(userId: string) {
 
   const nickname = generateNickname(true);
 
-  await db.run(
-    `
-    UPDATE players
-    SET
-      nickname = ?,
-      avatarUrl = ?,
-      deleted = 1,
-      deleted_at = CURRENT_TIMESTAMP
-    WHERE user_id = ?
-    `,
-    [nickname, DEFAULT_AVATAR, userId]
-  );
+  await db.run('BEGIN TRANSACTION');
+
+  try {
+	  await db.run(`
+				   UPDATE players
+			   	   SET
+			 	   nickname = ?,
+			 	   avatarUrl = ?,
+			 	   deleted = 1,
+			 	   deleted_at = CURRENT_TIMESTAMP
+			   	   WHERE user_id = ?
+			   	   `,
+			   	   [nickname, DEFAULT_AVATAR, userId]
+				  );
+
+	  await db.run(`
+				   DELETE FROM friends 
+				   WHERE user1_id = ? OR user2_id = ?
+				   `,
+				   [userId, userId]
+   				  );
+	  
+	  await db.run('COMMIT');
+
+  } catch (err) {
+	  await db.run('ROLLBACK');
+	  throw err;
+  }
 }
 
 // --------------------------------------------------
