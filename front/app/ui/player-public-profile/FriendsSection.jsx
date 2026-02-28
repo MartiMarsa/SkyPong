@@ -22,7 +22,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import api from "../../api/api";
-
+import Toast from "../messaging/toast";
 // ─── Config ───────────────────────────────────────────────────────────────────
 const ACTIVE_DAYS = 7;
 
@@ -228,22 +228,7 @@ function OutgoingRow({ r, onCancel, busy }) {
   );
 }
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
-function Toast({ msg, type, clear }) {
-  useEffect(() => { const t = setTimeout(clear, 2800); return () => clearTimeout(t); }, [msg]);
-  return (
-    <div style={{
-      position: "fixed", bottom: "24px", right: "24px", zIndex: 9999,
-      background: type === "err" ? C.danger : C.accent,
-      color: "#050810", fontFamily: mono, fontSize: "12px", fontWeight: 700,
-      letterSpacing: "0.06em", padding: "10px 18px", borderRadius: "8px",
-      boxShadow: `0 4px 24px ${type === "err" ? C.danger : C.accent}66`,
-      animation: "toastIn 0.2s ease",
-    }}>
-      {msg}
-    </div>
-  );
-}
+
 
 // ─── Tab bar ──────────────────────────────────────────────────────────────────
 function TabBar({ tabs, active, onChange }) {
@@ -299,9 +284,9 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
     setFetchError(null);
     try {
       const [f, inc, out] = await Promise.all([
-        api("/api/profile/friends", { csrf }),
-        api("/api/profile/friends/requests/incoming", { csrf }),
-        api("/api/profile/friends/requests/outgoing", { csrf }),
+        api("/api/profile/friends", { headers: { 'x-csrf-token': csrf }}),
+        api("/api/profile/friends/requests/incoming", { headers: { 'x-csrf-token': csrf }} ),
+        api("/api/profile/friends/requests/outgoing", { headers: { 'x-csrf-token': csrf }}),
       ]);
       console.info("Friends: ", f);
       setFriends(Array.isArray(f) ? f : []);

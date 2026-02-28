@@ -38,6 +38,8 @@ interface PlayerInfo {
     winPhrase: string | null;
     localization: string;
     created_at: string;
+	last_access_at: string;
+	logged: number;
     stats: PlayerStats;
 }
 
@@ -126,6 +128,8 @@ export async function getPlayerById(userId: string): Promise<PlayerInfo | null> 
 			winPhrase: row.winPhrase ?? null,
 			localization: row.localization,
 			created_at: row.created_at,
+			last_access_at: row.last_access_at,
+			logged: row.logged,
 
 			stats: {
 					played: row.played ?? 0,
@@ -151,8 +155,8 @@ export async function createPlayer(userId: string) {
     try {
 
       await db.run(
-        `INSERT INTO players (user_id, nickname)
-         VALUES (?, ?)`,
+        `INSERT INTO players (user_id, nickname, last_access_at, logged)
+         VALUES (?, ?, CURRENT_TIMESTAMP, 1)`,
         [userId, nickname]
       );
 
@@ -251,6 +255,24 @@ export async function updatePlayerAvatar(
     `UPDATE players SET avatarUrl = ? WHERE user_id = ?`,
     [final, userId]
   );
+}
+
+// --------------------------------------------------
+// UPDATE PLAYER'S ONLINE STATUS
+// --------------------------------------------------
+export async function updatePlayerOnlineStatus(userId: string, logged: boolean) {
+
+	const repoDate = '2025-12-01';
+
+	console.info("Updating player state...");
+
+	if (logged) {
+		await db.run(`UPDATE players SET last_access_at = CURRENT_TIMESTAMP, logged = 1 WHERE user_id = ?`, [userId]);
+		console.info("User set as logged with date ...");
+	} else {
+		await db.run(`UPDATE players SET last_access_at = ?, logged = 0 WHERE user_id = ?`, [repoDate, userId]);
+        console.info("User set as logged OUT with REPO date ...");
+	}
 }
 
 // --------------------------------------------------
@@ -428,6 +450,8 @@ export async function getUserPublicProfile(userId: string): Promise<PlayerInfo |
             winPhrase: row.winPhrase ?? null,
             localization: row.localization,
             created_at: row.created_at,
+			last_access_at: row.last_access_at,
+            logged: row.logged,
 
             stats: {
                     played: row.played ?? 0,

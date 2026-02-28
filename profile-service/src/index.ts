@@ -12,7 +12,8 @@ import {
   getPlayerById, 
   createPlayer, 
   updatePlayerInfo, 
-  updatePlayerAvatar, 
+  updatePlayerAvatar,
+  updatePlayerOnlineStatus, 
   updatePlayerStats,
   getLeaderboard,
   softdeletePlayer,
@@ -135,7 +136,9 @@ fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { p
 
 			if (!player) {
 				player = await createPlayer(userId) as Player;
-				}
+				} else { 
+				const logged = true;
+				await updatePlayerOnlineStatus(userId, logged); }
 
 		  	return reply.send({ nickname: player.nickname, });
 			} catch (err) {
@@ -145,7 +148,17 @@ fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { p
 				}
 });
 
-
+fastify.get<{ Params: { id: string } }>('/internal/profile/logout/:id', { preHandler: requireServiceAuth }, async (req, reply) => {
+	try {
+			const userId = req.params.id;
+			const logged = false;
+			await updatePlayerOnlineStatus(userId, logged);
+	} 
+	catch (err) {
+		req.log.error(err, 'Error user logout');
+		return reply.status(500).send();		
+	}
+										});
 
 // --- PUBLIC PROFILE USER ---
 fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
@@ -269,7 +282,7 @@ fastify.post('/internal/profile/gameresult/update', { preHandler: requireService
 // --- GET UPDATED LEADERBOARD ---
 fastify.get('/internal/profile/leaderboard/updates', { preHandler: requireServiceAuth }, async (req: any, reply) => {
 
-    	const since = req.query?.since || '2026-01-01';
+    	const since = req.query?.since || '2025-12-01';
 
 	try {
 		const leaderboard = await getLeaderboard(since);
@@ -434,7 +447,11 @@ fastify.get('/profile/avatars/:filename', async (req, reply) => {
         } catch {
             console.warn('Avatar not found:', filePath);
             
-            return reply.redirect('/api/profile/avatar/default-avatar.png');
+            const defaultFilePath = path.join(AVATARS_DIR, 'default-avatar.webp');
+            const defaultFileBuffer = await fs.readFile(defaultFilePath);
+            return reply.type('image/webp')
+            .header('Cache-Control', 'public, max-age=3600')
+            .send(defaultFileBuffer);
         }
 
         const fileBuffer = await fs.readFile(filePath);
@@ -463,13 +480,11 @@ fastify.get('/profile/friends', { preHandler: verifyToken }, async (req, reply) 
     return friendService.getFriendsService(userId);
 });
 
-// GET friends list from other user
-fastify.get('/profile/friends/:id', { preHandler: verifyToken }, async (req, reply) => {
-	const { id } = req.params as { id: string};
-    console.info("------>> Friend target id: ", id);
-    const result = friendService.getFriendsService(id);
-    console.info("------>> Friends list: ", result);
-    return (result);
+// GET friends of target
+fastify.get('/profile/friends/:targetId', { preHandler: verifyToken }, async (req, reply) => {
+    const userId = req.user.sub;
+	const { targetId } = req.params as { targetId: string};
+    return friendService.getFriendsOfTargetService(userId, targetId);
 });
 
 // GET incoming requests
