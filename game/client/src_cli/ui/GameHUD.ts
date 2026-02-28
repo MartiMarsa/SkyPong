@@ -1,7 +1,6 @@
 import { AdvancedDynamicTexture, Control, TextBlock } from '@babylonjs/gui';
 import { GUI_STYLES } from '../config/GUIStyles';
 import { GUIElements } from './GUIElements';
-import { VISUAL } from '../config';
 
 /**
  * Head-Up Display responsible for showing player names, scores, and countdowns.
@@ -23,70 +22,39 @@ export class GameHUD {
      * @param texture - The advanced dynamic texture to attach controls to.
      */
     constructor(private _texture: AdvancedDynamicTexture) {
-        // Player 1 label (bottom) - blue color
-        this._player1Text = GUIElements.CreateText(
+        this._player1Text = GUIElements.CreateHUDText(
             'player1Text',
             '',
-            GUI_STYLES.TEXT.PLAYER_BOTTOM,
+            GUI_STYLES.HUD.PLAYER1_NAME,
         );
-        this._player1Text.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
-        this._player1Text.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
-        this._player1Text.top = VISUAL.UI_POSITIONING.HUD.PLAYER1.NAME_TOP;
-        this._player1Text.isVisible = false;
-        this._player1Text.isHitTestVisible = false;
         this._texture.addControl(this._player1Text);
 
-        // Player 1 score (below name)
-        this._player1ScoreText = GUIElements.CreateText(
+        this._player1ScoreText = GUIElements.CreateHUDText(
             'player1ScoreText',
             '0',
-            GUI_STYLES.TEXT.COUNTDOWN,
+            GUI_STYLES.HUD.PLAYER1_SCORE,
         );
-        this._player1ScoreText.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
-        this._player1ScoreText.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
-        this._player1ScoreText.top = VISUAL.UI_POSITIONING.HUD.PLAYER1.SCORE_TOP;
-        this._player1ScoreText.fontSize = VISUAL.UI_POSITIONING.HUD.PLAYER1.SCORE_FONT_SIZE;
-        this._player1ScoreText.isVisible = false;
-        this._player1ScoreText.isHitTestVisible = false;
         this._texture.addControl(this._player1ScoreText);
 
-        // Player 2 label (top) - red color
-        this._player2Text = GUIElements.CreateText(
+        this._player2Text = GUIElements.CreateHUDText(
             'player2Text',
             '',
-            GUI_STYLES.TEXT.PLAYER_TOP,
+            GUI_STYLES.HUD.PLAYER2_NAME,
         );
-        this._player2Text.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
-        this._player2Text.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
-        this._player2Text.top = VISUAL.UI_POSITIONING.HUD.PLAYER2.NAME_TOP;
-        this._player2Text.isVisible = false;
-        this._player2Text.isHitTestVisible = false;
         this._texture.addControl(this._player2Text);
 
-        // Player 2 score (below name)
-        this._player2ScoreText = GUIElements.CreateText(
+        this._player2ScoreText = GUIElements.CreateHUDText(
             'player2ScoreText',
             '0',
-            GUI_STYLES.TEXT.COUNTDOWN,
+            GUI_STYLES.HUD.PLAYER2_SCORE,
         );
-        this._player2ScoreText.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
-        this._player2ScoreText.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
-        this._player2ScoreText.top = VISUAL.UI_POSITIONING.HUD.PLAYER2.SCORE_TOP;
-        this._player2ScoreText.fontSize = VISUAL.UI_POSITIONING.HUD.PLAYER2.SCORE_FONT_SIZE;
-        this._player2ScoreText.isVisible = false;
-        this._player2ScoreText.isHitTestVisible = false;
         this._texture.addControl(this._player2ScoreText);
 
-        // Countdown text (center)
-        this._countdownText = GUIElements.CreateText(
+        this._countdownText = GUIElements.CreateHUDText(
             'countdownText',
             '',
-            GUI_STYLES.TEXT.COUNTDOWN,
+            GUI_STYLES.HUD.COUNTDOWN,
         );
-        this._countdownText.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
-        this._countdownText.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
-        this._countdownText.isVisible = false;
-        this._countdownText.isHitTestVisible = false;
         this._texture.addControl(this._countdownText);
     }
 
@@ -155,7 +123,6 @@ export class GameHUD {
      * @param player2Score - Score of Player 2.
      */
     public updateScores(player1Score: number, player2Score: number): void {
-        // Guard against undefined values
         if (typeof player1Score !== 'number' || typeof player2Score !== 'number') {
             console.warn('[GameHUD] updateScores called with invalid values:', player1Score, player2Score);
             return;

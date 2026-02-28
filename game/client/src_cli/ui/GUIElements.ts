@@ -10,6 +10,8 @@ import {
     IButtonStyle,
     IContainerStyle,
     IPanelStyle,
+    ITextStyleEx,
+    IButtonStyleEx,
 } from '../config/GUIStyles';
 
 /**
@@ -49,6 +51,41 @@ export class GUIElements {
     }
 
     /**
+     * Creates a styled text block with positioning (reduces repeated code).
+     * @param name - The name of the control.
+     * @param content - The text to display.
+     * @param style - The style + positioning configuration.
+     */
+    public static CreatePositionedText(
+        name: string,
+        content: string,
+        style: ITextStyleEx,
+    ): TextBlock {
+        const text = this.CreateText(name, content, style);
+        text.horizontalAlignment = style.horizontalAlignment ?? Control.HORIZONTAL_ALIGNMENT_CENTER;
+        text.verticalAlignment = style.verticalAlignment ?? Control.VERTICAL_ALIGNMENT_CENTER;
+        if (style.top) text.top = style.top;
+        return text;
+    }
+
+    /**
+     * Creates a HUD text block (centered, hidden by default, not hit-testable).
+     * @param name - The name of the control.
+     * @param content - The text to display.
+     * @param style - The style + positioning configuration.
+     */
+    public static CreateHUDText(
+        name: string,
+        content: string,
+        style: ITextStyleEx,
+    ): TextBlock {
+        const text = this.CreatePositionedText(name, content, style);
+        text.isVisible = false;
+        text.isHitTestVisible = false;
+        return text;
+    }
+
+    /**
      * Creates a styled button with a click handler.
      * @param name - The name of the control.
      * @param content - The button label text.
@@ -72,6 +109,29 @@ export class GUIElements {
         if (onClick) {
             btn.onPointerUpObservable.add(onClick);
         }
+        return btn;
+    }
+
+    /**
+     * Creates a styled button with positioning.
+     * @param name - The name of the control.
+     * @param content - The button label text.
+     * @param style - The style + positioning configuration.
+     * @param onClick - Optional callback invoked on pointer up.
+     */
+    public static CreatePositionedButton(
+        name: string,
+        content: string,
+        style: IButtonStyleEx,
+        onClick?: () => void,
+    ): Button {
+        const btn = this.CreateButton(name, content, style, onClick);
+        if (style.horizontalAlignment) btn.horizontalAlignment = style.horizontalAlignment;
+        if (style.verticalAlignment) btn.verticalAlignment = style.verticalAlignment;
+        if (style.top) btn.top = style.top;
+        if (style.zIndex) btn.zIndex = style.zIndex;
+        btn.isHitTestVisible = true;
+        btn.isPointerBlocker = true;
         return btn;
     }
 
