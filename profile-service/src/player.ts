@@ -1,10 +1,15 @@
 import { getProfileDB } from './dbPlayers';
 import { getDbHelpers } from './helpers';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 // --- CONFIG ---
 const MAX_RETRIES = 5;
-const DEFAULT_AVATAR = '/static/avatars/default.webp';
+
+const AVATARS_DIR = path.join('/app/uploads', 'avatars');
+const DEFAULT_AVATAR_PATH = path.join('/app/static', 'default-avatar.webp');
+const DEFAULT_AVATAR = '/static/default-avatar.webp';
 
 // --- DB ---
 const db = getDbHelpers(getProfileDB());
@@ -86,6 +91,27 @@ function calculateRate(
   const final = Math.round(userRate + K * (score - expected));
 
   return Math.max(final, 0);
+}
+
+export async function ensureAvatarIsAlive(userId: string, avatarUrl: string | null) {
+  	if (!avatarUrl) {
+		await updatePlayerAvatar(userId, DEFAULT_AVATAR);
+        console.log(`[ensureAvatarIsAlive] Avatar missing for ${userId}, set default.`);
+		return;
+	}
+
+	if (avatarUrl === DEFAULT_AVATAR) return;
+
+  	const filename = path.basename(avatarUrl);
+  	const filePath = path.join(AVATARS_DIR, filename);
+
+  	try {
+		await fs.promises.access(filePath);
+		return;
+  	} catch {
+		await updatePlayerAvatar(userId, DEFAULT_AVATAR);
+		console.log(`[ensureAvatarIsAlive] Avatar missing for ${userId}, set default.`);
+  	}
 }
 
 // --- UTILS FOR DB ---
