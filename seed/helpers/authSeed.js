@@ -11,7 +11,7 @@ export async function seedAuthUsers(db) {
     { email: 'evePecadora@test.com', password: 'qwer1234!' },
     { email: 'diskard@test.com', password: 'qwer1234!' },
     { email: 'randalthor@test.com', password: 'qwer1234!' },
-    { email: 'morain@test.com', password: 'qwer1234!' },
+    { email: 'moraine@test.com', password: 'qwer1234!' },
     { email:  'ishamael@test.com', password: 'qwer1234!' },
   ];
 
