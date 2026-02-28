@@ -1,85 +1,56 @@
-import { AdvancedDynamicTexture, Control, StackPanel, Button, Image, TextBlock } from "@babylonjs/gui";
+import { AdvancedDynamicTexture, Control, StackPanel } from "@babylonjs/gui";
 import { InputController } from "src_cli/input/InputController";
 import { GUI_STYLES } from "../config/GUIStyles";
+import { GUIElements } from "./GUIElements";
 
 export class TouchControls {
-    private texture: AdvancedDynamicTexture;
-    private textBlock: TextBlock | null = null;
-    private controller: InputController | null = null;
+  private texture: AdvancedDynamicTexture;
+  private container: StackPanel | null = null;
+  private controller: InputController | null = null;
 
-    constructor(texture: AdvancedDynamicTexture) {
-        this.texture = texture;
+  constructor(texture: AdvancedDynamicTexture) {
+    this.texture = texture;
+  }
+
+  public hideControls(): void {
+    if (this.container) {
+      this.texture.removeControl(this.container);
+      this.container = null;
     }
+  }
 
-    hideText() {
-        if (this.textBlock) {
-            this.texture.removeControl(this.textBlock);
-            this.textBlock = null;
-        }
-    }
+  public setInputController(controller: InputController): void {
+    this.controller = controller;
+  }
 
-    setInputController(controller: InputController) {
-        this.controller = controller;
-    }
+  public showControls(): void {
+    this.container = new StackPanel();
+    this.container.isVertical = false;
+    this.container.horizontalAlignment =
+      GUI_STYLES.TOUCH_CONTAINER.horizontalAlignment;
+    this.container.verticalAlignment =
+      GUI_STYLES.TOUCH_CONTAINER.verticalAlignment;
+    this.container.height = GUI_STYLES.TOUCH_CONTAINER.height;
 
-    private createIconButton(
-        name: string,
-        style: typeof GUI_STYLES.TOUCH_CONTROLS.BUTTON_LEFT,
-        onPointerDown: () => void,
-        onPointerUp: () => void,
-    ): Button {
-        const button = Button.CreateSimpleButton(name, style.text || '');
-        button.width = style.width;
-        button.height = style.height;
-        button.color = style.color;
-        button.background = style.background;
-        button.thickness = 0;
-        button.fontSize = 0;
+    const leftButton = GUIElements.CreateIconButton(
+      "btnLeft",
+      GUI_STYLES.ICON_BUTTON.LEFT,
+      () => this.controller?.pressLeft(),
+      () => this.controller?.releaseLeft(),
+    );
+    leftButton.paddingRight = GUI_STYLES.ICON_BUTTON.LEFT.paddingRight ?? "0px";
 
-        if (style.iconUrl) {
-            const icon = new Image(`${name}Icon`, style.iconUrl);
-            icon.width = style.iconWidth ?? '40px';
-            icon.height = style.iconHeight ?? '40px';
-            icon.stretch = Image.STRETCH_UNIFORM;
-            icon.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
-            icon.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
-            button.addControl(icon);
-        }
+    const rightButton = GUIElements.CreateIconButton(
+      "btnRight",
+      GUI_STYLES.ICON_BUTTON.RIGHT,
+      () => this.controller?.pressRight(),
+      () => this.controller?.releaseRight(),
+    );
+    rightButton.paddingLeft = GUI_STYLES.ICON_BUTTON.RIGHT.paddingLeft ?? "0px";
 
-        button.onPointerDownObservable.add(onPointerDown);
-        button.onPointerUpObservable.add(onPointerUp);
+    this.container.addControl(leftButton);
+    this.container.addControl(rightButton);
 
-        return button;
-    }
-
-    showControls() {
-        const container = new StackPanel();
-        container.isVertical = false;
-        container.horizontalAlignment = GUI_STYLES.TOUCH_CONTROLS.CONTAINER.horizontalAlignment;
-        container.verticalAlignment = GUI_STYLES.TOUCH_CONTROLS.CONTAINER.verticalAlignment;
-        container.height = GUI_STYLES.TOUCH_CONTROLS.CONTAINER.height;
-
-        const leftStyle = GUI_STYLES.TOUCH_CONTROLS.BUTTON_LEFT;
-        const buttonLeft = this.createIconButton(
-            'btnLeft',
-            leftStyle,
-            () => this.controller?.pressLeft(),
-            () => this.controller?.releaseLeft(),
-        );
-        buttonLeft.paddingRight = leftStyle.paddingRight ?? '0px';
-
-        const rightStyle = GUI_STYLES.TOUCH_CONTROLS.BUTTON_RIGHT;
-        const buttonRight = this.createIconButton(
-            'btnRight',
-            rightStyle,
-            () => this.controller?.pressRight(),
-            () => this.controller?.releaseRight(),
-        );
-        buttonRight.paddingLeft = rightStyle.paddingLeft ?? '0px';
-
-        container.addControl(buttonLeft);
-        container.addControl(buttonRight);
-
-        this.texture.addControl(container);
-    }
+    this.texture.addControl(this.container);
+  }
 }

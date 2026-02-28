@@ -6,17 +6,22 @@ import {
     MeshBuilder,
     RenderTargetTexture,
 } from "@babylonjs/core";
+import { AdvancedDynamicTexture } from "@babylonjs/gui";
 import { EngineSetup } from "../rendering/EngineSetup";
 import { SceneLights } from "../rendering/SceneLights";
 import { MaterialFactory } from "../factories/MaterialFactory";
 import { MAT } from "../config/Materials";
 import { CAMERA, ANIMATION } from '../config';
+import { GameUIManager } from '../ui/GameUIManager';
+import { TouchControls } from '../ui/TouchControls';
 
 export class TestScene {
     private engine: Engine;
     private scene: Scene;
     private _engineSetup: EngineSetup;
     private _resizeHandler: (() => void) | null = null;
+    private _uiManager: GameUIManager | null = null;
+    private _touchControls: TouchControls | null = null;
 
     constructor(canvas: HTMLCanvasElement) {
         this._engineSetup = new EngineSetup(canvas);
@@ -30,6 +35,8 @@ export class TestScene {
             window.removeEventListener("resize", this._resizeHandler);
             this._resizeHandler = null;
         }
+        this._touchControls?.hideControls();
+        this._uiManager?.dispose();
         this._engineSetup.dispose();
         this.engine.dispose();
     }
@@ -53,6 +60,17 @@ export class TestScene {
         camera.attachControl(this.engine.getRenderingCanvas(), true);
         camera.minZ = CAMERA.TEST_SCENE.MIN_Z;
         camera.wheelPrecision = CAMERA.TEST_SCENE.WHEEL_PRECISION;
+
+        // Create UI Manager
+        this._uiManager = new GameUIManager(this.scene, () => {
+            console.log('[TestScene] Back to menu clicked');
+        });
+        this._uiManager.showGameHUD('Player 1', 'Player 2');
+        this._uiManager.hud.updateScores(5, 3);
+
+        // Create Touch Controls
+        this._touchControls = new TouchControls(this._uiManager.texture);
+        this._touchControls.showControls();
 
         const ball = MeshBuilder.CreateBox(
             "testBall",
