@@ -12,6 +12,7 @@ import {
   getPlayerById, 
   createPlayer, 
   updatePlayerInfo, 
+  ensureAvatarIsAlive,
   updatePlayerAvatar,
   updatePlayerOnlineStatus, 
   updatePlayerStats,
@@ -55,12 +56,12 @@ interface Player {
 		avatar?: string;
 }
 
-
+/*
 fastify.register(fastifyStatic, {
       	root: path.join(process.cwd(), 'uploads'),
       	prefix: '/static/'
 });
-
+*/
 declare module 'fastify' {
   interface FastifyRequest {
     user: {
@@ -181,6 +182,9 @@ fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
             console.info("Creating new player for user:", userId);
             player = await createPlayer(userId);
       	}
+
+		await ensureAvatarIsAlive(userId, player.avatarUrl);
+
         console.info("----> Sending player profile info: ", player);
 		return reply.send(player 
         );
@@ -196,20 +200,22 @@ fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
 // --- PUBLIC PROFILE ---
 fastify.get('/profile/:id', {preHandler: verifyToken }, async (req, reply) => {
 
-	const { id } = req.params as { id: string};
+			const { id } = req.params as { id: string};
 
-	const user = await getUserPublicProfile(id);
+			const user = await getUserPublicProfile(id);
 
-	if (!user) {
-	    	return reply.status(404).send({
-		  	error: { 
-				code: "USER_NOT_FOUND", 
-				message: "User not found" 
+			if (!user) {
+				return reply.status(404).send({
+				  	error: { 
+							code: "USER_NOT_FOUND", 
+							message: "User not found" 
+					}
+	    		});
 			}
-	    	});
-      	}
 
-      	return { user };
+			await ensureAvatarIsAlive(user.id, user.avatarUrl);
+
+			return { user };
 });
 
 // --- PRIVATE CHANGE PROFILE ---
@@ -307,7 +313,8 @@ fastify.post('/internal/profile/delete', { preHandler: requireServiceAuth }, asy
     	}
 
         const path = require('path');
-        const AVATAR_DIR = '/app/uploads/avatars/'; // O la ruta donde guardes físicamente los archivos
+		const AVATAR_DIR = AVATARS_DIR;
+//        const AVATAR_DIR = '/app/uploads/avatars/'; // O la ruta donde guardes físicamente los archivos
 
         const filePath = path.join(AVATAR_DIR, `${userId}.webp`);
         try {
@@ -336,18 +343,19 @@ fastify.post('/internal/profile/delete', { preHandler: requireServiceAuth }, asy
 
 
 // Use profile-service volume to persist avatars
-const AVATARS_DIR = process.env.AVATARS_PATH || path.join(process.cwd(), 'uploads', 'avatars');
+//const AVATARS_DIR = process.env.AVATARS_PATH || path.join(process.cwd(), 'uploads', 'avatars');
+const AVATARS_DIR = path.join('/app/uploads', 'avatars');
+const DEFAULT_AVATAR_PATH = path.join('/app/static', 'default-avatar.webp');
 
 // Creates service image directory
 (async () => {
-    try {
-        await fs.mkdir(AVATARS_DIR, { recursive: true });
-        console.log(`✅ Avatars directory ready: ${AVATARS_DIR}`);
-    } catch (error) {
-        console.error('Error creating avatars directory:', error);
-    }
+  try {
+    await fs.mkdir(AVATARS_DIR, { recursive: true });
+    console.log(`✅ Avatars directory ready: ${AVATARS_DIR}`);
+  } catch (error) {
+    console.error('Error creating avatars directory:', error);
+  }
 })();
-
 // --- CHANGE PROFILE AVATAR ---
 fastify.post('/profile/avatar', { preHandler: verifyToken }, async (req, reply) => {
     try {
@@ -403,13 +411,13 @@ fastify.post('/profile/avatar', { preHandler: verifyToken }, async (req, reply) 
         // ✅ CORRECCIÓN: Guarda en el volumen persistente
         console.log("Uploading Avatar to:", AVATARS_DIR);
         
-        const filePath = path.join(AVATARS_DIR, `${userId}.webp`);
-        await fs.writeFile(filePath, avatar);
+		const filePath = path.join(AVATARS_DIR, `${userId}.webp`);
+		await fs.writeFile(filePath, avatar);
         
         console.log("✅ Avatar saved at:", filePath);
 
         // ✅ URL pública del avatar
-        const avatarUrl = `/api/profile/avatars/${userId}.webp`;
+		const avatarUrl = `/api/profile/avatars/${userId}.webp`;
 
         // Actualiza en la base de datos
         await updatePlayerAvatar(userId, avatarUrl);
@@ -428,6 +436,48 @@ fastify.post('/profile/avatar', { preHandler: verifyToken }, async (req, reply) 
     }
 });
 
+fastify.get('/profile/avatars/:filename', async (req, reply) => {
+  try {
+    const { filename } = req.params as { filename: string };
+
+    if (
+      !filename.endsWith('.webp') ||
+      filename.includes('..') ||
+      filename.includes('/') ||
+      filename.includes('\\')
+    ) {
+      return reply.status(400).send({ error: 'Invalid filename' });
+    }
+
+    const userAvatarPath = path.join(AVATARS_DIR, filename);
+
+    try {
+      await fs.access(userAvatarPath);
+
+      return reply
+        .type('image/webp')
+        .header('Cache-Control', 'public, max-age=3600')
+        .send(await fs.readFile(userAvatarPath));
+
+    } catch {
+      // fallback → default avatar
+
+	  const userId = filename.replace('.webp', '');
+      await ensureAvatarIsAlive(userId, DEFAULT_AVATAR_PATH);
+
+      return reply
+        .type('image/png')
+        .header('Cache-Control', 'public, max-age=86400')
+        .send(await fs.readFile(DEFAULT_AVATAR_PATH));
+    }
+
+  } catch (error) {
+    console.error('Error serving avatar:', error);
+    return reply.status(500).send({ error: 'Failed to serve avatar' });
+  }
+});
+
+/*
 fastify.get('/profile/avatars/:filename', async (req, reply) => {
     try {
         const { filename } = req.params as { filename: string };
@@ -466,7 +516,7 @@ fastify.get('/profile/avatars/:filename', async (req, reply) => {
         return reply.status(500).send({ error: 'Failed to serve avatar' });
     }
 });
-
+*/
 
 fastify.addHook('onRequest', async (request, reply) => {
   console.log(`Recibida petición: ${request.method} ${request.url}`);

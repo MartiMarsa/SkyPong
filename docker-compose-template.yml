@@ -37,13 +37,24 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: PLACEHOLDER_PROFILE    
-  
+      device: PLACEHOLDER_PROFILE
+  uploads:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./uploads
+  static:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ./static
+
   prometheus_data:
   grafana_data:
   certs:
   keys:
-  uploads:
 # ──────────────────────────────────────────────
 # SERVICES
 # ──────────────────────────────────────────────
@@ -70,6 +81,9 @@ services:
     volumes:
       - ./nginx-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
       - certs:/etc/nginx/certs
+      - uploads:/app/uploads:ro
+      - static:/app/static:ro
+      - ./profile-service/static:/app/static:ro
     depends_on:
       frontend:
         condition: service_started
@@ -200,7 +214,8 @@ services:
     volumes:
       - PLACEHOLDER_PROFILE:/app/data
       - keys:/app/keys:ro
-      - uploads:/app/uploads
+      - uploads:/app/uploads:rw
+      - static:/app/static:ro
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:5000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
       interval: 10s
