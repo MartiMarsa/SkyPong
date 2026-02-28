@@ -29,6 +29,9 @@ export class GameRoom extends Room<MyGameState> {
 
     onCreate(options: any): void | Promise<any> {
         this.setState(new MyGameState());
+        if (options.winningScore) {
+            this.state.winningScore = options.winningScore;
+        }
         this.engine = new NullEngine();
         this.scene = new Scene(this.engine);
         this.physicsEngine = new PhysicsEngine(this.scene);
@@ -316,25 +319,25 @@ export class GameRoom extends Room<MyGameState> {
         // Assign player slots
         if (!this.player1Client) {
             this.player1Client = client;
-            this.state.player1Id = client.sessionId;
+            this.state.player1Id = options.playerId || client.sessionId;
             this.state.player1Name = options.playerName || "Player 1";
             this.state.player1Color = options.playerColor || "#00A6ED";
-            Logger.info(`Player 1 joined: ${client.sessionId} (${this.state.player1Name}, color: ${this.state.player1Color})`);
+            Logger.info(`Player 1 joined: ${this.state.player1Id} (${this.state.player1Name}, color: ${this.state.player1Color})`);
 
             // local 2P mode
             if (isLocal2P) {
-                this.state.player2Id = "local_p2";
+                this.state.player2Id = options.player2Id || "local_p2";
                 this.state.player2Name = options.player2Name;
                 this.state.player2Color = options.player2Color || "#F6511D";
-                Logger.info(`Local Player 2 configured: ${this.state.player2Name}, color: ${this.state.player2Color}`);
+                Logger.info(`Local Player 2 configured: ${this.state.player2Name} (${this.state.player2Id}), color: ${this.state.player2Color}`);
                 this.state.gameStarted = true;
             }
         } else if (!this.player2Client) {
             this.player2Client = client;
-            this.state.player2Id = client.sessionId;
+            this.state.player2Id = options.playerId || client.sessionId;
             this.state.player2Name = options.playerName || "Player 2";
             this.state.player2Color = options.playerColor || "#F6511D";
-            Logger.info(`Player 2 joined: ${client.sessionId} (${this.state.player2Name}, color: ${this.state.player2Color})`);
+            Logger.info(`Player 2 joined: ${this.state.player2Id} (${this.state.player2Name}, color: ${this.state.player2Color})`);
             // Start the game when second player joins
             this.state.gameStarted = true;
         } else {

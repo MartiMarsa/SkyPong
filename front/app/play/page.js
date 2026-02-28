@@ -54,7 +54,7 @@ export default function PlayPage() {
 
     const launchTimer = window.setTimeout(() => {
       const encoded = encodeGameConfig(config);
-      router.push(`/launch?config=${encodeURIComponent(encoded)}`);
+      router.push(`/launch?config=${encodeURIComponent(encoded)}`); // INFO redirects to /front/launch
     }, 800);
 
     return () => window.clearTimeout(launchTimer);

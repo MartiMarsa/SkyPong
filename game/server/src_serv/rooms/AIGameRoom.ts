@@ -42,8 +42,10 @@ export class AIGameRoom extends Room<MyGameState> {
         }
         
 
-
         this.setState(new MyGameState());
+        if (options.winningScore) {
+            this.state.winningScore = options.winningScore;
+        }
         this.engine = new NullEngine();
         this.scene = new Scene(this.engine);
         this.physicsEngine = new PhysicsEngine(this.scene);
@@ -305,7 +307,7 @@ export class AIGameRoom extends Room<MyGameState> {
             throw new Error("Room is full");
         }
         this.playerClient = client;
-        this.state.player1Id = client.sessionId;
+        this.state.player1Id = options.playerId || client.sessionId;
         this.state.player1Name = options.playerName || "Player";
         this.state.player1Color = options.playerColor || "#00A6ED";
         this.state.player2Id = "ai";
@@ -313,7 +315,7 @@ export class AIGameRoom extends Room<MyGameState> {
         this.state.player2Color = "#666666"; // Fixed gray color for AI
         this.state.gameStarted = true;
         this.lock(); // Lock room to prevent additional joins
-        Logger.info(`[AI] Player joined: ${client.sessionId} (${this.state.player1Name}, color: ${this.state.player1Color})`);
+        Logger.info(`[AI] Player joined: ${this.state.player1Id} (${this.state.player1Name}, color: ${this.state.player1Color})`);
     }
 
     onLeave(client: Client, consented: boolean): void | Promise<any> {
