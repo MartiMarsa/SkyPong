@@ -5,12 +5,11 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { useRouter, usePathname } from 'next/navigation';
 
 const AuthContext = createContext({
-  user: null,
-  avartarURL: "/avatars/default-avatar.webp",
-  loading: true,
-//  hasCredentials: false,
-  logout: async () => {},
-  checkAuth: async () => { return false; } // Útil para re-validar tras login
+    user: null,
+    authloading: true,
+    hasCredentials: false,
+    logout: async () => {},
+    checkAuth: async () => { return false; } // Útil para re-validar tras login
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -20,7 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const router = useRouter();
   const pathname = usePathname();
-  const publicRoutes = ['/login', '/signup'];
+  const publicRoutes = ['/login', '/signup', '/', '/play', '/launch', '/canvas'];
   const isPublicRoute = publicRoutes.includes(pathname);
 
   const checkAuth = useCallback(async () => {
