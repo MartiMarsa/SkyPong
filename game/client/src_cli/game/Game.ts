@@ -10,8 +10,10 @@ import { RoomManager, RoomManagerCallbacks } from "./RoomManager";
 import { GameLoop } from "./GameLoop";
 import { CountdownManager } from "./CountdownManager";
 import { GameReadyManager } from "./GameReadyManager";
+import { LoadingManager } from "./LoadingManager";
 import { adjustCamera } from '../utils/Camera';
 import { GameSessionConfig } from '../types/GameSessionConfig';
+import { LoadingState } from '../types/LoadingTypes';
 
 // Module-level lock to prevent duplicate game instances (React StrictMode)
 let gameInstanceLock = false;
@@ -32,12 +34,15 @@ export class Game {
     private _gameLoop: GameLoop | null = null;
     private _countdownManager: CountdownManager | null = null;
     private _gameReadyManager: GameReadyManager | null = null;
+    private _loadingManager: LoadingManager | null = null;
+    private _activeScene: Scene | null = null;
 
     startGame = (
         canvas: HTMLCanvasElement,
         config: GameSessionConfig,
         onGameReady?: (onLaunch: () => void, isWaitingForOpponent?: boolean) => void,
         onBackToMenu?: () => void,
+        onLoadingManagerReady?: (loadingManager: LoadingManager) => void,
     ) => {
         if (gameInstanceLock) return null;
         gameInstanceLock = true;
@@ -52,149 +57,159 @@ export class Game {
         const player2Color = config.player2Color || '#F6511D';
         const { gameMode } = config;
 
-        // Initialize ClientEngine (graphics & entities)
-        const clientEngine = new ClientEngine(canvas, config);
-        this._clientEngine = clientEngine;
-        const engine = clientEngine.engineSetup.engine;
-
-        // Determine initial player 2 name based on game mode
         const isPvPMode = gameMode === 'local-2p' || gameMode === 'online-create' || gameMode === 'online-join';
         const isAIMode = gameMode.startsWith('ai-');
         const initialPlayer2Name = isPvPMode ? 'Waiting...' : (isAIMode ? 'AI' : player2Name);
 
-        // Initialize entities with back to menu callback
         const onBackToMenuCallback = () => {
             if (this._onBackToMenu) {
                 this._onBackToMenu();
             }
         };
-        const entities = clientEngine.init(player1Name, initialPlayer2Name, onBackToMenuCallback);
-        const { ball, table, paddle, paddle2, gui, touchControls } = entities;
-        this._gui = gui;
 
-        const debugMonitor = new DebugMonitor();
-        this._debugMonitor = debugMonitor;
+        (async () => {
+            const clientEngine = new ClientEngine(canvas, config);
+            this._clientEngine = clientEngine;
+            const engine = clientEngine.engineSetup.engine;
 
-        let activeScene: Scene | null = null;
+            const entities = await clientEngine.init(player1Name, initialPlayer2Name, onBackToMenuCallback);
+            const { ball, table, paddle, paddle2, gui, touchControls } = entities;
+            this._gui = gui;
 
-        const createScene = async () => {
-            const scene = clientEngine.scene;
+            const debugMonitor = new DebugMonitor();
+            this._debugMonitor = debugMonitor;
 
-            try {
-                const roomManager = new RoomManager(
-                    this._createRoomManagerCallbacks(
-                        clientEngine,
-                        table,
-                        paddle,
-                        paddle2,
-                        ball,
-                        gui
-                    )
-                );
+            const createScene = async () => {
+                const scene = clientEngine.scene;
 
-                this._roomManager = roomManager;
-                const room = await roomManager.connect(gameMode, config, config.roomId);
-                this._room = room;
+                try {
+                    const roomManager = new RoomManager(
+                        this._createRoomManagerCallbacks(
+                            clientEngine,
+                            table,
+                            paddle,
+                            paddle2,
+                            ball,
+                            gui
+                        )
+                    );
 
-                const isOnlineMode = gameMode === 'online-create' || gameMode === 'online-join';
+                    this._roomManager = roomManager;
+                    const room = await roomManager.connect(gameMode, config, config.roomId);
+                    this._room = room;
 
-                this._countdownManager = new CountdownManager({
-                    onCountdownUpdate: (count) => {
-                        if (count > 0) {
-                            gui.hud.updateCountdown(count.toString());
-                        } else {
-                            gui.hud.updateCountdown('');
-                        }
-                    },
-                    onCountdownComplete: () => {
-                        roomManager.sendLaunch();
-                    },
-                });
+                    const isOnlineMode = gameMode === 'online-create' || gameMode === 'online-join';
 
-                this._gameReadyManager = new GameReadyManager({
-                    roomManager,
-                    countdownManager: this._countdownManager,
-                    gui,
-                    isPvP: isPvPMode,
-                    isOnline: isOnlineMode,
-                    initialGameStarted: room.state?.gameStarted ?? false,
-                    onGameReady: this._onGameReady ?? undefined,
-                });
+                    this._countdownManager = new CountdownManager({
+                        onCountdownUpdate: (count) => {
+                            if (count > 0) {
+                                gui.hud.updateCountdown(count.toString());
+                            } else {
+                                gui.hud.updateCountdown('');
+                            }
+                        },
+                        onCountdownComplete: () => {
+                            roomManager.sendLaunch();
+                        },
+                    });
 
-                // Create GameLoop first with initial positions
-                const input = new InputController(scene);
-                this._input = input;
+                    this._gameReadyManager = new GameReadyManager({
+                        roomManager,
+                        countdownManager: this._countdownManager,
+                        gui,
+                        isPvP: isPvPMode,
+                        isOnline: isOnlineMode,
+                        initialGameStarted: room.state?.gameStarted ?? false,
+                        onGameReady: this._onGameReady ?? undefined,
+                    });
 
-                touchControls.setInputController(input);
+                    this._loadingManager = new LoadingManager({
+                        roomManager,
+                        isOnline: isOnlineMode,
+                        isPvP: isPvPMode,
+                    });
 
-                const gameLoop = new GameLoop({
-                    engine,
-                    scene,
-                    inputController: input,
-                    roomManager,
-                    ball,
-                    paddle,
-                    paddle2,
-                    debugMonitor,
-                    camera: clientEngine.engineSetup.camera,
-                });
-                this._gameLoop = gameLoop;
-
-                gameLoop.setInitialStates(
-                    room.state.ball.enabled ?? true,
-                    room.state.paddle.enabled ?? true,
-                    room.state.paddle2.enabled ?? true
-                );
-                gameLoop.setupStateListeners();
-                gameLoop.start();
-
-                if (isPvPMode) {
-                    if (this._gui && room.state) {
-                        const p1Name = room.state.player1Name || player1Name;
-                        const p2Name = room.state.player2Name || 'Waiting...';
-                        let bottomLabel = p1Name;
-                        let topLabel = p2Name;
-
-                        if (room.sessionId === room.state.player2Id) {
-                            bottomLabel = p2Name || 'Waiting...';
-                            topLabel = p1Name;
-                        }
-
-                        this._gui.hud.updatePlayerNames(bottomLabel, topLabel);
+                    if (onLoadingManagerReady) {
+                        onLoadingManagerReady(this._loadingManager);
                     }
 
-                    scene.executeWhenReady(() => {
-                        this._gameReadyManager?.start();
-                    });
-                } else {
-                    scene.executeWhenReady(() => {
-                        this._gameReadyManager?.start();
-                    });
-                }
-            } catch (e) {
-                console.error("Join error", e);
-                alert('Failed to connect to game server. Please try again.');
-                if (this._onBackToMenu) {
-                    this._onBackToMenu();
-                }
-            }
+                    const input = new InputController(scene);
+                    this._input = input;
 
-            return scene;
-        };
+                    touchControls.setInputController(input);
 
-        createScene().then((scene) => {
-            activeScene = scene;
-            if (this._room) engine.runRenderLoop(() => scene.render());
-        });
+                    const gameLoop = new GameLoop({
+                        engine,
+                        scene,
+                        inputController: input,
+                        roomManager,
+                        ball,
+                        paddle,
+                        paddle2,
+                        debugMonitor,
+                        camera: clientEngine.engineSetup.camera,
+                    });
+                    this._gameLoop = gameLoop;
+
+                    gameLoop.setInitialStates(
+                        room.state.ball.enabled ?? true,
+                        room.state.paddle.enabled ?? true,
+                        room.state.paddle2.enabled ?? true
+                    );
+                    gameLoop.setupStateListeners();
+                    gameLoop.start();
+
+                    if (isPvPMode) {
+                        if (this._gui && room.state) {
+                            const p1Name = room.state.player1Name || player1Name;
+                            const p2Name = room.state.player2Name || 'Waiting...';
+                            let bottomLabel = p1Name;
+                            let topLabel = p2Name;
+
+                            if (room.sessionId === room.state.player2Id) {
+                                bottomLabel = p2Name || 'Waiting...';
+                                topLabel = p1Name;
+                            }
+
+                            this._gui.hud.updatePlayerNames(bottomLabel, topLabel);
+                        }
+
+                        scene.executeWhenReady(() => {
+                            this._gameReadyManager?.start();
+                        });
+                    } else {
+                        scene.executeWhenReady(() => {
+                            this._gameReadyManager?.start();
+                        });
+                    }
+                } catch (e) {
+                    const errMsg = e instanceof Error ? e.message : String(e);
+                    console.error("Failed to start game:", errMsg, e);
+                    if (this._onBackToMenu) {
+                        this._onBackToMenu();
+                    }
+                }
+
+                return scene;
+            };
+
+            createScene().then((scene) => {
+                this._activeScene = scene;
+                if (this._room && clientEngine) {
+                    clientEngine.engineSetup.engine.runRenderLoop(() => scene.render());
+                }
+            });
+        })();
 
         let isDisposed = false;
         return () => {
             if (isDisposed) return;
             isDisposed = true;
             this._cleanup();
-            engine.stopRenderLoop();
-            activeScene?.dispose();
-            engine.dispose();
+            this._activeScene?.dispose();
+            this._activeScene = null;
+            this._clientEngine?.engineSetup.engine.stopRenderLoop();
+            this._clientEngine?.engineSetup.engine.dispose();
             gameInstanceLock = false;
         };
     };
@@ -216,6 +231,8 @@ export class Game {
         this._countdownManager = null;
         this._gameReadyManager?.dispose();
         this._gameReadyManager = null;
+        this._loadingManager?.dispose();
+        this._loadingManager = null;
     }
 
     private _signalGameReady(isPvP: boolean, isOnline: boolean, gameStarted: boolean): void {
@@ -313,6 +330,7 @@ export class Game {
                 gui.hud.updatePlayerNames(bottomLabel, topLabel);
             },
             onRoomExpired: () => {
+                this._loadingManager?.handleRoomExpired();
                 if (this._onBackToMenu) {
                     alert('Room expired — no opponent joined within 2 minutes.');
                     this._onBackToMenu();
@@ -320,6 +338,7 @@ export class Game {
             },
             onGameStarted: () => {
                 this._gameReadyManager?.updateGameStarted(true);
+                this._loadingManager?.handleGameStarted();
             },
             onError: (error) => {
                 console.error("Join error", error);
@@ -335,7 +354,8 @@ export const startGame = (
     config: GameSessionConfig,
     onGameReady?: (onLaunch: () => void, isWaitingForOpponent?: boolean) => void,
     onBackToMenu?: () => void,
+    onLoadingManagerReady?: (loadingManager: LoadingManager) => void,
 ) => {
     const game = new Game();
-    return game.startGame(canvas, config, onGameReady, onBackToMenu);
+    return game.startGame(canvas, config, onGameReady, onBackToMenu, onLoadingManagerReady);
 };

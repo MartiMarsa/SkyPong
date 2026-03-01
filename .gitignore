@@ -39,3 +39,6 @@ game/server/src_serv/**/*.js
 # Typescript build cache
 *.tsbuildinfo
 game/common/tsconfig.tsbuildinfo
+
+# Documentation
+.opencode

@@ -125,7 +125,7 @@ export class RoomManager {
                 });
                 break;
             case 'local-2p':
-                room = await client.joinOrCreate<GameState>(SERVER_CONNECTION.ROOMS.GAME_ROOM, joinOptions);
+                room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.GAME_ROOM, joinOptions);
                 break;
             case 'ai-easy':
             case 'ai-medium':
@@ -150,6 +150,13 @@ export class RoomManager {
         if (room.state.player1Id || room.state.player2Id) {
             this.notifyPlayerAssignment();
         }
+        // Safety net: re-check assignment after a short delay in case Colyseus
+        // state was already populated before .listen() callbacks were registered.
+        setTimeout(() => {
+            if (room.state.player2Id && room.sessionId === room.state.player2Id && !this._isPlayer2) {
+                this.notifyPlayerAssignment();
+            }
+        }, 200);
         ['player2Id', 'player1Id'].forEach(prop =>
             (room.state as any).listen(prop, () => {
                 this.notifyPlayerAssignment();
@@ -159,7 +166,10 @@ export class RoomManager {
         ['player1Color', 'player2Color'].forEach(prop =>
             (room.state as any).listen(prop, () => this.notifyPlayerColorUpdate())
         );
-        (room.state as any).listen('player2Joined', () => this.notifyPlayerColorUpdate());
+        (room.state as any).listen('player2Joined', () => {
+            this.notifyPlayerAssignment();
+            this.notifyPlayerColorUpdate();
+        });
         (room.state as any).listen('player2Name', () => this.notifyPlayerNameUpdate());
         (room.state as any).listen('gameStarted', (value: boolean) => {
             if (value === true) {
