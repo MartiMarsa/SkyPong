@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { encodeConfig } from '../lib/game/game-session-config';
 import { getAvailableRooms } from '../lib/game/room-service';
 import { useAuth } from '../context/auth-context';
+import { useStyles } from '../hooks/use-styles';
+import FooterTermsPolicy from '../ui/footer-terms-policy';
+import NavigationAppUI from '../ui/navigation-app-ui';
 
 const STATES = {
   SELECT_MODE: 'SELECT_MODE',
@@ -36,26 +39,33 @@ const PLAYER_COLORS = [
   { hex: '#F4E04D', name: 'Yellow' },
 ];
 
+const mobileStyles = {
+  main: 'h-dvh bg-[#d9d9d9] text-slate-900',
+};
+
+const desktopStyles = {
+  main: 'h-dvh overflow-hidden bg-[#d9d9d9] px-6 text-slate-900 lg:px-10',
+};
+
+const panelButton =
+  'w-full rounded-2xl border-2 border-slate-700 bg-[#efefef] px-5 py-3 text-base font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60';
+
 function ColorPicker({ selectedColor, onColorSelect, label }) {
   return (
-    <div>
-      <label style={{ display: 'block', marginBottom: '5px' }}>{label}</label>
-      <div style={{ display: 'flex', gap: '10px' }}>
+    <div className="flex flex-col gap-3">
+      <label className="text-sm font-semibold uppercase tracking-wide text-slate-700">{label}</label>
+      <div className="flex flex-wrap gap-3">
         {PLAYER_COLORS.map((color) => (
           <button
             key={color.hex}
             type="button"
             onClick={() => onColorSelect(color.hex)}
             title={color.name}
+            className="h-10 w-10 rounded-full border-2 transition"
             style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
               backgroundColor: color.hex,
-              border: selectedColor === color.hex ? '3px solid white' : '2px solid transparent',
-              boxShadow: selectedColor === color.hex ? `0 0 8px ${color.hex}` : 'none',
-              cursor: 'pointer',
-              padding: 0,
+              borderColor: selectedColor === color.hex ? '#0f172a' : 'transparent',
+              boxShadow: selectedColor === color.hex ? `0 0 0 3px ${color.hex}80` : 'none',
             }}
           />
         ))}
@@ -79,33 +89,34 @@ function GameOverlay({ gameUrl, onExit }) {
   }, [onExit]);
 
   return (
-    <div style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: '#000',
-      zIndex: 1000,
-    }}>
+    <div className="fixed inset-0 z-[1000] bg-black">
       <iframe
         ref={iframeRef}
         src={gameUrl}
         title="Game"
-        style={{
-          width: '100%',
-          height: '100%',
-          border: 'none',
-        }}
+        className="h-full w-full border-0"
         allow="cross-origin-isolated"
       />
     </div>
   );
 }
 
+function PlayPanel({ title, subtitle, children }) {
+  return (
+    <section className="w-full max-w-lg rounded-[2rem] border-2 border-slate-700 bg-[#e7e7e7]/70 p-6 shadow-sm sm:p-8">
+      <div className="mb-6 space-y-2 text-center">
+        <h1 className="text-4xl font-black uppercase tracking-tight sm:text-5xl">{title}</h1>
+        {subtitle && <p className="text-sm font-semibold text-slate-700 sm:text-base">{subtitle}</p>}
+      </div>
+      <div className="flex flex-col gap-3">{children}</div>
+    </section>
+  );
+}
+
 export default function PlayPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { styles } = useStyles(mobileStyles, desktopStyles);
   const [state, setState] = useState(STATES.SELECT_MODE);
   const [config, setConfig] = useState(INITIAL_CONFIG);
   const [rooms, setRooms] = useState([]);
@@ -185,9 +196,15 @@ export default function PlayPage() {
 
   if (state === STATES.LOADING) {
     return (
-      <main>
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <h1>Loading...</h1>
+      <main className={`${styles.main} overflow-hidden`}>
+        <div className="mx-auto flex h-full w-full max-w-6xl flex-col rounded-[2.5rem] border-2 border-slate-700 px-4 py-6 sm:px-8 sm:py-8">
+          <NavigationAppUI userURL={hasCredentials ? '/user-home' : '/login'} compactGuestActions />
+          <section className="flex min-h-0 flex-1 items-center justify-center">
+            <PlayPanel title="Pong" subtitle="Loading game..." />
+          </section>
+          <div className="pt-4 text-slate-800">
+            <FooterTermsPolicy />
+          </div>
         </div>
       </main>
     );
@@ -198,271 +215,282 @@ export default function PlayPage() {
   }
 
   return (
-    <main style={{ padding: '20px' }}>
-      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+    <main className={`${styles.main} overflow-hidden`}>
+      <div className="mx-auto flex h-full w-full max-w-6xl flex-col rounded-[2.5rem] border-2 border-slate-700 px-4 py-6 sm:px-8 sm:py-8">
+        <NavigationAppUI userURL={hasCredentials ? '/user-home' : '/login'} compactGuestActions />
 
-      {state === STATES.SELECT_MODE && (
-        <section>
-          <h1>Choose your game mode</h1>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px' }}>
-            <button type="button" onClick={() => {
-              setConfig((prev) => ({ ...prev, gameMode: 'ai-easy' }));
-              setState(STATES.AI_SELECT_DIFFICULTY);
-            }}>
-              1 vs AI
-            </button>
-            {hasCredentials && (
-              <button type="button" onClick={() => setState(STATES.MULTIPLAYER_MENU)}>
-                Multiplayer
-              </button>
+        <section className="flex min-h-0 flex-1 items-center justify-center py-4 md:py-6 lg:py-10">
+          <div className="flex w-full flex-col items-center gap-4">
+            {error && <p className="text-sm font-semibold text-red-600">Error: {error}</p>}
+
+            {state === STATES.SELECT_MODE && (
+              <PlayPanel title="Pong" subtitle="Choose game mode">
+                <button
+                  type="button"
+                  className={panelButton}
+                  onClick={() => {
+                    setConfig((prev) => ({ ...prev, gameMode: 'local-2p' }));
+                    setState(STATES.LOCAL_P1_SETUP);
+                  }}
+                >
+                  1 vs 1 · Local
+                </button>
+                <button
+                  type="button"
+                  className={panelButton}
+                  onClick={() => {
+                    setConfig((prev) => ({ ...prev, gameMode: 'ai-easy' }));
+                    setState(STATES.AI_SELECT_DIFFICULTY);
+                  }}
+                >
+                  1 vs AI
+                </button>
+                {hasCredentials && (
+                  <button type="button" className={panelButton} onClick={() => setState(STATES.MULTIPLAYER_MENU)}>
+                    Multiplayer
+                  </button>
+                )}
+                <button type="button" className={panelButton} onClick={() => router.push('/')}>Back</button>
+              </PlayPanel>
             )}
-          </div>
-        </section>
-      )}
 
-      {state === STATES.AI_SELECT_DIFFICULTY && (
-        <section>
-          <h1>Select Difficulty</h1>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px' }}>
-            <button type="button" onClick={() => {
-              setConfig((prev) => ({ ...prev, gameMode: 'ai-easy' }));
-              setState(STATES.CONFIGURE_GAME);
-            }}>
-              Easy
-            </button>
-            <button type="button" onClick={() => {
-              setConfig((prev) => ({ ...prev, gameMode: 'ai-medium' }));
-              setState(STATES.CONFIGURE_GAME);
-            }}>
-              Medium
-            </button>
-            <button type="button" onClick={() => {
-              setConfig((prev) => ({ ...prev, gameMode: 'ai-hard' }));
-              setState(STATES.CONFIGURE_GAME);
-            }}>
-              Hard
-            </button>
-            <button type="button" onClick={() => setState(STATES.SELECT_MODE)}>
-              Back
-            </button>
-          </div>
-        </section>
-      )}
-
-      {state === STATES.MULTIPLAYER_MENU && hasCredentials && (
-        <section>
-          <h1>Multiplayer</h1>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px' }}>
-            <button type="button" onClick={() => setState(STATES.ONLINE_LOBBY)}>
-              Online PVP
-            </button>
-            <button type="button" onClick={() => {
-              setConfig((prev) => ({ ...prev, gameMode: 'local-2p' }));
-              setState(STATES.LOCAL_P1_SETUP);
-            }}>
-              Local PVP
-            </button>
-            <button type="button" onClick={() => setState(STATES.SELECT_MODE)}>
-              Back
-            </button>
-          </div>
-        </section>
-      )}
-
-      {state === STATES.ONLINE_LOBBY && (
-        <section>
-          <h1>Online Multiplayer</h1>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px' }}>
-            <button type="button" onClick={() => {
-              setConfig((prev) => ({
-                ...prev,
-                playerName: user?.nickname || prev.playerName || 'Player 1',
-                gameMode: 'online-create',
-              }));
-              setState(STATES.CONFIGURE_GAME);
-            }}>
-              Create room
-            </button>
-            <button type="button" onClick={() => {
-              refreshRooms();
-              setState(STATES.ONLINE_JOIN_ROOM);
-            }}>
-              Join room
-            </button>
-            <button type="button" onClick={() => setState(STATES.MULTIPLAYER_MENU)}>
-              Back
-            </button>
-          </div>
-        </section>
-      )}
-
-
-      {state === STATES.ONLINE_JOIN_ROOM && (
-        <section>
-          <h1>Room List</h1>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px' }}>
-            <button type="button" onClick={refreshRooms} disabled={loadingRooms}>
-              {loadingRooms ? 'Loading...' : 'Refresh'}
-            </button>
-            {roomError && <p style={{ color: 'red' }}>{roomError}</p>}
-            {rooms.length === 0 && !loadingRooms && <p>No rooms available</p>}
-            {rooms.map((room) => (
-              <div key={room.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', border: '1px solid #ccc' }}>
-                <span>{room.creatorName ? `${room.creatorName}'s room` : room.name}</span>
-                <button type="button" onClick={() => {
-                  setConfig((prev) => ({ ...prev, gameMode: 'online-join', roomId: room.id }));
+            {state === STATES.AI_SELECT_DIFFICULTY && (
+              <PlayPanel title="AI" subtitle="Select difficulty">
+                <button type="button" className={panelButton} onClick={() => {
+                  setConfig((prev) => ({ ...prev, gameMode: 'ai-easy' }));
                   setState(STATES.CONFIGURE_GAME);
                 }}>
-                  Join
+                  Easy
                 </button>
-              </div>
-            ))}
-            <button type="button" onClick={() => setState(STATES.ONLINE_LOBBY)}>
-              Back
-            </button>
-          </div>
-        </section>
-      )}
+                <button type="button" className={panelButton} onClick={() => {
+                  setConfig((prev) => ({ ...prev, gameMode: 'ai-medium' }));
+                  setState(STATES.CONFIGURE_GAME);
+                }}>
+                  Medium
+                </button>
+                <button type="button" className={panelButton} onClick={() => {
+                  setConfig((prev) => ({ ...prev, gameMode: 'ai-hard' }));
+                  setState(STATES.CONFIGURE_GAME);
+                }}>
+                  Hard
+                </button>
+                <button type="button" className={panelButton} onClick={() => setState(STATES.SELECT_MODE)}>Back</button>
+              </PlayPanel>
+            )}
 
-      {state === STATES.ONLINE_WAITING && (
-        <section>
-          <h1>Waiting for opponent...</h1>
-          <button type="button" onClick={() => {
-            setState(STATES.ONLINE_LOBBY);
-          }}>
-            Cancel
-          </button>
-        </section>
-      )}
+            {state === STATES.MULTIPLAYER_MENU && hasCredentials && (
+              <PlayPanel title="Multiplayer" subtitle="Choose a mode">
+                <button type="button" className={panelButton} onClick={() => setState(STATES.ONLINE_LOBBY)}>
+                  Online PVP
+                </button>
+                <button type="button" className={panelButton} onClick={() => {
+                  setConfig((prev) => ({ ...prev, gameMode: 'local-2p' }));
+                  setState(STATES.LOCAL_P1_SETUP);
+                }}>
+                  Local PVP
+                </button>
+                <button type="button" className={panelButton} onClick={() => setState(STATES.SELECT_MODE)}>Back</button>
+              </PlayPanel>
+            )}
 
-      {state === STATES.CONFIGURE_GAME && (
-        <section>
-          <h1>Configure Game</h1>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px' }}>
-            {user?.nickname ? (
-              <p style={{ margin: 0 }}>Name: <strong>{user.nickname}</strong></p>
-            ) : (
-              <label>
-                Name:
-                <input
-                  type="text"
-                  placeholder="Enter your name"
-                  value={config.playerName || ''}
-                  onChange={(e) => setConfig((prev) => ({ ...prev, playerName: e.target.value }))}
-                  style={{ padding: '10px', fontSize: '16px', width: '100%' }}
+            {state === STATES.ONLINE_LOBBY && (
+              <PlayPanel title="Online" subtitle="Multiplayer lobby">
+                <button type="button" className={panelButton} onClick={() => {
+                  setConfig((prev) => ({
+                    ...prev,
+                    playerName: user?.nickname || prev.playerName || 'Player 1',
+                    gameMode: 'online-create',
+                  }));
+                  setState(STATES.CONFIGURE_GAME);
+                }}>
+                  Create room
+                </button>
+                <button type="button" className={panelButton} onClick={() => {
+                  refreshRooms();
+                  setState(STATES.ONLINE_JOIN_ROOM);
+                }}>
+                  Join room
+                </button>
+                <button type="button" className={panelButton} onClick={() => setState(STATES.MULTIPLAYER_MENU)}>Back</button>
+              </PlayPanel>
+            )}
+
+            {state === STATES.ONLINE_JOIN_ROOM && (
+              <PlayPanel title="Rooms" subtitle="Choose an available room">
+                <button type="button" className={panelButton} onClick={refreshRooms} disabled={loadingRooms}>
+                  {loadingRooms ? 'Loading...' : 'Refresh'}
+                </button>
+                {roomError && <p className="text-sm font-semibold text-red-600">{roomError}</p>}
+                {rooms.length === 0 && !loadingRooms && <p className="text-sm text-slate-700">No rooms available</p>}
+                {rooms.map((room) => (
+                  <div key={room.id} className="flex items-center justify-between rounded-xl border border-slate-500 bg-white/70 px-3 py-2">
+                    <span className="text-sm font-medium">{room.creatorName ? `${room.creatorName}'s room` : room.name}</span>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-slate-700 px-3 py-1 text-sm font-semibold hover:bg-slate-100"
+                      onClick={() => {
+                        setConfig((prev) => ({ ...prev, gameMode: 'online-join', roomId: room.id }));
+                        setState(STATES.CONFIGURE_GAME);
+                      }}
+                    >
+                      Join
+                    </button>
+                  </div>
+                ))}
+                <button type="button" className={panelButton} onClick={() => setState(STATES.ONLINE_LOBBY)}>Back</button>
+              </PlayPanel>
+            )}
+
+            {state === STATES.ONLINE_WAITING && (
+              <PlayPanel title="Online" subtitle="Waiting for opponent...">
+                <button type="button" className={panelButton} onClick={() => setState(STATES.ONLINE_LOBBY)}>
+                  Cancel
+                </button>
+              </PlayPanel>
+            )}
+
+            {state === STATES.CONFIGURE_GAME && (
+              <PlayPanel title="Setup" subtitle="Configure your match">
+                {user?.nickname ? (
+                  <p className="rounded-xl border border-slate-500 bg-white/70 px-4 py-3 text-sm">Name: <strong>{user.nickname}</strong></p>
+                ) : (
+                  <label className="flex flex-col gap-2 text-sm font-semibold text-slate-700">
+                    Name
+                    <input
+                      type="text"
+                      placeholder="Enter your name"
+                      value={config.playerName || ''}
+                      onChange={(e) => setConfig((prev) => ({ ...prev, playerName: e.target.value }))}
+                      className="rounded-xl border border-slate-500 bg-white px-4 py-3 text-base font-medium text-slate-900"
+                    />
+                  </label>
+                )}
+                {config.gameMode !== 'online-join' && (
+                  <label className="flex flex-col gap-2 text-sm font-semibold text-slate-700">
+                    Points to win
+                    <select
+                      value={config.winningScore}
+                      onChange={(e) => setConfig((prev) => ({ ...prev, winningScore: Number(e.target.value) }))}
+                      className="rounded-xl border border-slate-500 bg-white px-4 py-3 text-base font-medium text-slate-900"
+                    >
+                      <option value={3}>3</option>
+                      <option value={5}>5</option>
+                      <option value={7}>7</option>
+                      <option value={9}>9</option>
+                      <option value={11}>11</option>
+                    </select>
+                  </label>
+                )}
+                <ColorPicker
+                  selectedColor={config.playerColor}
+                  onColorSelect={(hex) => setConfig((prev) => ({ ...prev, playerColor: hex }))}
+                  label="Paddle color"
                 />
-              </label>
-            )}
-            {config.gameMode !== 'online-join' && (
-              <label>
-                Points to win:
-                <select
-                  value={config.winningScore}
-                  onChange={(e) => setConfig((prev) => ({ ...prev, winningScore: Number(e.target.value) }))}
-                  style={{ padding: '10px', fontSize: '16px', width: '100%' }}
+                <button
+                  type="button"
+                  className={panelButton}
+                  onClick={() => {
+                    const finalConfig = { ...config, playerName: config.playerName || 'Player 1' };
+                    if (finalConfig.gameMode === 'online-create') {
+                      setConfig(finalConfig);
+                      setState(STATES.ONLINE_WAITING);
+                    } else {
+                      startLoadingWithConfig(finalConfig);
+                    }
+                  }}
                 >
-                  <option value={3}>3</option>
-                  <option value={5}>5</option>
-                  <option value={7}>7</option>
-                  <option value={9}>9</option>
-                  <option value={11}>11</option>
-                </select>
-              </label>
+                  {config.gameMode === 'online-create' ? 'Create & Wait' : 'Play'}
+                </button>
+                <button
+                  type="button"
+                  className={panelButton}
+                  onClick={() => {
+                    if (config.gameMode.startsWith('ai-')) setState(STATES.AI_SELECT_DIFFICULTY);
+                    else if (config.gameMode === 'online-create') setState(STATES.ONLINE_LOBBY);
+                    else if (config.gameMode === 'online-join') setState(STATES.ONLINE_JOIN_ROOM);
+                    else setState(STATES.ONLINE_LOBBY);
+                  }}
+                >
+                  Back
+                </button>
+              </PlayPanel>
             )}
-            <ColorPicker
-              selectedColor={config.playerColor}
-              onColorSelect={(hex) => setConfig((prev) => ({ ...prev, playerColor: hex }))}
-              label="Paddle color:"
-            />
-            <button type="button" onClick={() => {
-              const finalConfig = { ...config, playerName: config.playerName || 'Player 1' };
-              if (finalConfig.gameMode === 'online-create') {
-                setConfig(finalConfig);
-                setState(STATES.ONLINE_WAITING);
-              } else {
-                startLoadingWithConfig(finalConfig);
-              }
-            }}>
-              {config.gameMode === 'online-create' ? 'Create & Wait' : 'Play'}
-            </button>
-            <button type="button" onClick={() => {
-              if (config.gameMode.startsWith('ai-')) setState(STATES.AI_SELECT_DIFFICULTY);
-              else if (config.gameMode === 'online-create') setState(STATES.ONLINE_LOBBY);
-              else if (config.gameMode === 'online-join') setState(STATES.ONLINE_JOIN_ROOM);
-              else setState(STATES.ONLINE_LOBBY);
-            }}>
-              Back
-            </button>
-          </div>
-        </section>
-      )}
 
-      {state === STATES.LOCAL_P1_SETUP && (
-        <section>
-          <h1>Player 1 Setup</h1>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px' }}>
-            <label>
-              Name:
-              <input
-                type="text"
-                value={config.playerName || ''}
-                onChange={(e) => setConfig((prev) => ({ ...prev, playerName: e.target.value }))}
-                style={{ padding: '10px', fontSize: '16px' }}
-              />
-            </label>
-            <ColorPicker
-              selectedColor={config.playerColor}
-              onColorSelect={(hex) => setConfig((prev) => ({ ...prev, playerColor: hex }))}
-              label="Paddle color:"
-            />
-            <button type="button" onClick={() => {
-              setConfig((prev) => ({ ...prev, playerName: prev.playerName || 'Player 1' }));
-              setState(STATES.LOCAL_P2_SETUP);
-            }}>
-              Next
-            </button>
-            <button type="button" onClick={() => setState(STATES.MULTIPLAYER_MENU)}>
-              Back
-            </button>
-          </div>
-        </section>
-      )}
+            {state === STATES.LOCAL_P1_SETUP && (
+              <PlayPanel title="Player 1" subtitle="Local match setup">
+                <label className="flex flex-col gap-2 text-sm font-semibold text-slate-700">
+                  Name
+                  <input
+                    type="text"
+                    value={config.playerName || ''}
+                    onChange={(e) => setConfig((prev) => ({ ...prev, playerName: e.target.value }))}
+                    className="rounded-xl border border-slate-500 bg-white px-4 py-3 text-base font-medium text-slate-900"
+                  />
+                </label>
+                <ColorPicker
+                  selectedColor={config.playerColor}
+                  onColorSelect={(hex) => setConfig((prev) => ({ ...prev, playerColor: hex }))}
+                  label="Paddle color"
+                />
+                <button
+                  type="button"
+                  className={panelButton}
+                  onClick={() => {
+                    setConfig((prev) => ({ ...prev, playerName: prev.playerName || 'Player 1' }));
+                    setState(STATES.LOCAL_P2_SETUP);
+                  }}
+                >
+                  Next
+                </button>
+                <button type="button" className={panelButton} onClick={() => setState(STATES.SELECT_MODE)}>
+                  Back
+                </button>
+              </PlayPanel>
+            )}
 
-      {state === STATES.LOCAL_P2_SETUP && (
-        <section>
-          <h1>Player 2 Setup</h1>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '300px' }}>
-            <label>
-              Name:
-              <input
-                type="text"
-                value={config.player2Name || ''}
-                onChange={(e) => setConfig((prev) => ({ ...prev, player2Name: e.target.value }))}
-                style={{ padding: '10px', fontSize: '16px' }}
-              />
-            </label>
-            <ColorPicker
-              selectedColor={config.player2Color || '#F6511D'}
-              onColorSelect={(hex) => setConfig((prev) => ({ ...prev, player2Color: hex }))}
-              label="Paddle color:"
-            />
-            <button type="button" onClick={() => {
-              const finalConfig = {
-                ...config,
-                player2Name: config.player2Name || 'Player 2',
-                player2Color: config.player2Color || '#F6511D',
-              };
-              setConfig(finalConfig);
-              startLoadingWithConfig(finalConfig);
-            }}>
-              Play
-            </button>
-            <button type="button" onClick={() => setState(STATES.LOCAL_P1_SETUP)}>
-              Back
-            </button>
+            {state === STATES.LOCAL_P2_SETUP && (
+              <PlayPanel title="Player 2" subtitle="Local match setup">
+                <label className="flex flex-col gap-2 text-sm font-semibold text-slate-700">
+                  Name
+                  <input
+                    type="text"
+                    value={config.player2Name || ''}
+                    onChange={(e) => setConfig((prev) => ({ ...prev, player2Name: e.target.value }))}
+                    className="rounded-xl border border-slate-500 bg-white px-4 py-3 text-base font-medium text-slate-900"
+                  />
+                </label>
+                <ColorPicker
+                  selectedColor={config.player2Color || '#F6511D'}
+                  onColorSelect={(hex) => setConfig((prev) => ({ ...prev, player2Color: hex }))}
+                  label="Paddle color"
+                />
+                <button
+                  type="button"
+                  className={panelButton}
+                  onClick={() => {
+                    const finalConfig = {
+                      ...config,
+                      player2Name: config.player2Name || 'Player 2',
+                      player2Color: config.player2Color || '#F6511D',
+                    };
+                    setConfig(finalConfig);
+                    startLoadingWithConfig(finalConfig);
+                  }}
+                >
+                  Play
+                </button>
+                <button type="button" className={panelButton} onClick={() => setState(STATES.LOCAL_P1_SETUP)}>
+                  Back
+                </button>
+              </PlayPanel>
+            )}
           </div>
         </section>
-      )}
+
+        <div className="pt-4 text-slate-800">
+          <FooterTermsPolicy />
+        </div>
+      </div>
     </main>
   );
 }
