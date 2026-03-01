@@ -21,6 +21,7 @@ coverage/
 .next/
 out/
 volumes/
+sqlite-admin/
 
 # OS / IDE
 .DS_Store
@@ -38,3 +39,6 @@ game/server/src_serv/**/*.js
 # Typescript build cache
 *.tsbuildinfo
 game/common/tsconfig.tsbuildinfo
+
+# Documentation
+.opencode

@@ -1,15 +1,27 @@
 'use client';
 import { useState } from 'react';
 import { useAuth } from '../../context/auth-context'; // Ajusta la ruta a tu contexto
+import { useTranslation } from '../../hooks/use-translation';
+import Loader from '../loader/loader-ui';
 
-export default function AvatarUpload({ currentAvatar }) {
-  const { user } = useAuth();
+export default function AvatarUpload() {
+  const { user, authLoading } = useAuth();
   const [preview, setPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [serverError, setServerError] = useState('');
+  const { t } = useTranslation(); 
   
   // Imagen por defecto si no hay una previa ni una nueva seleccionada
-  const defaultAvatar = "/images/default-avatar.png"; 
-  const displayImage = preview || currentAvatar || defaultAvatar;
+  const defaultAvatar =  user?.avatarUrl || "/avatar/default-avatar.webp"; 
+  const displayImage = preview || defaultAvatar;
+
+const getCookie = (name) => {
+    return document.cookie
+        .split('; ')
+        .find(row => row.startsWith(name + '='))
+        ?.split('=')[1];
+};
+
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -24,39 +36,54 @@ export default function AvatarUpload({ currentAvatar }) {
     if (!user) return;
     
     setUploading(true);
-    setServerError('');
     const formData = new FormData();
     // Importante: El nombre 'avatar' debe coincidir con lo que espere tu backend
-    formData.append('uploads', file);
+    formData.append('uploads/avatars/', file);
 
     try {
-        const csrfToken = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('csrf_token='))
-            ?.split('=')[1];
+        const rawCookie = getCookie('csrf_token');
+        const csrfToken = rawCookie ? decodeURIComponent(rawCookie) : '';
 
-        const response = await fetch('/api/profile/me/avatar', {
+        if (!csrfToken) {
+            setServerError('CSRF token missing');
+            return;
+        }
+
+        const response = await fetch('/api/profile/avatar', {
             method: 'POST',
             body: formData, // El navegador se encarga del Content-Type
             credentials: 'include',
             headers: {
-                'x-csrf-token': csrfToken || '', // <-- para el middleware de CSRF
+                'x-csrf-token': csrfToken, // <-- para el middleware de CSRF
             }
         });
 
-      if (response.ok) {
-        alert("¡Avatar actualizado!");
-      } else {
-        console.error("Fallo en la subida");
-      }
+        if (!response.ok)
+        {
+          console.error("Fallo en la subida. Status: ", response.status, "Error: ", response.error);
+
+          if(response.status === 413)
+           setServerError(t.avatar.error.tooLarge);
+          else if (response.status === 400)
+           setServerError(t.avatar.error.invalidImageFile);
+          else if(response.error === 2)
+            setServerError(t.avatar.error.invalidFormat);
+          else
+            setServerError(t.avatar.error.unknownError);
+          return;
+        }
+        console.info("Avatar uploaded: ", response);
+        user.avatarURL = `/uploads/avatars/${user.id}.webp`;
     } catch (error) {
-      console.error("Error conectando con el servidor", error);
+      console.error("Error avatar: ", error);
     } finally {
       setUploading(false);
     }
   };
 
   return (
+    <>
+    { authLoading ? (<Loader />) : (
     <div className="flex flex-col items-center gap-4">
       <div className="relative w-32 h-32 overflow-hidden rounded-full border-2 border-gray-300">
         <img 
@@ -81,6 +108,13 @@ export default function AvatarUpload({ currentAvatar }) {
           disabled={uploading}
         />
       </label>
+        {serverError && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                {serverError}
+            </div>
+        )}
     </div>
+    )}
+  </>
   );
 }

@@ -1,10 +1,15 @@
 import { getProfileDB } from './dbPlayers';
 import { getDbHelpers } from './helpers';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 // --- CONFIG ---
 const MAX_RETRIES = 5;
-const DEFAULT_AVATAR = '/static/avatars/default.webp';
+
+const AVATARS_DIR = path.join('/app/uploads', 'avatars');
+const DEFAULT_AVATAR_PATH = path.join('/app/static', 'default-avatar.webp');
+const DEFAULT_AVATAR = '/static/default-avatar.webp';
 
 // --- DB ---
 const db = getDbHelpers(getProfileDB());
@@ -32,12 +37,14 @@ interface PlayerStats {
 }
 
 interface PlayerInfo {
-    user_id: string;
+    id: string;
     nickname: string;
     avatarUrl: string | null;
     winPhrase: string | null;
     localization: string;
     created_at: string;
+	last_access_at: string;
+	logged: number;
     stats: PlayerStats;
 }
 
@@ -86,6 +93,27 @@ function calculateRate(
   return Math.max(final, 0);
 }
 
+export async function ensureAvatarIsAlive(userId: string, avatarUrl: string | null) {
+  	if (!avatarUrl) {
+		await updatePlayerAvatar(userId, DEFAULT_AVATAR);
+        console.log(`[ensureAvatarIsAlive] Avatar missing for ${userId}, set default.`);
+		return;
+	}
+
+	if (avatarUrl === DEFAULT_AVATAR) return;
+
+  	const filename = path.basename(avatarUrl);
+  	const filePath = path.join(AVATARS_DIR, filename);
+
+  	try {
+		await fs.promises.access(filePath);
+		return;
+  	} catch {
+		await updatePlayerAvatar(userId, DEFAULT_AVATAR);
+		console.log(`[ensureAvatarIsAlive] Avatar missing for ${userId}, set default.`);
+  	}
+}
+
 // --- UTILS FOR DB ---
 const PROFILE_QUERY = `
   SELECT
@@ -120,12 +148,14 @@ export async function getPlayerById(userId: string): Promise<PlayerInfo | null> 
 	if (!row) return null;
 
   	return {
-			user_id: row.user_id,
+			id: row.user_id,
 			nickname: row.nickname,
 			avatarUrl: row.avatarUrl ?? null,
 			winPhrase: row.winPhrase ?? null,
 			localization: row.localization,
 			created_at: row.created_at,
+			last_access_at: row.last_access_at,
+			logged: row.logged,
 
 			stats: {
 					played: row.played ?? 0,
@@ -142,42 +172,47 @@ export async function getPlayerById(userId: string): Promise<PlayerInfo | null> 
 // CREATE PLAYER
 // --------------------------------------------------
 
-export async function createPlayer(userId: string): Promise<PlayerInfo> {
+export async function createPlayer(userId: string) {
+
   for (let i = 1; i <= MAX_RETRIES; i++) {
+
     const nickname = generateNickname(false);
 
     try {
-      await db.run('BEGIN');
 
       await db.run(
-        `INSERT INTO players (user_id, nickname)
-         VALUES (?, ?)`,
+        `INSERT INTO players (user_id, nickname, last_access_at, logged)
+         VALUES (?, ?, CURRENT_TIMESTAMP, 1)`,
         [userId, nickname]
       );
 
-      await db.run(
-        `INSERT INTO player_stats (user_id)
-         VALUES (?)`,
-        [userId]
-      );
-
-      await db.run('COMMIT');
+      await db.run(`
+		   INSERT OR IGNORE INTO player_stats
+		   (user_id, played, wins, losses, winrate, rate, updated_at)
+		   VALUES
+		   (?, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
+		   `, 
+		   [userId]
+		  );
 
       const player = await getPlayerById(userId);
+
       if (!player) {
         throw new Error('Player not found after create');
       }
 
       console.log('[createPlayer]', userId, nickname);
+
       return player;
 
     } catch (err: any) {
-      await db.run('ROLLBACK');
 
       if (err?.code === 'SQLITE_CONSTRAINT') {
+
         if (i === MAX_RETRIES) {
           throw new Error('Nickname collision limit');
         }
+
         continue;
       }
 
@@ -185,7 +220,7 @@ export async function createPlayer(userId: string): Promise<PlayerInfo> {
     }
   }
 
-  throw new Error('Failed to create player');
+  throw new Error('createPlayer failed');
 }
 
 // --------------------------------------------------
@@ -249,6 +284,24 @@ export async function updatePlayerAvatar(
 }
 
 // --------------------------------------------------
+// UPDATE PLAYER'S ONLINE STATUS
+// --------------------------------------------------
+export async function updatePlayerOnlineStatus(userId: string, logged: boolean) {
+
+	const repoDate = '2025-12-01';
+
+	console.info("Updating player state...");
+
+	if (logged) {
+		await db.run(`UPDATE players SET last_access_at = CURRENT_TIMESTAMP, logged = 1 WHERE user_id = ?`, [userId]);
+		console.info("User set as logged with date ...");
+	} else {
+		await db.run(`UPDATE players SET last_access_at = ?, logged = 0 WHERE user_id = ?`, [repoDate, userId]);
+        console.info("User set as logged OUT with REPO date ...");
+	}
+}
+
+// --------------------------------------------------
 // SOFT DELETE
 // --------------------------------------------------
 
@@ -256,18 +309,34 @@ export async function softdeletePlayer(userId: string) {
 
   const nickname = generateNickname(true);
 
-  await db.run(
-    `
-    UPDATE players
-    SET
-      nickname = ?,
-      avatarUrl = ?,
-      deleted = 1,
-      deleted_at = CURRENT_TIMESTAMP
-    WHERE user_id = ?
-    `,
-    [nickname, DEFAULT_AVATAR, userId]
-  );
+  await db.run('BEGIN TRANSACTION');
+
+  try {
+	  await db.run(`
+				   UPDATE players
+			   	   SET
+			 	   nickname = ?,
+			 	   avatarUrl = ?,
+			 	   deleted = 1,
+			 	   deleted_at = CURRENT_TIMESTAMP
+			   	   WHERE user_id = ?
+			   	   `,
+			   	   [nickname, DEFAULT_AVATAR, userId]
+				  );
+
+	  await db.run(`
+				   DELETE FROM friends 
+				   WHERE user1_id = ? OR user2_id = ?
+				   `,
+				   [userId, userId]
+   				  );
+	  
+	  await db.run('COMMIT');
+
+  } catch (err) {
+	  await db.run('ROLLBACK');
+	  throw err;
+  }
 }
 
 // --------------------------------------------------
@@ -313,14 +382,11 @@ export async function updatePlayerStats(
       [p1.user_id, p2.user_id]
     );
 
-/*    console.log('-------------> gameid: ', gameId);
-    console.log('-------------> user_1: ', p1.user_id, p1.result);
-    console.log('------------->', p1.user_id, p2.user_id);
-    console.log('------------->', players.length)
-*/
     if (players.length !== 2) {
-      throw new Error('Players not found');
-    }
+
+		await db.exec('ROLLBACK');
+  		return { applied: false };
+	}
 
     const A = players.find(p => p.user_id === p1.user_id)!;
     const B = players.find(p => p.user_id === p2.user_id)!;
@@ -420,12 +486,14 @@ export async function getUserPublicProfile(userId: string): Promise<PlayerInfo |
     if (!row) return null;
 
     return {
-            user_id: row.user_id,
+            id: row.user_id,
             nickname: row.nickname,
             avatarUrl: row.avatarUrl ?? null,
             winPhrase: row.winPhrase ?? null,
             localization: row.localization,
             created_at: row.created_at,
+			last_access_at: row.last_access_at,
+            logged: row.logged,
 
             stats: {
                     played: row.played ?? 0,

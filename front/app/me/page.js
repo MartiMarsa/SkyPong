@@ -5,69 +5,50 @@ import { useTranslation } from '../hooks/use-translation';
 import NavigationAppUI from '../ui/navigation-app-ui';
 import { useAuth } from '../context/auth-context';
 import { useRouter } from 'next/navigation';
+import PlayerInfo from '../ui/player-public-profile/player-info-ui';
+import PlayerAchievementsUI from '../ui/player-public-profile/player-achievements-ui';
+import AchievementsSection from '../ui/player-public-profile/AchievementsSection';
+import FriendsSection from '../ui/player-public-profile/FriendsSection';
 
 export default function ProfilePagePublic()
 {
     const t = useTranslation();
     const router = useRouter();
     const [profile, setProfile] = useState(null);
-    const { userInfo, checkAuth, hasCredentials} = useAuth();
+    const { user, authloading} = useAuth();
     const [isLoading, setIsLoading] = useState(true);
+    const [serverError, setServerError] = useState('');
+
+    const getCookie = (name) => {
+        return document.cookie
+            .split('; ')
+            .find(row => row.startsWith(name + '='))
+            ?.split('=')[1];
+    };
 
     useEffect(() => {
-        setIsLoading(true);
-        const fetchMyProfile = async () => {
-            try {
-                const isAuthenticated = await checkAuth();
-                if (!isAuthenticated)
-                {
-                    router.push('/login');
-                    return;
-                }
-
-                const response = await fetch('/api/profile/me', {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        },
-                    });
-                await checkAuth();
-                if (!hasCredentials) 
-                {
-                    throw new Error(`Profile request failed with status ${response.status}`);
-                }
-
-                const rawBody = await response.text();
-                if (!rawBody)
-                {
-                    throw new Error('Profile request returned an empty response body');
-                }
-
-                let data;
-                try {
-                    data = JSON.parse(rawBody);
-                } catch {
-                    throw new Error('Profile request did not return valid JSON');
-                }
-
-                console.info("Data:", data);
-                setProfile(data.player);
-            } catch (error) {
-                console.error('Error:', error);
-                router.push('/login');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchMyProfile();
-    }, [router]);
+        console.info("User session: ", user);
+        if (authloading) return;
+        
+        // 2. Si ya terminó de cargar y NO hay usuario, mandamos a home.
+        if (!user) {
+            router.push('/');
+            return;
+        }
+        setProfile(user);
+    }, [user, authloading, profile, router]);
     return (
         <main>
             <NavigationAppUI  />
-            { console.info("Translation", t) }
-            <h1>{t?.profilePage?.title || "My Private Profile" }</h1>
+            <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
+            {profile && <PlayerInfo profile={profile} />}
+            { profile && <FriendsSection
+                currentUserId={profile.id}
+                csrfToken={getCookie()}
+                onNavigateProfile={(id) => router.push(`/${id}`)}
+                />}
+            { profile && <AchievementsSection t={t.t} stats={profile?.stats} /> }
         </main>
     );
 }
+

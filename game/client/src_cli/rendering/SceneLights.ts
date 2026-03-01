@@ -9,9 +9,27 @@ import {
     EXRCubeTexture,
 } from "@babylonjs/core";
 import { RENDERING } from '../config';
+import { CloudObject } from "./CloudObject";
 
 export class SceneLights {
+    private static _envTexture: EXRCubeTexture | null = null;
+    private static _loadingPromise: Promise<void> | null = null;
+    private static _scene: Scene | null = null;
+
+    public static async waitForLoad(): Promise<void> {
+        if (SceneLights._loadingPromise) {
+            await SceneLights._loadingPromise;
+        }
+        await CloudObject.waitForLoad();
+    }
+
     public static Create(scene: Scene): ShadowGenerator {
+        SceneLights._scene = scene;
+        
+        if (SceneLights._envTexture) {
+          SceneLights._envTexture.dispose();
+        }
+    
         const envTexture = new EXRCubeTexture(
             RENDERING.ENVIRONMENT.TEXTURE_PATH,
             scene,
@@ -21,6 +39,23 @@ export class SceneLights {
             false,
             true
         );
+
+        SceneLights._envTexture = envTexture;
+
+        SceneLights._loadingPromise = new Promise<void>((resolve) => {
+            if (envTexture.isReady()) {
+                resolve();
+                return;
+            }
+            
+            envTexture.onLoadObservable.addOnce(() => {
+                resolve();
+            });
+
+            setTimeout(() => {
+                resolve();
+            }, 3000);
+        });
 
         scene.environmentIntensity = RENDERING.ENVIRONMENT.INTENSITY;
         scene.environmentTexture = envTexture;
@@ -41,6 +76,9 @@ export class SceneLights {
             RENDERING.LIGHTS.DIRECTIONAL.DIRECTION,
             scene,
         );
+
+      const cloudPos = new Vector3(1, -5, 0);
+      const cloudObject = new CloudObject(scene, cloudPos);
 
         dirLight.position = RENDERING.LIGHTS.DIRECTIONAL.POSITION;
         dirLight.intensity = RENDERING.LIGHTS.DIRECTIONAL.INTENSITY;

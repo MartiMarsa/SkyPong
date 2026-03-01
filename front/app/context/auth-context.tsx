@@ -2,59 +2,90 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 const AuthContext = createContext({
-  user: null,
-  avartar: "/images/default-avatar.png",
-  loading: true,
-  hasCredentials: false,
-  logout: async () => {},
-  checkAuth: async () => { return false; } // Útil para re-validar tras login
+    user: null,
+    authloading: true,
+    hasCredentials: false,
+    logout: async () => {},
+    checkAuth: async () => { return false; } // Útil para re-validar tras login
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(null);
-  const [authloading, setLoading] = useState(true);
-  const [hasCredentials , sethasCredentials] = useState(false);
+  const [authloading, setAuthloading] = useState(true);
+  const [hasCredentials , setHasCredentials] = useState(false);
+
   const router = useRouter();
+  const pathname = usePathname();
+  const signRoutes = ['/login', '/signup'];
+  const privateRoutes = ['/updateme', '/me'];
 
   const checkAuth = useCallback(async () => {
-    try {
-      const res = await fetch('/api/auth/verify', { 
-        credentials: 'include' 
-      });
-      console.log("Response:", res)
-      if (res.ok) {
-        const data = await res.json();
-        console.log("Auth data verified: ", data);
-        setUser(data);
-        return(true);
-      } else {
-          setUser(null);
-          console.warn("Auth data NOT verified");
-         return(false);
-      }
-    } catch (err) {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  setAuthloading(true);
 
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  const logout = async () => {
-    try {
-      // 1. Obtener el CSRF token de las cookies (document.cookie)
-      // Tu backend Fastify lo guarda en una cookie no httpOnly llamada 'csrf_token'
+  try {
       const csrfToken = document.cookie
         .split('; ')
         .find(row => row.startsWith('csrf_token='))
         ?.split('=')[1];
 
+      if (!csrfToken) {
+        setUser(null);
+        return false;
+      }
+
+      const res = await fetch('/api/profile/me', {
+          credentials: 'include',
+          headers: { 'x-csrf-token': csrfToken || '' },
+        });
+        
+      if (res.status === 401 || !res.ok) {
+        setUser(null);
+        return false;
+      }
+
+      const userData = await res.json();
+      setUser(userData);
+      setHasCredentials(true);
+      return true;
+    } catch {
+      setUser(null);
+      setHasCredentials(false);
+      return false;
+    } finally {
+      setAuthloading(false);
+      router.refresh();
+    }
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const loggedIn = await checkAuth();
+
+      const isSignRoute = signRoutes.includes(pathname);
+      const isPrivateRoute = privateRoutes.includes(pathname);
+
+      console.info('Pathname: ', pathname);
+      if (loggedIn && isSignRoute) {
+        router.replace('/me');
+      } else if (!loggedIn && isPrivateRoute) {
+        router.replace('/login');
+      }
+    })();
+  }, [pathname, router, checkAuth]);
+
+  const logout = async () => {
+    try {
+		const csrfToken = document.cookie
+        .split('; ')
+        .find(row => row.startsWith('csrf_token='))
+        ?.split('=')[1];
+
+      // 1. Obtener el CSRF token de las cookies (document.cookie)
+      // Tu backend Fastify lo guarda en una cookie no httpOnly llamada 'csrf_token'
+    
       await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
@@ -64,11 +95,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // body: JSON.stringify({ user: { id: user.id }}),
       });
     } catch (err) {
-      console.error("Error durante el logout:", err);
+        console.error("Error durante el logout:", err);
+        return;
     } finally {
       // 2. Limpiar el estado local e ir a home pase lo que pase
       setUser(null);
-      router.push('/');
+      router.push('/login');
       router.refresh(); // Limpia la caché de Next.js
     }
   };

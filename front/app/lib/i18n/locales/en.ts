@@ -10,6 +10,16 @@ const en = {
     },
     user: {
         hi: "Hi!",
+        nickname: "Nickname",
+        winphrase: "Win Phrase",
+        deleteBtn: "Delete Account",
+        deleteAccountWarning: "This will remove permanently your account. This acction is irreverible. Ate you sure?",
+        errors: {
+            nicknameRequired: "Nickname vacío",
+            nicknameMinLength: (len: number)=>{ return (`La Frase de la vitoria debe contener ${len}`)},
+            winphraseRequired: "Nickname vacío",
+            winphraseMinLength: (len: number)=>{ return (`La Frase de la vitoria debe contener ${len}`)},
+        }
     },
     avatar: {
         error: {

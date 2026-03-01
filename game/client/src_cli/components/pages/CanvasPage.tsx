@@ -1,9 +1,12 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
+import { decodeConfig } from '../../utils/configDecoder';
 import { startGame } from '../../game/Game';
 import { TestScene } from '../../game/TestScene';
 import LoadingOverlay from '../LoadingOverlay';
 import { GameSessionConfig } from '../../types/GameSessionConfig';
+import { LoadingManager } from '../../game/LoadingManager';
+import { LoadingState, INITIAL_LOADING_STATE } from '../../types/LoadingTypes';
 
 const CanvasPage = () => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -13,27 +16,36 @@ const CanvasPage = () => {
     const location = useLocation();
     const initializedRef = useRef(false);
     const initLockRef = useRef(false);
+    const loadingManagerRef = useRef<LoadingManager | null>(null);
     const [, forceUpdate] = useState({});
 
-    // Loading and overlay state
-    const [isLoading, setIsLoading] = useState(true);
-    const [loadingMsg, setLoadingMsg] = useState('Loading...');
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
-    const [fadingOut, setFadingOut] = useState(false);
+    const [loadingState, setLoadingState] = useState<LoadingState>(INITIAL_LOADING_STATE);
 
-    // Get game config from navigation state
-    const config = location.state as GameSessionConfig | null;
+    const [searchParams] = useSearchParams();
+
+    const getConfig = (): GameSessionConfig | null => {
+        const encoded = searchParams.get('config');
+        if (encoded) {
+            const result = decodeConfig(encoded);
+            if (result.valid) return result.config;
+        }
+
+        const stateConfig = location.state as GameSessionConfig | null;
+        return stateConfig;
+    };
+    const config = useMemo(() => getConfig(), [location.state, searchParams]);
 
     useEffect(() => {
-        setIsLoading(true);
-        setFadingOut(false);
-        setLoadingMsg('Loading...');
-        setErrorMsg(null);
+        setLoadingState(INITIAL_LOADING_STATE);
+        loadingManagerRef.current = null;
     }, [isTestScene, config]);
 
     useEffect(() => {
         if (!canvasRef.current) {
-            setLoadingMsg('Initializing display...');
+            setLoadingState((prev) => ({
+                ...prev,
+                message: 'Initializing display...',
+            }));
             return;
         }
 
@@ -46,55 +58,72 @@ const CanvasPage = () => {
         let retryTimeout: ReturnType<typeof setTimeout> | null = null;
 
         function handleReady() {
-            setFadingOut(true);
+            setLoadingState((prev) => ({
+                ...prev,
+                isFadingOut: true,
+            }));
             setTimeout(() => {
-                setIsLoading(false);
-                setFadingOut(false);
+                setLoadingState((prev) => ({
+                    ...prev,
+                    phase: 'error',
+                    isFadingOut: false,
+                }));
             }, 700);
-        }
-
-        function handleError(err: string) {
-            setErrorMsg(err);
-            setLoadingMsg('');
-            setIsLoading(true);
-            setFadingOut(false);
         }
 
         if (isTestScene) {
             try {
                 testSceneRef.current = new TestScene(canvasRef.current);
                 initializedRef.current = true;
-                setTimeout(handleReady, 1200);
+                setTimeout(() => {
+                    setLoadingState((prev) => ({
+                        ...prev,
+                        phase: 'ready',
+                        message: 'Ready!',
+                    }));
+                    handleReady();
+                }, 1200);
             } catch {
-                handleError('Failed to load visualization.');
+                setLoadingState((prev) => ({
+                    ...prev,
+                    phase: 'error',
+                    message: '',
+                    error: { code: 'unknown', details: 'Failed to load visualization.' },
+                }));
             }
         } else {
-            // Start game with config - GUI is now handled by Babylon.js
             if (!config) {
-                handleError('No game configuration provided');
+                setLoadingState((prev) => ({
+                    ...prev,
+                    phase: 'error',
+                    message: '',
+                    error: { code: 'configuration-invalid', details: 'No game configuration provided' },
+                }));
                 setTimeout(() => navigate('/'), 2000);
                 return;
             }
 
             const isOnlineMode = config.gameMode === 'online-create' || config.gameMode === 'online-join';
+            const isPvPMode = config.gameMode === 'local-2p' || isOnlineMode;
 
-            // FRONT this is where the game actually starts
             dispose = startGame(
                 canvasRef.current,
                 config,
-                // onGameReady callback, called when all assets/network/game is ready
                 (onLaunch, isWaitingForOpponent = false) => {
                     if (isWaitingForOpponent) {
-                        setLoadingMsg('Waiting for opponent...');
+                        setLoadingState((prev) => ({
+                            ...prev,
+                            phase: 'waiting-for-opponent',
+                            message: 'Waiting for opponent...',
+                        }));
                         return;
                     }
 
-                    // Game calls this when ready to launch
-                    // We update message and trigger fade out
-                    setLoadingMsg(isOnlineMode
-                        ? 'Starting game...'
-                        : 'Ready!');
-                    // Fade out overlay
+                    setLoadingState((prev) => ({
+                        ...prev,
+                        phase: isOnlineMode ? 'starting' : 'ready',
+                        message: isOnlineMode ? 'Starting game...' : 'Ready!',
+                    }));
                     handleReady();
 
                     setTimeout(() => {
@@ -104,15 +133,29 @@ const CanvasPage = () => {
                     }, 200);
                 },
                 () => {
-                    handleError('Connection failed or room closed.');
+                    setLoadingState((prev) => ({
+                        ...prev,
+                        phase: 'error',
+                        message: '',
+                        error: { code: 'connection-failed', details: 'Connection failed or room closed.' },
+                    }));
                     setTimeout(() => navigate('/'), 2000);
+                },
+                (loadingManager) => {
+                    loadingManagerRef.current = loadingManager;
+                    loadingManager.onStateChange((state: LoadingState) => {
+                        setLoadingState(state);
+                    });
                 },
             );
 
             if (dispose !== null) {
                 initializedRef.current = true;
             } else {
-                setLoadingMsg('Waiting for game cleanup...');
+                setLoadingState((prev) => ({
+                    ...prev,
+                    message: 'Waiting for game cleanup...',
+                }));
                 initLockRef.current = false;
                 retryTimeout = setTimeout(() => {
                     forceUpdate({});
@@ -124,6 +167,8 @@ const CanvasPage = () => {
             if (retryTimeout) {
                 clearTimeout(retryTimeout);
             }
+            loadingManagerRef.current?.dispose();
+            loadingManagerRef.current = null;
             dispose?.();
             initializedRef.current = false;
             initLockRef.current = false;
@@ -135,17 +180,20 @@ const CanvasPage = () => {
     };
 
     const handleBackToStart = () => {
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'game-exit' }, '*');
+        }
         navigate('/');
     };
+
+    const isOverlayVisible = loadingState.phase !== 'error' || loadingState.error !== null;
 
     return (
         <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
             <canvas ref={canvasRef} id="renderCanvas" style={{ display: 'block' }} />
             <LoadingOverlay
-                visible={isLoading || fadingOut}
-                fadingOut={fadingOut}
-                message={loadingMsg}
-                error={errorMsg}
+                state={loadingState}
+                visible={isOverlayVisible}
             />
             <div
                 style={{

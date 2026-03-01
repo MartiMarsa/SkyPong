@@ -6,12 +6,7 @@
     "dev": "ts-node-dev --respawn src/index.ts",
     "build": "tsc",
     "generate-keys": "node scripts/generate-keys.cjs",
-    "start": "node dist/index.js",
-    "check-all-users": "ts-node src/dbCheckAll.ts",
-    "check-user": "ts-node src/dbCheckUser.ts",
-    "check-password": "ts-node src/checkPassword.ts",
-    "cli-signup": "ts-node src/mockSignup.ts",
-    "cli-login": "ts-node src/mockLogin.ts"
+    "start": "node dist/index.js"
   },
   "keywords": [],
   "author": "",

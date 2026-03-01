@@ -56,7 +56,7 @@ restart: down up
 
 all: clean config build up
 
-hall: clean-hall config build up
+hall: clean-hard config build up
 
 buildup: build up
 
@@ -85,6 +85,7 @@ clean:
 # Limpio "hard": borra volúmenes (pierdes SQLite, Prometheus, Grafana, etc.)
 clean-hard:
 	$(DC) $(DCFLAGS) down -v --remove-orphans
+	rm -Rvf /volumes/*
 
 # Prunes (ojo: globales, no solo tu proyecto)
 prune-images:

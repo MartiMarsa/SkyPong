@@ -1,17 +1,15 @@
 import React from 'react';
+import { LoadingState } from '../types/LoadingTypes';
 
 interface LoadingOverlayProps {
-    message?: string;
-    error?: string | null;
+    state: LoadingState;
     visible: boolean;
-    fadingOut?: boolean;
 }
 
-// FRONT loading screen setup
-const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ message = 'Loading...', error, visible, fadingOut = false }) => {
-    console.log('[LoadingOverlay] Render - visible:', visible, 'fadingOut:', fadingOut, 'message:', message);
+const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ state, visible }) => {
+    if (!visible && !state.isFadingOut) return null;
 
-    if (!visible && !fadingOut) return null;
+    const displayMessage = state.error?.details || state.message;
 
     return (
         <div style={{
@@ -22,7 +20,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ message = 'Loading...',
             height: '100vh',
             zIndex: 9999,
             background: '#fff',
-            opacity: fadingOut ? 0 : 1,
+            opacity: state.isFadingOut ? 0 : 1,
             pointerEvents: 'all',
             transition: 'opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1)',
             display: 'flex',
@@ -40,13 +38,13 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ message = 'Loading...',
                 }}>
                     SkyPong <span style={{ fontWeight: 400, fontSize: 20, color: '#666' }}>– 3D Multiplayer Pong</span>
                 </div>
-                {error ? (
+                {state.error ? (
                     <div style={{ fontSize: 20, color: '#b00', marginTop: 8, fontWeight: 500 }}>
-                        {error}
+                        {displayMessage}
                     </div>
                 ) : (
                     <div style={{ fontSize: 19, color: '#444' }}>
-                        {message}
+                        {displayMessage}
                     </div>
                 )}
             </div>

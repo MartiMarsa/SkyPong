@@ -19,10 +19,10 @@ export default function UserMenuUI({ userURL })
                 <div className=''>
                     { console.info("User:", user)}
                     {t.user.hi}, 
-                    <Link href={ !user ? (userURL) : (`/you`) } className="user-menu">
+                    <Link href={ !user ? (userURL) : (`/updateme`) } className="user-menu">
                         { user?.nickname || " SkyPong" }
                         <span className='overflow-hidden rounded-full inline-block aspect-square max-w-12'>
-                            <img src={`/api/profile/avatars/${user.id}.webp`} />
+                            <img src={user.avatarUrl || "/avatar/default-avatar.webp"} />
                         </span>
                     </Link>
                 </div>

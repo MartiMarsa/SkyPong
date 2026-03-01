@@ -1,57 +1,48 @@
 import {
     Scene,
     Vector3,
-    Observer,
     Color3,
 } from "@babylonjs/core";
-import * as Colyseus from "colyseus.js";
 import { InputController } from "../input/InputController";
-import { ClientBall } from "../entities/ClientBall";
-import { ClientTable } from "../entities/ClientTable";
-import { ClientPaddle } from "../entities/ClientPaddle";
-import { SceneLights } from "../rendering/SceneLights";
 import { DebugMonitor } from "../utils/DebugMonitor";
-import { EngineSetup } from "../rendering/EngineSetup";
-import { GMCN, INTERPOLATION, NETWORK } from '@skypong/common/constants';
-import { GameUIManager } from '../ui/GameUIManager';
-import { SERVER_CONNECTION, VISUAL, CLIENT_TIMING, RENDERING, CAMERA } from '../config';
+import { ClientEngine } from "./ClientEngine";
+import { RoomManager, RoomManagerCallbacks } from "./RoomManager";
+import { GameLoop } from "./GameLoop";
+import { CountdownManager } from "./CountdownManager";
+import { GameReadyManager } from "./GameReadyManager";
+import { LoadingManager } from "./LoadingManager";
 import { adjustCamera } from '../utils/Camera';
 import { GameSessionConfig } from '../types/GameSessionConfig';
-
-interface GameState {
-    ball: any; paddle: any; paddle2: any;
-    player1Id: string; player2Id: string;
-    player1Name: string; player2Name: string;
-    player1Color: string; player2Color: string;
-    player1Score: number; player2Score: number;
-    winningScore: number;
-    winner: string; gameOver: boolean; gameStarted: boolean;
-    player2Joined: boolean;
-}
+import { LoadingState } from '../types/LoadingTypes';
 
 // Module-level lock to prevent duplicate game instances (React StrictMode)
 let gameInstanceLock = false;
 
 export class Game {
-    private _engineSetup: EngineSetup | null = null;
     private _debugMonitor: DebugMonitor | null = null;
     private _input: InputController | null = null;
-    private _room: Colyseus.Room<GameState> | null = null;
-    private _renderObserver: Observer<Scene> | null = null;
-    private _renderObservable: any = null;
+    private _room: any = null;
     private _config: GameSessionConfig | null = null;
     private _onGameReady: ((onLaunch: () => void, isWaitingForOpponent?: boolean) => void) | null = null;
     private _onBackToMenu: (() => void) | null = null;
-    private _gui: GameUIManager | null = null;
+    private _gui: any = null;
     private _isGameOver: boolean = false;
-    private _intervals: number[] = [];
+    private _isCameraFlipped: boolean = false;
     private _isPlayer2: boolean = false;
+    private _clientEngine: ClientEngine | null = null;
+    private _roomManager: RoomManager | null = null;
+    private _gameLoop: GameLoop | null = null;
+    private _countdownManager: CountdownManager | null = null;
+    private _gameReadyManager: GameReadyManager | null = null;
+    private _loadingManager: LoadingManager | null = null;
+    private _activeScene: Scene | null = null;
 
     startGame = (
         canvas: HTMLCanvasElement,
         config: GameSessionConfig,
         onGameReady?: (onLaunch: () => void, isWaitingForOpponent?: boolean) => void,
         onBackToMenu?: () => void,
+        onLoadingManagerReady?: (loadingManager: LoadingManager) => void,
     ) => {
         if (gameInstanceLock) return null;
         gameInstanceLock = true;
@@ -65,460 +56,296 @@ export class Game {
         const player1Color = config.playerColor || '#00A6ED';
         const player2Color = config.player2Color || '#F6511D';
         const { gameMode } = config;
-        const engineSetup = new EngineSetup(canvas);
-        this._engineSetup = engineSetup;
-        const engine = engineSetup.engine;
 
-        const client = new Colyseus.Client(SERVER_CONNECTION.WS_URL);
-        let activeScene: Scene | null = null;
+        const isPvPMode = gameMode === 'local-2p' || gameMode === 'online-create' || gameMode === 'online-join';
+        const isAIMode = gameMode.startsWith('ai-');
+        const initialPlayer2Name = isPvPMode ? 'Waiting...' : (isAIMode ? 'AI' : player2Name);
 
-        const createScene = async () => {
-            const scene = engineSetup.scene;
-            engineSetup.camera.setTarget(Vector3.Zero());
+        const onBackToMenuCallback = () => {
+            if (this._onBackToMenu) {
+                this._onBackToMenu();
+            }
+        };
 
-            const shadowGenerator = SceneLights.Create(scene);
+        (async () => {
+            const clientEngine = new ClientEngine(canvas, config);
+            this._clientEngine = clientEngine;
+            const engine = clientEngine.engineSetup.engine;
 
-            const ball = new ClientBall(scene);
-            const table = new ClientTable(scene);
-
-            const skybox = scene.getMeshByName("hdrSkyBox");
-            const refractionRenderList = skybox ? [table.mesh, skybox, ball.mesh] : [table.mesh];
-
-            const createPaddle = (name: string) => new ClientPaddle(scene, {
-                name, materialKey: "CLEARGLASS",
-                albedoColor: new Color3(0.5, 0.5, 0.5),
-                tintColor: new Color3(0.5, 0.5, 0.5),
-                refractionRenderList,
-            });
-            const paddle = createPaddle("paddle1");
-            const paddle2 = createPaddle("paddle2");
+            const entities = await clientEngine.init(player1Name, initialPlayer2Name, onBackToMenuCallback);
+            const { ball, table, paddle, paddle2, gui, touchControls } = entities;
+            this._gui = gui;
 
             const debugMonitor = new DebugMonitor();
             this._debugMonitor = debugMonitor;
 
-            // Create Babylon.js GUI for in-game UI
-            const gui = new GameUIManager(scene, () => {
-                if (this._onBackToMenu) {
-                    this._onBackToMenu();
-                }
-            });
-            this._gui = gui;
-            // For PvP modes, show "Waiting..." for Player 2 until they join
-            const isPvPMode = gameMode === 'local-2p' || gameMode === 'online-create' || gameMode === 'online-join';
-            const isAIMode = gameMode.startsWith('ai-');
-            const initialPlayer2Name = isPvPMode ? 'Waiting...' : (isAIMode ? 'AI' : player2Name);
-            gui.showGameHUD(player1Name, initialPlayer2Name);
+            const createScene = async () => {
+                const scene = clientEngine.scene;
 
-            shadowGenerator.addShadowCaster(ball.mesh);
-            engineSetup.setResizeTarget(table.mesh);
+                try {
+                    const roomManager = new RoomManager(
+                        this._createRoomManagerCallbacks(
+                            clientEngine,
+                            table,
+                            paddle,
+                            paddle2,
+                            ball,
+                            gui
+                        )
+                    );
 
-            [table.mesh, ball.mesh, paddle.mesh, paddle2.mesh].forEach(m => {
-                m.renderingGroupId = RENDERING.RENDERING_GROUPS.GAME_OBJECTS;
-            });
+                    this._roomManager = roomManager;
+                    const room = await roomManager.connect(gameMode, config, config.roomId);
+                    this._room = room;
 
-            try {
-                let room: Colyseus.Room<GameState>;
-                const joinOptions = {
-                    playerName: player1Name,
-                    player2Name: player2Name,
-                    playerColor: player1Color,
-                    player2Color: player2Color,
-                };
-
-                switch (gameMode) {
-                    case 'online-join':
-                        if (config.roomId) {
-                            room = await client.joinById<GameState>(config.roomId, { playerName: player1Name, playerColor: player1Color });
-                        } else {
-                            throw new Error('roomId is required for online-join mode');
-                        }
-                        break;
-                    case 'online-create':
-                        room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.PVP_ROOM, { playerName: player1Name, playerColor: player1Color });
-                        break;
-                    case 'local-2p':
-                        room = await client.joinOrCreate<GameState>(SERVER_CONNECTION.ROOMS.GAME_ROOM, joinOptions);
-                        break;
-                    case 'ai-easy':
-                    case 'ai-medium':
-                    case 'ai-hard':
-                        room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.AI_GAME_ROOM, { ...joinOptions, difficulty: gameMode.replace('ai-', '') });
-                        break;
-                    default:
-                        // Fallback to AI easy
-                        room = await client.create<GameState>(SERVER_CONNECTION.ROOMS.AI_GAME_ROOM, { ...joinOptions, difficulty: 'easy' });
-                }
-
-                this._room = room;
-
-                let cameraSetupComplete = false;
-
-                const checkPlayerAssignment = () => {
-                    if (cameraSetupComplete) return;
-
-                    const cam = engineSetup.camera;
-                    const mesh = table.mesh;
-                    const center = mesh.getBoundingInfo().boundingBox.centerWorld;
-
-                    this._isPlayer2 = room.sessionId === room.state.player2Id;
-                    engineSetup.setIsPlayer2(this._isPlayer2);
-                    adjustCamera(cam, mesh, engineSetup.engine);
-
-                    if (this._isPlayer2) {
-                        cam.position = new Vector3(cam.position.x, cam.position.y, -cam.position.z);
-                    }
-                    cam.setTarget(center);
-                    cameraSetupComplete = true;
-                };
-                
-                const updatePlayerColorsFromState = () => {
-                    if (!room.state || !this._gui) return;
-
-                    // For online PvP, wait until player2 has joined (both colors are set)
-                    // For local 2P, colors are available immediately from joinOptions
                     const isOnlineMode = gameMode === 'online-create' || gameMode === 'online-join';
-                    if (isOnlineMode && !room.state.player2Joined) {
-                        return;
-                    }
 
-                    // Use room state colors with fallback to config colors
-                    const p1Color = room.state.player1Color || player1Color;
-                    const p2Color = room.state.player2Color || player2Color;
-                    const isPlayer2 = room.sessionId === room.state.player2Id;
-
-
-
-                    this._gui.hud.updatePlayerColors(isPlayer2 ? p2Color : p1Color, isPlayer2 ? p1Color : p2Color);
-
-                    [paddle, paddle2].forEach((p, i) => {
-                        const color = i === 0 ? p1Color : p2Color;
-                        const mat = p.mesh.material as any;
-
-                        if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
-                        if (mat?.subSurface?.tintColor) mat.subSurface.tintColor = Color3.FromHexString(color);
-                    });
-                };
-
-                if (room.state.player1Id || room.state.player2Id) checkPlayerAssignment();
-                ['player2Id', 'player1Id'].forEach(prop =>
-                    (room.state as any).listen(prop, () => {
-                        checkPlayerAssignment();
-                        updatePlayerColorsFromState();
-                    })
-                );
-                ['player1Color', 'player2Color'].forEach(prop =>
-                    (room.state as any).listen(prop, updatePlayerColorsFromState)
-                );
-                (room.state as any).listen('player2Joined', updatePlayerColorsFromState);
-
-                // Handle room expiration
-                room.onMessage('room_expired', () => {
-                    if (this._onBackToMenu) {
-                        alert('Room expired — no opponent joined within 2 minutes.');
-                        this._onBackToMenu();
-                    }
-                });
-
-                // For PvP modes, update HUD with actual player names from server state
-                // and wait for second player before starting countdown
-                const isOnlineMode = gameMode === 'online-create' || gameMode === 'online-join';
-                if (isPvPMode) {
-                    // Update HUD with actual names and colors from server
-                    if (this._gui && room.state) {
-                        const p1Name = room.state.player1Name || player1Name;
-                        const p2Name = room.state.player2Name || 'Waiting...';
-                        let bottomLabel = p1Name;
-                        let topLabel = p2Name;
-
-                        // Mark "You" player
-                        if (room.sessionId === room.state.player2Id) {
-                            bottomLabel = p2Name || 'Waiting...';
-                            topLabel = p1Name;
-                        }
-
-                        this._gui.hud.updatePlayerNames(bottomLabel, topLabel);
-
-                        // Apply colors from state (this will be called again when colors change via listeners)
-                        updatePlayerColorsFromState();
-                    }
-
-                    // Store the countdown callback to call when both are ready
-                    let countdownCallback: (() => void) | null = null;
-
-                    // Callback for when both clients/network are ready, before countdown
-                    const signalGameReady = () => {
-                        // For online PvP, send "client_ready" message to server
-                        if (isOnlineMode) {
-                            room.send('client_ready', {});
-                        }
-
-                        // Check if game has already started
-                        if (room.state?.gameStarted) {
-                            // Both clients are ready, fade out and start countdown
-                            if (this._onGameReady) {
-                                const callback = this._onGameReady;
-                                this._onGameReady = null;
-                                callback(() => this._startCountdown(room), false);
+                    this._countdownManager = new CountdownManager({
+                        onCountdownUpdate: (count) => {
+                            if (count > 0) {
+                                gui.hud.updateCountdown(count.toString());
                             } else {
-                                this._startCountdown(room);
+                                gui.hud.updateCountdown('');
                             }
-                        } else {
-                            // Signal that we're waiting for opponent
-                            if (this._onGameReady) {
-                                countdownCallback = () => this._startCountdown(room);
-                                this._onGameReady(countdownCallback, true);
-                            }
-                        }
-                    };
-
-                    // For online PvP, signal ready immediately after assets load
-                    if (isOnlineMode) {
-                        scene.executeWhenReady(() => signalGameReady());
-                    } else {
-                        // For local-2p, show waiting message
-                        if (this._gui) {
-                            scene.executeWhenReady(() => signalGameReady());
-                        }
-                    }
-
-                    // Listen for gameStarted to become true (when both clients are ready)
-                    (room.state as any).listen('gameStarted', (value: boolean) => {
-                        if (value && countdownCallback && this._onGameReady) {
-                            // Both clients are ready, fade out and start countdown
-                            const callback = this._onGameReady;
-                            this._onGameReady = null;
-                            callback(countdownCallback, false);
-                        }
+                        },
+                        onCountdownComplete: () => {
+                            roomManager.sendLaunch();
+                        },
                     });
 
-                    // Check initial state in case gameStarted is already true
-                    if (room.state?.gameStarted && countdownCallback && this._onGameReady) {
-                        const callback = this._onGameReady;
-                        this._onGameReady = null;
-                        callback(countdownCallback, false);
+                    this._gameReadyManager = new GameReadyManager({
+                        roomManager,
+                        countdownManager: this._countdownManager,
+                        gui,
+                        isPvP: isPvPMode,
+                        isOnline: isOnlineMode,
+                        initialGameStarted: room.state?.gameStarted ?? false,
+                        onGameReady: this._onGameReady ?? undefined,
+                    });
+
+                    this._loadingManager = new LoadingManager({
+                        roomManager,
+                        isOnline: isOnlineMode,
+                        isPvP: isPvPMode,
+                    });
+
+                    if (onLoadingManagerReady) {
+                        onLoadingManagerReady(this._loadingManager);
                     }
-                    // Update Player 2's name when they join
-                    (room.state as any).listen('player2Name', (value: string) => {
-                        if (value && this._gui) {
-                            let bottomLabel = room.state.player1Name;
-                            let topLabel = value;
-                            if (room.sessionId === room.state.player1Id) {
-                                bottomLabel = `${room.state.player1Name}`;
-                                topLabel = value;
-                            } else if (room.sessionId === room.state.player2Id) {
-                                bottomLabel = value;
-                                topLabel = room.state.player1Name;
+
+                    const input = new InputController(scene);
+                    this._input = input;
+
+                    touchControls.setInputController(input);
+
+                    const gameLoop = new GameLoop({
+                        engine,
+                        scene,
+                        inputController: input,
+                        roomManager,
+                        ball,
+                        paddle,
+                        paddle2,
+                        debugMonitor,
+                        camera: clientEngine.engineSetup.camera,
+                    });
+                    this._gameLoop = gameLoop;
+
+                    gameLoop.setInitialStates(
+                        room.state.ball.enabled ?? true,
+                        room.state.paddle.enabled ?? true,
+                        room.state.paddle2.enabled ?? true
+                    );
+                    gameLoop.setupStateListeners();
+                    gameLoop.start();
+
+                    if (isPvPMode) {
+                        if (this._gui && room.state) {
+                            const p1Name = room.state.player1Name || player1Name;
+                            const p2Name = room.state.player2Name || 'Waiting...';
+                            let bottomLabel = p1Name;
+                            let topLabel = p2Name;
+
+                            if (room.sessionId === room.state.player2Id) {
+                                bottomLabel = p2Name || 'Waiting...';
+                                topLabel = p1Name;
                             }
+
                             this._gui.hud.updatePlayerNames(bottomLabel, topLabel);
                         }
-                    });
-                } else {
-                    // AI mode: update colors from state with fallback to config
-                    if (this._gui && room.state) {
-                        const p1Color = room.state.player1Color || player1Color;
-                        const p2Color = room.state.player2Color || player2Color || '#666666';
-                        this._gui.hud.updatePlayerColors(p1Color, p2Color);
 
-                        [paddle, paddle2].forEach((p, i) => {
-                            const color = i === 0 ? p1Color : p2Color;
-                            if (color) {
-                                const mat = p.mesh.material as any;
-                                if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
-                                if (mat?.subSurface?.tintColor) mat.subSurface.tintColor = Color3.FromHexString(color);
-                            }
+                        scene.executeWhenReady(() => {
+                            this._gameReadyManager?.start();
+                        });
+                    } else {
+                        scene.executeWhenReady(() => {
+                            this._gameReadyManager?.start();
                         });
                     }
-
-                    const signalGameReady = () => {
-                        if (this._onGameReady) {
-                            const cb = this._onGameReady;
-                            this._onGameReady = null;
-                            cb(() => this._startCountdown(room));
-                        } else {
-                            this._startCountdown(room);
-                        }
-                    };
-                    // Wait for scene to be fully loaded with textures before signaling ready
-                    scene.executeWhenReady(() => signalGameReady());
+                } catch (e) {
+                    const errMsg = e instanceof Error ? e.message : String(e);
+                    console.error("Failed to start game:", errMsg, e);
+                    if (this._onBackToMenu) {
+                        this._onBackToMenu();
+                    }
                 }
 
+                return scene;
+            };
 
-                const targetPosition = new Vector3(0, 0, 0);
-                let lastBallPosition = ball.mesh.position.clone();
-                let lastSpeedSampleAt = performance.now();
-                let speedUpdateCounter = 0;
-
-                room.state.ball.onChange(() => {
-                    targetPosition.set(
-                        room.state.ball.x,
-                        room.state.ball.y,
-                        room.state.ball.z,
-                    );
-                });
-
-                let lastCollisionAt = 0;
-
-                room.state.ball.listen("collisionCount", (currentVal: number, prevVal: number) => {
-                    ball.triggerBounce(
-                        room.state.ball.lastImpactX,
-                        room.state.ball.lastImpactZ,
-                        room.state.ball.collisionTime
-                    );
-                    lastCollisionAt = performance.now();
-                });
-
-                const targetPaddlePosition = new Vector3(0, 0, 0);
-                const targetPaddle2Position = new Vector3(0, 0, 0);
-
-                room.state.paddle.onChange(() => {
-                    targetPaddlePosition.set(
-                        room.state.paddle.x,
-                        paddle.mesh.position.y,
-                        room.state.paddle.z,
-                    );
-                });
-
-                room.state.paddle2.onChange(() => {
-                    targetPaddle2Position.set(
-                        room.state.paddle2.x,
-                        paddle2.mesh.position.y,
-                        room.state.paddle2.z,
-                    );
-                });
-
-                (room.state as any).listen('player1Score', (value: number) =>
-                    this._gui?.hud.updateScores(value, room.state.player2Score));
-                (room.state as any).listen('player2Score', (value: number) =>
-                    this._gui?.hud.updateScores(room.state.player1Score, value));
-
-                (room.state as any).listen('gameOver', (value: boolean) => {
-                    if (value && !this._isGameOver && this._gui) {
-                        this._isGameOver = true;
-                        const isP1Winner = room.state.winner === room.state.player1Id;
-                        this._gui.gameOverOverlay.show(
-                            isP1Winner ? room.state.player1Name : room.state.player2Name,
-                            isP1Winner, room.state.player1Score, room.state.player2Score,
-                            room.state.player1Name, room.state.player2Name
-                        );
-                    }
-                });
-
-                const input = new InputController(scene);
-                this._input = input;
-
-                let speed = 0;
-                let inputSendCounter = 0;
-
-                this._renderObservable = scene.onBeforeRenderObservable;
-                this._renderObserver = this._renderObservable.add(() => {
-                    const deltaTime = engine.getDeltaTime();
-                    const collisionDetected = performance.now() - lastCollisionAt < CLIENT_TIMING.COLLISION.WINDOW_MS;
-                    const now = performance.now();
-
-                    if (++speedUpdateCounter >= NETWORK.SYNC.SPEED_UPDATE_INTERVAL_FRAMES) {
-                        const elapsed = (now - lastSpeedSampleAt) / 1000;
-                        speed = elapsed > 0 ? Vector3.Distance(ball.mesh.position, lastBallPosition) / elapsed : 0;
-                        lastBallPosition.copyFrom(ball.mesh.position);
-                        lastSpeedSampleAt = now;
-                        speedUpdateCounter = 0;
-                    }
-
-                    const ballSmoothingSpeed = collisionDetected ? INTERPOLATION.COLLISION_SPEED : INTERPOLATION.DEFAULT_SPEED;
-                    const paddleSmoothingSpeed = VISUAL.SMOOTHING.PADDLE_LERP_SPEED;
-
-                    const ballLerpFactor = 1 - Math.exp(-ballSmoothingSpeed * (deltaTime / 1000));
-                    const paddleLerpFactor = 1 - Math.exp(-paddleSmoothingSpeed * (deltaTime / 1000));
-
-                    ball.update(targetPosition, ballLerpFactor, room.state.ball.enabled, deltaTime);
-                    paddle.update(targetPaddlePosition, paddleLerpFactor, room.state.paddle.enabled);
-                    paddle2.update(targetPaddle2Position, paddleLerpFactor, room.state.paddle2.enabled);
-                    debugMonitor.update(
-                        ball.mesh.position,
-                        engineSetup.camera.position,
-                        room.state.ball.enabled,
-                        collisionDetected,
-                        speed,
-                    );
-
-                    if (++inputSendCounter >= NETWORK.SYNC.INPUT_SEND_INTERVAL_FRAMES && !this._isGameOver) {
-                        room.send('input', isOnlineMode
-                            ? { a: !!input.inputMap['a'], d: !!input.inputMap['d'] }
-                            : input.inputMap);
-                        inputSendCounter = 0;
-                    }
-                });
-            } catch (e) {
-                console.error("Join error", e);
-                alert('Failed to connect to game server. Please try again.');
-                if (this._onBackToMenu) {
-                    this._onBackToMenu();
+            createScene().then((scene) => {
+                this._activeScene = scene;
+                if (this._room && clientEngine) {
+                    clientEngine.engineSetup.engine.runRenderLoop(() => scene.render());
                 }
-            }
-
-            return scene;
-        };
-
-        createScene().then((scene) => {
-            activeScene = scene;
-            if (this._room) engine.runRenderLoop(() => scene.render());
-        });
+            });
+        })();
 
         let isDisposed = false;
         return () => {
             if (isDisposed) return;
             isDisposed = true;
             this._cleanup();
-            engine.stopRenderLoop();
-            activeScene?.dispose();
-            engine.dispose();
+            this._activeScene?.dispose();
+            this._activeScene = null;
+            this._clientEngine?.engineSetup.engine.stopRenderLoop();
+            this._clientEngine?.engineSetup.engine.dispose();
             gameInstanceLock = false;
         };
     };
 
     private _cleanup(): void {
-        this._intervals.forEach(id => clearInterval(id));
-        this._intervals = [];
-        this._room?.leave();
-        this._room?.removeAllListeners();
+        this._roomManager?.disconnect();
+        this._roomManager = null;
         this._room = null;
-        this._renderObserver && this._renderObservable?.remove(this._renderObserver);
-        this._renderObserver = null;
-        this._renderObservable = null;
         this._input?.dispose();
         this._input = null;
         this._debugMonitor?.dispose();
         this._debugMonitor = null;
-        this._engineSetup?.dispose();
-        this._engineSetup = null;
-        this._gui?.dispose();
+        this._clientEngine?.dispose();
+        this._clientEngine = null;
         this._gui = null;
+        this._gameLoop?.dispose();
+        this._gameLoop = null;
+        this._countdownManager?.dispose();
+        this._countdownManager = null;
+        this._gameReadyManager?.dispose();
+        this._gameReadyManager = null;
+        this._loadingManager?.dispose();
+        this._loadingManager = null;
     }
 
-    private _startCountdown(room: Colyseus.Room<GameState>): void {
-        let currentCount = CLIENT_TIMING.COUNTDOWN.DURATION_SECONDS;
-
-        if (this._gui) {
-            this._gui.hud.updateCountdown(currentCount.toString());
+    private _signalGameReady(isPvP: boolean, isOnline: boolean, gameStarted: boolean): void {
+        if (isOnline) {
+            this._roomManager?.signalClientReady();
         }
 
-        const countdownInterval = window.setInterval(() => {
-            currentCount--;
+        const isWaitingForOpponent = isPvP && !gameStarted;
+        const launchCallback = () => this._countdownManager?.start();
 
-            if (currentCount > 0) {
-                if (this._gui) {
-                    this._gui.hud.updateCountdown(currentCount.toString());
+        if (this._onGameReady) {
+            const cb = this._onGameReady;
+            this._onGameReady = null;
+            cb(launchCallback, isWaitingForOpponent);
+        } else {
+            launchCallback();
+        }
+    }
+
+    private _createRoomManagerCallbacks(
+        clientEngine: ClientEngine,
+        table: any,
+        paddle: any,
+        paddle2: any,
+        ball: any,
+        gui: any
+    ): RoomManagerCallbacks {
+        return {
+            onPlayerAssignment: ({ isPlayer2, player1Id, player2Id }) => {
+                this._isPlayer2 = isPlayer2;
+                clientEngine.engineSetup.setIsPlayer2(isPlayer2);
+                const cam = clientEngine.engineSetup.camera;
+                const mesh = table.mesh;
+                const center = mesh.getBoundingInfo().boundingBox.centerWorld;
+                
+                // Only apply flip once - on first assignment when isPlayer2 is true
+                // Don't re-adjust after opponent joins (prevents flip from being overwritten)
+                if (isPlayer2 && !this._isCameraFlipped) {
+                    // First set up camera for player 1, then flip
+                    adjustCamera(cam, mesh, clientEngine.engineSetup.engine);
+                    cam.position = new Vector3(cam.position.x, cam.position.y, -cam.position.z);
+                    this._isCameraFlipped = true;
+                } else if (!isPlayer2) {
+                    adjustCamera(cam, mesh, clientEngine.engineSetup.engine);
                 }
-            } else {
-                clearInterval(countdownInterval);
-                const idx = this._intervals.indexOf(countdownInterval);
-                if (idx > -1) this._intervals.splice(idx, 1);
-                if (this._gui) {
-                    this._gui.hud.updateCountdown('');
+                
+                cam.setTarget(center);
+            },
+            onPlayerColorUpdate: ({ p1Color, p2Color, isPlayer2 }) => {
+                gui.hud.updatePlayerColors(isPlayer2 ? p2Color : p1Color, isPlayer2 ? p1Color : p2Color);
+                [paddle, paddle2].forEach((p, i) => {
+                    const color = i === 0 ? p1Color : p2Color;
+                    const mat = p.mesh.material as any;
+                    if (mat?.albedoColor) mat.albedoColor = Color3.FromHexString(color);
+                    if (mat?.subSurface?.tintColor) mat.subSurface.tintColor = Color3.FromHexString(color);
+                });
+            },
+            onBallUpdate: ({ x, y, z }) => {
+                this._gameLoop?.updateBallPosition(x, y, z);
+            },
+            onBallCollision: ({ lastImpactX, lastImpactZ, collisionTime }) => {
+                ball.triggerBounce(lastImpactX, lastImpactZ, collisionTime);
+            },
+            onPaddleUpdate: ({ paddleIndex, x, z, enabled }) => {
+                this._gameLoop?.updatePaddlePosition(paddleIndex, x, z);
+            },
+            onScoreUpdate: ({ player1Score, player2Score }) => {
+                gui.hud.updateScores(player1Score, player2Score);
+            },
+            onGameOver: ({ winner, player1Name, player2Name, player1Score, player2Score }) => {
+                if (!this._isGameOver) {
+                    this._isGameOver = true;
+                    this._gameLoop?.setGameOver(true);
+                    const room = this._roomManager?.room;
+                    const isP1Winner = winner === room?.state.player1Id;
+                    gui.gameOverOverlay.show(
+                        isP1Winner ? player1Name : player2Name,
+                        isP1Winner, player1Score, player2Score,
+                        player1Name, player2Name
+                    );
                 }
-                room.send('launch', {});
-            }
-        }, CLIENT_TIMING.COUNTDOWN.INTERVAL_MS);
-        this._intervals.push(countdownInterval);
+            },
+            onPlayerNameUpdate: ({ player1Name, player2Name }) => {
+                const room = this._roomManager?.room;
+                if (!room) return;
+                let bottomLabel = player1Name;
+                let topLabel = player2Name;
+                if (room.sessionId === room.state.player1Id) {
+                    bottomLabel = player1Name;
+                    topLabel = player2Name;
+                } else if (room.sessionId === room.state.player2Id) {
+                    bottomLabel = player2Name;
+                    topLabel = player1Name;
+                }
+                gui.hud.updatePlayerNames(bottomLabel, topLabel);
+            },
+            onRoomExpired: () => {
+                this._loadingManager?.handleRoomExpired();
+                if (this._onBackToMenu) {
+                    alert('Room expired — no opponent joined within 2 minutes.');
+                    this._onBackToMenu();
+                }
+            },
+            onGameStarted: () => {
+                this._gameReadyManager?.updateGameStarted(true);
+                this._loadingManager?.handleGameStarted();
+            },
+            onError: (error) => {
+                console.error("Join error", error);
+                alert('Failed to connect to game server. Please try again.');
+                if (this._onBackToMenu) this._onBackToMenu();
+            },
+        };
     }
 }
 
@@ -527,7 +354,8 @@ export const startGame = (
     config: GameSessionConfig,
     onGameReady?: (onLaunch: () => void, isWaitingForOpponent?: boolean) => void,
     onBackToMenu?: () => void,
+    onLoadingManagerReady?: (loadingManager: LoadingManager) => void,
 ) => {
     const game = new Game();
-    return game.startGame(canvas, config, onGameReady, onBackToMenu);
+    return game.startGame(canvas, config, onGameReady, onBackToMenu, onLoadingManagerReady);
 };

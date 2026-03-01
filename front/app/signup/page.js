@@ -74,7 +74,7 @@ export default function SignUpPage() {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify(data),
+                body: JSON.stringify({...data, avatarURL: 'default-avatar.webp'}),
             });
             const contentType = response.headers.get('content-type');
         
@@ -105,7 +105,7 @@ export default function SignUpPage() {
             if (hasCredentials)
             {
                 console.log('Signup successful:', result);
-                router.push('/me');
+                router.push('/updateme');
             }
             else
                 setServerError("Error validating credentials");
@@ -142,6 +142,7 @@ export default function SignUpPage() {
                                 autoComplete="email"
                                 {...register('email')} 
                             />
+                            {errors.email && <p>{errors.email.message}</p>}
                         </div>
 
                         {/* Password Field */}
@@ -153,6 +154,7 @@ export default function SignUpPage() {
                                 autoComplete="new-password"
                                 {...register('password')}  
                             />
+                            {errors.password && <p>{errors.password.message}</p>}
                         </div>
 
                         {/* Confirm Password Field */}
@@ -164,13 +166,14 @@ export default function SignUpPage() {
                                 autoComplete="new-password"
                                 {...register('confirmPassword')} 
                                 />
+                            {errors.password && <p>{errors.password.message}</p>}
+                        </div>
                         { serverError && (
                             <p className={styles.errorMessage}>
                                     { console.log("Error:", serverError)}
                                     {serverError}
                                 </p>
-                            )}
-                        </div>
+                        )}
 
                         <button 
                             className={styles.submitButton} 
