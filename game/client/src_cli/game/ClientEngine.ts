@@ -37,7 +37,7 @@ export class ClientEngine {
         this.scene = this.engineSetup.scene;
     }
 
-    public init(player1Name: string, player2Name: string, onBackToMenu?: () => void): GameEntities {
+    public async init(player1Name: string, player2Name: string, onBackToMenu?: () => void): Promise<GameEntities> {
         const scene = this.scene;
         const engine = this.engineSetup.engine;
 
@@ -86,6 +86,9 @@ export class ClientEngine {
         gui.showGameHUD(player1Name, isPvPMode ? 'Waiting...' : (isAIMode ? 'AI' : player2Name));
 
         this._entities = { ball, table, paddle, paddle2, gui, touchControls };
+
+        await SceneLights.waitForLoad();
+
         return this._entities;
     }
 
