@@ -183,8 +183,8 @@ export class Game {
                         });
                     }
                 } catch (e) {
-                    console.error("Join error", e);
-                    alert('Failed to connect to game server. Please try again.');
+                    const errMsg = e instanceof Error ? e.message : String(e);
+                    console.error("Failed to start game:", errMsg, e);
                     if (this._onBackToMenu) {
                         this._onBackToMenu();
                     }

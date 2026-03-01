@@ -6,7 +6,7 @@ type Props = {
   player: 1 | 2;
   pointsToWin: number;
   ballColor: string;
-  onChange: (patch: { pointsToWin?: number; ballColor?: string }) => void;
+  onChange: (patch: { winningScore?: number; playerColor?: string }) => void;
   onNext: () => void;
   onBack: () => void;
 };
@@ -33,7 +33,7 @@ export default function LocalSetup({
         <select
           id="local-setup-points"
           value={pointsToWin}
-          onChange={(event) => onChange({ pointsToWin: Number(event.target.value) })}
+          onChange={(event) => onChange({ winningScore: Number(event.target.value) })}
         >
           <option value={3}>3</option>
           <option value={5}>5</option>
@@ -44,12 +44,12 @@ export default function LocalSetup({
       </div>
 
       <div>
-        <label htmlFor="local-setup-ball-color">Paddle color</label>
+        <label htmlFor="local-setup-paddle-color">Paddle color</label>
         <input
           id="local-setup-paddle-color"
           type="color"
           value={ballColor}
-          onChange={(event) => onChange({ ballColor: event.target.value })}
+          onChange={(event) => onChange({ playerColor: event.target.value })}
         />
       </div>
 

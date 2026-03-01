@@ -6,7 +6,7 @@ type Props = {
   title: string;
   pointsToWin: number;
   ballColor: string;
-  onChange: (patch: { pointsToWin?: number; ballColor?: string }) => void;
+  onChange: (patch: { winningScore?: number; playerColor?: string }) => void;
   primaryCta: string;
   onPrimary: () => void;
   onBack: () => void;
@@ -32,7 +32,7 @@ export default function GameConfigForm({
         <select
           id="game-config-points"
           value={pointsToWin}
-          onChange={(event) => onChange({ pointsToWin: Number(event.target.value) })}
+          onChange={(event) => onChange({ winningScore: Number(event.target.value) })}
         >
           <option value={3}>3</option>
           <option value={5}>5</option>
@@ -43,12 +43,12 @@ export default function GameConfigForm({
       </div>
 
       <div>
-        <label htmlFor="game-config-ball-color">Paddle color</label>
+        <label htmlFor="game-config-paddle-color">Paddle color</label>
         <input
           id="game-config-paddle-color"
           type="color"
           value={ballColor}
-          onChange={(event) => onChange({ ballColor: event.target.value })}
+          onChange={(event) => onChange({ playerColor: event.target.value })}
         />
       </div>
 

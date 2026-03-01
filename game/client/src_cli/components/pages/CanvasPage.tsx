@@ -180,6 +180,9 @@ const CanvasPage = () => {
     };
 
     const handleBackToStart = () => {
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'game-exit' }, '*');
+        }
         navigate('/');
     };
 
