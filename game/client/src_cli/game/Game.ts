@@ -267,7 +267,7 @@ export class Game {
                 const cam = clientEngine.engineSetup.camera;
                 const mesh = table.mesh;
                 const center = mesh.getBoundingInfo().boundingBox.centerWorld;
-                
+
                 // Only apply flip once - on first assignment when isPlayer2 is true
                 // Don't re-adjust after opponent joins (prevents flip from being overwritten)
                 if (isPlayer2 && !this._isCameraFlipped) {
@@ -278,7 +278,7 @@ export class Game {
                 } else if (!isPlayer2) {
                     adjustCamera(cam, mesh, clientEngine.engineSetup.engine);
                 }
-                
+
                 cam.setTarget(center);
             },
             onPlayerColorUpdate: ({ p1Color, p2Color, isPlayer2 }) => {
@@ -300,8 +300,20 @@ export class Game {
                 this._gameLoop?.updatePaddlePosition(paddleIndex, x, z);
             },
             onScoreUpdate: ({ player1Score, player2Score }) => {
-                gui.hud.updateScores(player1Score, player2Score);
+                const room = this._roomManager?.room;
+                if (!room) return;
+                let bottomScore = player1Score;
+                let topScore = player2Score;
+                if (room.sessionId === room.state.player1Id) {
+                    bottomScore = player2Score;
+                    topScore = player1Score;
+                } else if (room.sessionId === room.state.player2Id) {
+                    bottomScore = player1Score;
+                    topScore = player2Score;
+                }
+                gui.hud.updateScores(bottomScore, topScore);
             },
+            
             onGameOver: ({ winner, player1Name, player2Name, player1Score, player2Score }) => {
                 if (!this._isGameOver) {
                     this._isGameOver = true;
