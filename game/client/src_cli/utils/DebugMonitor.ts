@@ -17,8 +17,8 @@ export class DebugMonitor {
     constructor() {
         this.container = document.createElement("div");
         this.container.style.position = "absolute";
-        this.container.style.bottom = GUI_STYLES.UI_POSITIONING.DEBUG.BOTTOM;
-        this.container.style.left = GUI_STYLES.UI_POSITIONING.DEBUG.LEFT;
+        this.container.style.bottom = GUI_STYLES.DEBUG.BOTTOM;
+        this.container.style.left = GUI_STYLES.DEBUG.LEFT;
         this.container.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
         this.container.style.color = "#00ff00";
         this.container.style.fontFamily = "monospace";
@@ -85,7 +85,7 @@ export class DebugMonitor {
         speed: number,
     ): void {
         this.updateCounter++;
-        if (this.updateCounter < GUI_STYLES.UI_POSITIONING.DEBUG.UPDATE_INTERVAL_FRAMES) return;
+        if (this.updateCounter < GUI_STYLES.DEBUG.UPDATE_INTERVAL_FRAMES) return;
         this.updateCounter = 0;
 
         this.xDisplay.textContent = `X: ${position.x.toFixed(2)}`;
