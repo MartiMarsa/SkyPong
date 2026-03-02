@@ -130,6 +130,7 @@ const CanvasPage = () => {
                         if (onLaunch) {
                             onLaunch();
                         }
+                        canvasRef.current?.focus();
                     }, 200);
                 },
                 () => {
