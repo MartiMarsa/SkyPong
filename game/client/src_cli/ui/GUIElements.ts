@@ -1,27 +1,12 @@
-import {
-    Button,
-    TextBlock,
-    Rectangle,
-    StackPanel,
-    Control,
-} from '@babylonjs/gui';
+import { Button, TextBlock, Rectangle, Control, Image } from '@babylonjs/gui';
 import {
     ITextStyle,
     IButtonStyle,
     IContainerStyle,
-    IPanelStyle,
+    IIconButtonStyle,
 } from '../config/GUIStyles';
 
-/**
- * Factory class for creating styled Babylon.js GUI controls.
- */
 export class GUIElements {
-    /**
-     * Creates a styled text block.
-     * @param name - The name of the control.
-     * @param content - The text to display.
-     * @param style - The style configuration object.
-     */
     public static CreateText(
         name: string,
         content: string,
@@ -32,11 +17,17 @@ export class GUIElements {
         text.color = style.color;
         text.fontSize = style.fontSize;
 
-        if (style.height) text.height = style.height;
         if (style.fontFamily) text.fontFamily = style.fontFamily;
         if (style.fontWeight) text.fontWeight = style.fontWeight;
         if (style.outlineWidth) text.outlineWidth = style.outlineWidth;
         if (style.outlineColor) text.outlineColor = style.outlineColor;
+        if (style.shadowColor) text.shadowColor = style.shadowColor;
+        if (style.shadowOffsetX) text.shadowOffsetX = style.shadowOffsetX;
+        if (style.shadowOffsetY) text.shadowOffsetY = style.shadowOffsetY;
+        if (style.shadowBlur) text.shadowBlur = style.shadowBlur;
+        if (style.horizontalAlignment) text.horizontalAlignment = style.horizontalAlignment;
+        if (style.verticalAlignment) text.verticalAlignment = style.verticalAlignment;
+        if (style.top) text.top = style.top;
 
         if (style.textVerticalAlignment !== undefined) {
             text.textVerticalAlignment = style.textVerticalAlignment;
@@ -48,14 +39,7 @@ export class GUIElements {
         return text;
     }
 
-    /**
-     * Creates a styled button with a click handler.
-     * @param name - The name of the control.
-     * @param content - The button label text.
-     * @param style - The style configuration object.
-     * @param onClick - Optional callback invoked on pointer up.
-     */
-    public static CreateButton(
+    public static CreateTextButton(
         name: string,
         content: string,
         style: IButtonStyle,
@@ -69,17 +53,50 @@ export class GUIElements {
         btn.cornerRadius = style.cornerRadius;
         btn.fontSize = style.fontSize;
 
+        if (style.horizontalAlignment) btn.horizontalAlignment = style.horizontalAlignment;
+        if (style.verticalAlignment) btn.verticalAlignment = style.verticalAlignment;
+        if (style.top) btn.top = style.top;
+        if (style.zIndex) btn.zIndex = style.zIndex;
+
         if (onClick) {
             btn.onPointerUpObservable.add(onClick);
         }
+
+        btn.isHitTestVisible = true;
+        btn.isPointerBlocker = true;
         return btn;
     }
 
-    /**
-     * Creates a background container (Rectangle).
-     * @param name - The name of the control.
-     * @param style - The style configuration object.
-     */
+    public static CreateIconButton(
+        name: string,
+        style: IIconButtonStyle,
+        onPointerDown: () => void,
+        onPointerUp: () => void,
+    ): Button {
+        const button = Button.CreateSimpleButton(name, '');
+        button.width = style.width;
+        button.height = style.height;
+        button.background = style.background;
+        button.cornerRadius = style.cornerRadius;
+        button.thickness = 0;
+        button.fontSize = 0;
+
+        if (style.iconUrl) {
+            const icon = new Image(`${name}Icon`, style.iconUrl);
+            icon.width = style.iconWidth;
+            icon.height = style.iconHeight;
+            icon.stretch = Image.STRETCH_UNIFORM;
+            icon.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
+            icon.verticalAlignment = Control.VERTICAL_ALIGNMENT_CENTER;
+            button.addControl(icon);
+        }
+
+        button.onPointerDownObservable.add(onPointerDown);
+        button.onPointerUpObservable.add(onPointerUp);
+
+        return button;
+    }
+
     public static CreateContainer(
         name: string,
         style: IContainerStyle,
@@ -89,28 +106,10 @@ export class GUIElements {
         rect.cornerRadius = style.cornerRadius;
         rect.thickness = style.thickness;
         rect.verticalAlignment = style.verticalAlignment;
+        if (style.width) rect.width = style.width;
+        if (style.height) rect.height = style.height;
         rect.adaptWidthToChildren = true;
         rect.adaptHeightToChildren = true;
         return rect;
-    }
-
-    /**
-     * Creates a stack panel for organizing child controls vertically.
-     * @param name - The name of the control.
-     * @param style - The style configuration object.
-     */
-    public static CreateStackPanel(
-        name: string,
-        style: IPanelStyle,
-    ): StackPanel {
-        const panel = new StackPanel(name);
-        panel.spacing = style.spacing;
-        panel.paddingTop = style.padding;
-        panel.paddingBottom = style.padding;
-        panel.paddingLeft = style.padding;
-        panel.paddingRight = style.padding;
-        panel.adaptWidthToChildren = true;
-        panel.adaptHeightToChildren = true;
-        return panel;
     }
 }

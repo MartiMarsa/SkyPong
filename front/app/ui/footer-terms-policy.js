@@ -4,10 +4,11 @@ export default function FooterTermsPolicy()
 {
     const { t } = useTranslation();
     return (
-        <footer className="absolute bottom-5 w-auto text-center mb-4">
-            <ul className='flex p-3  flex-row gap-5 text-center'>
-                <li><a href="/terms">{t.legal.terms}</a></li>
+        <footer className="mb-2 w-full text-center">
+            <ul className='flex flex-row items-center justify-center gap-2 p-3 text-lg'>
                 <li><a href="/privacy">{t.legal.privacy}</a></li>
+                <li>and</li>
+                <li><a href="/terms">{t.legal.terms}</a></li>
             </ul>
         </footer>
     );
