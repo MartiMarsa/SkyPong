@@ -5,23 +5,22 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { useRouter, usePathname } from 'next/navigation';
 
 const AuthContext = createContext({
-  user: null,
-  avartarURL: "/avatars/default-avatar.webp",
-  loading: true,
-//  hasCredentials: false,
-  logout: async () => {},
-  checkAuth: async () => { return false; } // Útil para re-validar tras login
+    user: null,
+    authloading: true,
+    hasCredentials: false,
+    logout: async () => {},
+    checkAuth: async () => { return false; } // Útil para re-validar tras login
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState(null);
   const [authloading, setAuthloading] = useState(true);
-  const [hasCredentials , sethasCredentials] = useState(false);
+  const [hasCredentials , setHasCredentials] = useState(false);
 
   const router = useRouter();
   const pathname = usePathname();
-  const publicRoutes = ['/login', '/signup'];
-  const isPublicRoute = publicRoutes.includes(pathname);
+  const signRoutes = ['/login', '/signup'];
+  const privateRoutes = ['/updateme', '/me'];
 
   const checkAuth = useCallback(async () => {
   setAuthloading(true);
@@ -38,10 +37,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       const res = await fetch('/api/profile/me', {
-        credentials: 'include',
-        headers: { 'x-csrf-token': csrfToken || '' },
-      });
-
+          credentials: 'include',
+          headers: { 'x-csrf-token': csrfToken || '' },
+        });
+        
       if (res.status === 401 || !res.ok) {
         setUser(null);
         return false;
@@ -49,12 +48,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const userData = await res.json();
       setUser(userData);
+      setHasCredentials(true);
       return true;
     } catch {
       setUser(null);
+      setHasCredentials(false);
       return false;
     } finally {
       setAuthloading(false);
+      router.refresh();
     }
   }, []);
 
@@ -62,11 +64,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       const loggedIn = await checkAuth();
 
-      const isPublicRoute = publicRoutes.includes(pathname);
+      const isSignRoute = signRoutes.includes(pathname);
+      const isPrivateRoute = privateRoutes.includes(pathname);
 
-      if (loggedIn && isPublicRoute) {
+      console.info('Pathname: ', pathname);
+      if (loggedIn && isSignRoute) {
         router.replace('/me');
-      } else if (!loggedIn && !isPublicRoute) {
+      } else if (!loggedIn && isPrivateRoute) {
         router.replace('/login');
       }
     })();

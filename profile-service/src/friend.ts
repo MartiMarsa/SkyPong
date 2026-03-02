@@ -12,6 +12,8 @@ export type FriendUser = {
       	nickname: string;
       	avatarUrl: string | null;
       	created_at: string;
+		last_access_at?: string;
+		logged?: number;
 };
 
 function normalizeId(a: string, b: string): [string, string] {
@@ -193,6 +195,8 @@ export async function getFriends(userId: string): Promise<any[]> {
         p.user_id, 
         p.nickname, 
         p.avatarUrl,
+		p.last_access_at,
+        p.logged,
         f.status,
         CASE WHEN f.blocked_by = ? THEN 1 ELSE 0 END AS blocked_by_me
        FROM friends f
@@ -218,7 +222,9 @@ export async function getFriendsOfTarget(currentUserId: string, targetId: string
       `SELECT 
         p.user_id, 
         p.nickname, 
-        p.avatarUrl
+        p.avatarUrl,
+		p.last_access_at,
+        p.logged
        FROM friends f
        JOIN players p ON p.user_id = CASE 
          WHEN f.user1_id = ? THEN f.user2_id 
@@ -247,7 +253,16 @@ export async function getIncomingRequests(userId: string): Promise<any[]> {
 	const db = getProfileDB();
 
 	return new Promise((resolve, reject) => {
-		db.all(`SELECT p.user_id, p.nickname, p.avatarUrl, f.created_at FROM friends f JOIN players p ON p.user_id = f.requester_id WHERE f.status = 'pending' AND requester_id != ? AND (f.user1_id = ? OR f.user2_id = ?)`,
+		db.all(`SELECT 
+			   p.user_id, 
+			   p.nickname, 
+			   p.avatarUrl,
+			   p.last_access_at,
+	   		   p.logged,
+			   f.created_at 
+			   FROM friends f 
+			   JOIN players p ON p.user_id = f.requester_id 
+			   WHERE f.status = 'pending' AND requester_id != ? AND (f.user1_id = ? OR f.user2_id = ?)`,
 			[userId, userId, userId],
 			(err, rows) => {
 				if (err) return reject(err);
@@ -279,7 +294,7 @@ export async function getOutgoingRequests(userId: string): Promise<any[]> {
 
   return new Promise((resolve, reject) => {
     db.all(
-      `SELECT p.user_id, p.nickname, p.avatarUrl, f.created_at 
+      `SELECT p.user_id, p.nickname, p.avatarUrl, p.last_access_at, p.logged, f.created_at 
        FROM friends f 
        JOIN players p ON p.user_id = CASE 
          WHEN f.user1_id = ? THEN f.user2_id 
@@ -301,7 +316,7 @@ export async function getBlocklist(userId: string): Promise<FriendUser[]> {
 	const db = getProfileDB();
 
 	return new Promise((resolve, reject) => {
-		db.all<FriendUser>(`SELECT p.user_id, p.nickname, p.avatarUrl, f.created_at FROM friends f JOIN players p ON p.user_id = CASE WHEN f.user1_id = ? THEN f.user2_id ELSE f.user1_id END WHERE f.status = 'blocked' AND f.blocked_by = ? AND (f.user1_id = ? OR f.user2_id = ?)`,
+		db.all<FriendUser>(`SELECT p.user_id, p.nickname, p.avatarUrl, p.last_access_at, p.logged, f.created_at FROM friends f JOIN players p ON p.user_id = CASE WHEN f.user1_id = ? THEN f.user2_id ELSE f.user1_id END WHERE f.status = 'blocked' AND f.blocked_by = ? AND (f.user1_id = ? OR f.user2_id = ?)`,
 			[userId, userId, userId, userId],
 			(err, rows) => {
 				if (err) return reject(err);

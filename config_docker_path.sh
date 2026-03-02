@@ -16,19 +16,26 @@ FRONT="front-dev"
 STATISTICS="statistics"
 PROFILE="profile"
 GAME_SERVICE="game"
+STATIC="${PWD}/static"
+UPLOADS="${PWD}/uploads"
+AVATARS="${UPLOADS}/avatars"
 
 # Crear directorios host para todos los volúmenes y aplicar permisos
 mkdir -p \
   "${BASE}${AUTH}" \
   "${BASE}${FRONT}" \
   "${BASE}${STATISTICS}" \
-  "${BASE}${PROFILE}" 2>/dev/null || true
+  "${BASE}${PROFILE}" \
+  "${STATIC}" \
+  "${AVATARS}" 2>/dev/null || true
 
 chmod 777 \
   "${BASE}${AUTH}" \
   "${BASE}${FRONT}" \
   "${BASE}${STATISTICS}" \
-  "${BASE}${PROFILE}" 2>/dev/null || true
+  "${BASE}${PROFILE}" \
+  "${STATIC}" \
+  "${UPLOADS}" 2>/dev/null || true
 
 
 # Intentar chown (puede fallar en 42/rootless o ciertos FS) sin romper el script
@@ -36,17 +43,21 @@ chown -R "$USER:$USER" \
   "${BASE}${AUTH}" \
   "${BASE}${FRONT}" \
   "${BASE}${STATISTICS}" \
-  "${BASE}${PROFILE}" 2>/dev/null || true
+  "${BASE}${PROFILE}" \
+  "${STATIC}" \
+  "${UPLOADS}" 2>/dev/null || true
 
 # Asegurar permisos mínimos para tu usuario
 chmod -R u+rwX \
   "${BASE}${AUTH}" \
   "${BASE}${FRONT}" \
   "${BASE}${STATISTICS}" \
-  "${BASE}${PROFILE}" 2>/dev/null || true
+  "${BASE}${PROFILE}" \
+  "${STATIC}" \
+  "${UPLOADS}" 2>/dev/null || true
 
 echo "✅ Directorios OK:"
-ls -ld "${BASE}${AUTH}" "${BASE}${FRONT}" "${BASE}${STATISTICS}" "${BASE}${PROFILE}"
+ls -ld "${BASE}${AUTH}" "${BASE}${FRONT}" "${BASE}${STATISTICS}" "${BASE}${PROFILE}" "${UPLOADS}" "${STATIC}" "${AVATARS}"
 
 # 3) SUSTITUIR PLACEHOLDERS EN docker-compose.yml
 echo "🧩 Sustituyendo placeholders de paths..."
