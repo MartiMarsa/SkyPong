@@ -299,6 +299,19 @@ fastify.get('/internal/profile/leaderboard/updates', { preHandler: requireServic
 	}
 });
 
+fastify.get('/profile/leaderboard', { preHandler: verifyToken }, async (req: any, reply) => {
+
+    	const since = req.query?.since || '2025-12-01'; //UPDATE THIS TO A SUITABLE DATE: THIS MONTH?
+
+	try {
+		const leaderboard = await getLeaderboard(since);
+	      	reply.send(leaderboard);
+	} catch (err) {
+		req.log.error(err);
+		reply.status(500).send({ error: 'LEADERBOARD_FETCH_FAILED'});
+	}
+});
+
 
 // --- DELETE PROFILE ---
 fastify.post('/internal/profile/delete', { preHandler: requireServiceAuth }, async (req: any, reply) => {
