@@ -38,6 +38,7 @@ export class AIGameRoom extends Room<MyGameState> {
   private startAt: string | null = null;
   private endAt: string | null = null;
   private gameStats: GameStats | null = null;
+  private loggedIn: boolean = false;
 
   onCreate(options: any): void | Promise<any> {
     // Set difficulty from options, default to medium
@@ -306,23 +307,36 @@ export class AIGameRoom extends Room<MyGameState> {
 
   private checkForWinner(): void {
     const winningScore = this.state.winningScore;
+    let winnerId: string | null = null;
+    let winnerName: string | null = null;
 
     if (this.state.player1Score >= winningScore) {
-      this.state.winner = this.state.player1Id;
-      this.state.gameOver = true;
-      this.serverBall.setGameOver(true);
-      this.serverBall.setEnabled(false);
-      Logger.gameOver(
-        `[AI] Player wins! (${this.state.player1Score}-${this.state.player2Score})`,
-      );
+      winnerId = this.state.player1Id;
+      winnerName = this.state.player1Name;
     } else if (this.state.player2Score >= winningScore) {
-      this.state.winner = this.state.player2Id;
+      winnerId = this.difficulty;
+      winnerName = this.difficulty;
+    }
+
+    if (winnerId) {
+      this.state.winner = winnerId;
       this.state.gameOver = true;
       this.serverBall.setGameOver(true);
       this.serverBall.setEnabled(false);
       Logger.gameOver(
-        `[AI] AI wins! (${this.state.player1Score}-${this.state.player2Score})`,
+        `[AI] Winner: ${winnerName} (${this.state.player1Score}-${this.state.player2Score})`,
       );
+      if (this.gameStats) {
+        this.gameStats.setScore(
+          this.state.player1Score,
+          this.state.player2Score,
+        );
+        this.gameStats.setEndAt(new Date().toISOString());
+        Logger.info("[GameStats]", this.gameStats.toPayload());
+          if (this.loggedIn && this.gameStats) {
+              this.gameStats.send();
+        }
+      }
     }
   }
 
@@ -354,8 +368,11 @@ export class AIGameRoom extends Room<MyGameState> {
     this.state.player2Id = "ai";
     this.state.player2Name = options.player2Name || "AI";
     this.state.player2Color = "#666666"; // Fixed gray color for AI
+    this.loggedIn = !!options.player1Id;
     this.gameStats?.setPlayer1Id(options.player1Id || client.sessionId);
     this.gameStats?.setPlayer1Name(this.state.player1Name);
+    this.gameStats?.setPlayer2Id("ai-" + this.difficulty);
+    this.gameStats?.setPlayer2Name("ai-" + this.difficulty);
     this.state.gameStarted = true;
     this.lock(); // Lock room to prevent additional joins
     Logger.info(
