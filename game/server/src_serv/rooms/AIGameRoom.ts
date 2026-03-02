@@ -332,9 +332,9 @@ export class AIGameRoom extends Room<MyGameState> {
           this.state.player2Score,
         );
         this.gameStats.setEndAt(new Date().toISOString());
-        Logger.info("[GameStats]", this.gameStats.toPayload());
-          if (this.loggedIn && this.gameStats) {
-              this.gameStats.send();
+        if (this.loggedIn === true && this.gameStats) {
+          Logger.info("[GameStats]", this.gameStats.toPayload());
+          this.gameStats.send();
         }
       }
     }
@@ -368,11 +368,12 @@ export class AIGameRoom extends Room<MyGameState> {
     this.state.player2Id = "ai";
     this.state.player2Name = options.player2Name || "AI";
     this.state.player2Color = "#666666"; // Fixed gray color for AI
-    this.loggedIn = !!options.player1Id;
-    this.gameStats?.setPlayer1Id(options.player1Id || client.sessionId);
+    this.gameStats?.setPlayer1Id(this.state.player1Id || client.sessionId);
     this.gameStats?.setPlayer1Name(this.state.player1Name);
     this.gameStats?.setPlayer2Id("ai-" + this.difficulty);
     this.gameStats?.setPlayer2Name("ai-" + this.difficulty);
+    this.loggedIn = !!options.playerId;
+    Logger.info(`[LoggedIn] ${this.loggedIn}`)
     this.state.gameStarted = true;
     this.lock(); // Lock room to prevent additional joins
     Logger.info(
