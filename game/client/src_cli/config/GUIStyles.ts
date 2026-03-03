@@ -15,6 +15,10 @@ export interface ITextStyle {
   verticalAlignment?: number;
   top?: string;
   textVerticalAlignment?: number;
+  paddingTop?: string;
+  paddingBottom?: string;
+  paddingLeft?: string;
+  paddingRight?: string;
 }
 
 export interface IButtonStyle {
@@ -46,9 +50,16 @@ export interface IContainerStyle {
   background: string;
   cornerRadius: number;
   thickness: number;
-  verticalAlignment: number;
+  verticalAlignment?: number;
+  horizontalAlignment?: number;
   width?: string;
   height?: string;
+  paddingTop?: string;
+  paddingBottom?: string;
+  paddingLeft?: string;
+  paddingRight?: string;
+  top?: string;
+  left?: string;
 }
 
 export const GUI_STYLES = {
@@ -60,30 +71,36 @@ export const GUI_STYLES = {
     } as ITextStyle,
     HUD_NAME: {
       color: "#FFFFFF",
-      fontSize: 52,
+      fontSize: 42,
       fontWeight: "bold",
-      shadowColor: "#80808080",
+      shadowColor: "#01040080",
       shadowOffsetX: 1,
       shadowOffsetY: 1,
       shadowBlur: 4,
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+      // paddingTop: "4px",
+      // paddingBottom: "4px",
     } as ITextStyle,
     HUD_SCORE: {
-      color: "#4CAF50",
-      fontSize: 48,
+      color: "#FFFBFC90",
+      fontSize: 32,
       fontWeight: "bold",
-      shadowColor: "#FFFFFF80",
+      shadowColor: "#01040080",
       shadowOffsetX: 1,
       shadowOffsetY: 1,
       shadowBlur: 4,
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+      // paddingTop: "4px",
+      // paddingBottom: "4px",
     } as ITextStyle,
     COUNTDOWN: {
-      color: "#4CAF50",
+      color: "#FFFBFC90",
       fontSize: 120,
       fontWeight: "bold",
-      outlineWidth: 4,
-      outlineColor: "black",
+      shadowColor: "#01040080",
+      shadowOffsetX: 1,
+      shadowOffsetY: 1,
+      shadowBlur: 4,
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
       verticalAlignment: Control.VERTICAL_ALIGNMENT_CENTER,
     } as ITextStyle,
@@ -149,6 +166,24 @@ export const GUI_STYLES = {
   },
 
   CONTAINER: {
+    HUD_PLAYER1: {
+      background: "transparent",
+      cornerRadius: 0,
+      thickness: 0,
+      verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
+      horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+      paddingBottom: "24px",
+      top: "-24px",
+    } as IContainerStyle,
+    HUD_PLAYER2: {
+      background: "transparent",
+      cornerRadius: 0,
+      thickness: 0,
+      verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
+      horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+      paddingBottom: "24px",
+      top: "32px",
+    } as IContainerStyle,
     DEFAULT: {
       background: "transparent",
       cornerRadius: 0,
@@ -171,24 +206,24 @@ export const GUI_STYLES = {
     verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
   },
 
-  HUD_POSITIONS: {
-    PLAYER1_NAME: {
-      top: "-100px",
-      verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
-    },
-    PLAYER1_SCORE: {
-      top: "-50px",
-      verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
-    },
-    PLAYER2_NAME: {
-      top: "60px",
-      verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
-    },
-    PLAYER2_SCORE: {
-      top: "110px",
-      verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
-    },
-  },
+  // HUD_POSITIONS: {
+  //   PLAYER1_NAME: {
+  //     top: "-100px",
+  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
+  //   },
+  //   PLAYER1_SCORE: {
+  //     top: "-50px",
+  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
+  //   },
+  //   PLAYER2_NAME: {
+  //     top: "60px",
+  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
+  //   },
+  //   PLAYER2_SCORE: {
+  //     top: "110px",
+  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
+  //   },
+  // },
 
   GAME_OVER_POSITIONS: {
     TITLE: { top: "-200px" },
