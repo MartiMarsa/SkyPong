@@ -2,6 +2,7 @@ import axios from 'axios';
 import { getStatisticsDB } from './dbStats';
 import { sleep, getDbHelpers } from './helpers';
 import * as StatsTypes from './stats.types';
+import { GameRow } from './stats.types';
 
 // --- CONFIG ---
 //const PROFILE_API = 'http://profile-service:8082/internal/profile/gameresult/update';
