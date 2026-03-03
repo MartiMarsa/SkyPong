@@ -18,6 +18,13 @@ export async function seedProfiles(db, users) {
        VALUES (?)`,
       [u.id]
     );
+
+	 await run(
+      db,
+      `INSERT OR IGNORE INTO player_ai_stats (user_id)
+       VALUES (?)`,
+      [u.id]
+    );
   }
 
   // friendships

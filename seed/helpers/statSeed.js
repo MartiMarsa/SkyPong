@@ -19,8 +19,9 @@ export async function seedGames(db, users) {
         user2_result,
         start_at,
         end_at,
-        processed
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 0)`,
+        processed,
+        game_mode
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 0, 'remote-pvp')`,
       [
         uuid(),
         a,
@@ -32,6 +33,38 @@ export async function seedGames(db, users) {
       ]
     );
   }
+
+  // One game between AI and second user to check the things
+  const aiUserId = 'ai-easy';
+  const secondUserId = users[1].id; 
+  
+  //const secondUserId = users[Math.floor(Math.random() * users.length)].id;
+
+  await run(
+    db,
+    `INSERT OR IGNORE INTO games_and_results (
+      game_id,
+      user1_id,
+      user2_id,
+      user1_score,
+      user2_score,
+      user1_result,
+      user2_result,
+      start_at,
+      end_at,
+      processed,
+      game_mode
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 0, 'ai')`,
+    [
+      uuid(),
+      aiUserId,
+      secondUserId,
+      3,
+      1,
+      'win',
+      'loss'
+    ]
+  );
 }
 
 function run(db, sql, params = []) {

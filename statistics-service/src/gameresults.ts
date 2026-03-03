@@ -19,6 +19,66 @@ type GameResult = {
 	players: PlayerResult[];
 };
 
+export enum AIUserType {
+	EASY = 'ai-easy',
+	MEDIUM = 'ai-medium',
+	HARD = 'ai-hard',
+}
+
+export enum GameMode {
+	AI = 'ai',
+	REMOTE = 'remote-pvp',
+}
+
+const AI_USER_IDS = new Set<string>(Object.values(AIUserType));
+
+function detectGameMode(user1Id: string, user2Id: string): GameMode {
+  	if (AI_USER_IDS.has(user1Id) || AI_USER_IDS.has(user2Id)) {
+		return GameMode.AI;
+  	}
+
+  	return GameMode.REMOTE;
+}
+
+export type GameHistoryRow = {
+  game_id: string;
+  user1_id: string;
+  user2_id: string;
+  user1_score: number;
+  user2_score: number;
+  user1_result: 'win' | 'loss';
+  user2_result: 'win' | 'loss';
+  start_at: string;
+  end_at: string;
+  game_mode: GameMode | 'local-pvp' | null;
+};
+
+export async function getGamesHistoryByUserId(userId: string): Promise<GameHistoryRow[]> {
+  const { all } = db;
+
+  const rows = await all<GameHistoryRow>(
+    `
+    SELECT
+      game_id,
+      user1_id,
+      user2_id,
+      user1_score,
+      user2_score,
+      user1_result,
+      user2_result,
+      start_at,
+      end_at,
+      game_mode
+    FROM games_and_results
+    WHERE user1_id = ? OR user2_id = ?
+    ORDER BY end_at DESC
+    `,
+    [userId, userId]
+  );
+
+  return rows ?? [];
+}
+
 export async function addGameStats(game: GameResult): Promise<void> {
 
       	const { run } = db;
@@ -35,6 +95,9 @@ export async function addGameStats(game: GameResult): Promise<void> {
 	    	[p1, p2] = [p2, p1];
 	}
 
+		const game_mode = detectGameMode(p1.user_id, p2.user_id);	
+
+		console.log("----> GAME MODE IS: ", game_mode);
 
       	await run(
 	    	`
@@ -51,9 +114,11 @@ export async function addGameStats(game: GameResult): Promise<void> {
 		  	user2_result,
 
 		  	start_at,
-		  	end_at
+		  	end_at,
 
-	    	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			game_mode
+
+	    	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	    	`,
 	    	[
 		  	game.game_id,
@@ -68,7 +133,9 @@ export async function addGameStats(game: GameResult): Promise<void> {
 		  	p2.user_result,
 
 		  	game.start_at,
-		  	game.end_at
+		  	game.end_at,
+
+			game_mode
 	    	]
       	);
 }
