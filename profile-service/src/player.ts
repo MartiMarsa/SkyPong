@@ -81,7 +81,7 @@ interface GameHistoryItem {
   gameDate: string;
   player1: PlayerGamesHistoryData | AIGamesHistoryData;
   player2: PlayerGamesHistoryData | AIGamesHistoryData;
-  winner: string;
+  winner: number;
 }
 
 
@@ -774,9 +774,9 @@ export async function getUserGameHistory(userId: string): Promise<GameHistoryIte
         };
       }
 
-      // Winner — nickname or AI id
+      // Winner - if User1 - 0, if User2 - 1 - for serializacion at frontend
       const winner =
-        game.user1_result === 'win' ? player1.nickname : player2.nickname;
+        game.user1_result === 'win' ? 0 : 1;
 
       result.push({
         gameId: game.game_id,

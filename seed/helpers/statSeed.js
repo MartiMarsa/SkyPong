@@ -59,10 +59,10 @@ export async function seedGames(db, users) {
       uuid(),
       aiUserId,
       secondUserId,
-      3,
       1,
-      'win',
-      'loss'
+      3,
+      'loss',
+      'win'
     ]
   );
 }
