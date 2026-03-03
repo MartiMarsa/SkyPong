@@ -61,6 +61,8 @@ export class Game {
     const isAIMode = gameMode.startsWith("ai-");
     const initialPlayer2Name = isPvPMode ? "Waiting..." : isAIMode ? "AI" : player2Name;
 
+    const isLocalMode = isAIMode || gameMode === "local-2p";
+
     const onBackToMenuCallback = () => {
       if (this._onBackToMenu) {
         this._onBackToMenu();
@@ -76,6 +78,9 @@ export class Game {
         player1Name,
         initialPlayer2Name,
         onBackToMenuCallback,
+        () => {
+          this._gameLoop?.resume();
+        },
       );
       const { ball, table, paddle, paddle2, gui, touchControls } = entities;
       this._gui = gui;
@@ -147,6 +152,13 @@ export class Game {
             camera: clientEngine.engineSetup.camera,
           });
           this._gameLoop = gameLoop;
+
+          if (isLocalMode) {
+            gui.hud.showPauseButton(() => {
+              gui.pauseOverlay.show();
+              this._gameLoop?.pause();
+            });
+          }
 
           gameLoop.setInitialStates(
             room.state.ball.enabled ?? true,
@@ -230,7 +242,7 @@ export class Game {
     this._gameReadyManager = null;
     this._loadingManager?.dispose();
     this._loadingManager = null;
-    this._winningScore = null;
+    this._winningScore = undefined;
   }
 
   private _signalGameReady(isPvP: boolean, isOnline: boolean, gameStarted: boolean): void {

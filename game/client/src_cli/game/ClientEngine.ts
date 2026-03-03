@@ -37,7 +37,7 @@ export class ClientEngine {
         this.scene = this.engineSetup.scene;
     }
 
-    public async init(player1Name: string, player2Name: string, onBackToMenu?: () => void): Promise<GameEntities> {
+    public async init(player1Name: string, player2Name: string, onBackToMenu?: () => void, onResume?: () => void): Promise<GameEntities> {
         const scene = this.scene;
         const engine = this.engineSetup.engine;
 
@@ -64,7 +64,7 @@ export class ClientEngine {
         const paddle = createPaddle("paddle1");
         const paddle2 = createPaddle("paddle2");
 
-        const gui = new GameUIManager(scene, onBackToMenu || (() => { }));
+        const gui = new GameUIManager(scene, onBackToMenu || (() => { }), onResume);
 
         const hasTouch = touchDetection();
         const touchControls = new TouchControls(gui.texture);

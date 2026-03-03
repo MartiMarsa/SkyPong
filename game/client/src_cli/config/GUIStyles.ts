@@ -32,6 +32,7 @@ export interface IButtonStyle {
   verticalAlignment?: number;
   top?: string;
   zIndex?: number;
+  thickness?: number;
 }
 
 export interface IIconButtonStyle {
@@ -137,6 +138,7 @@ export const GUI_STYLES = {
       fontSize: 24,
       cornerRadius: 10,
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+      thickness: 0,
     } as IButtonStyle,
   },
 
@@ -145,8 +147,7 @@ export const GUI_STYLES = {
       width: "80px",
       height: "60px",
       background: "transparent",
-      iconUrl:
-        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik0xNSA5bC03IDdsNyA3Ii8+PC9zdmc+",
+      iconUrl: "/icons/leftButton.svg",
       iconWidth: "32px",
       iconHeight: "32px",
       cornerRadius: 10,
@@ -156,12 +157,20 @@ export const GUI_STYLES = {
       width: "80px",
       height: "60px",
       background: "transparent",
-      iconUrl:
-        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik05IDlsNyA3bC03IDciLz48L3N2Zz4=",
+      iconUrl: "/icons/rightButton.svg",
       iconWidth: "32px",
       iconHeight: "32px",
       cornerRadius: 10,
       paddingLeft: "20px",
+    } as IIconButtonStyle,
+    PAUSE: {
+      width: "50px",
+      height: "50px",
+      background: "transparent",
+      iconUrl: "/icons/pause.svg",
+      iconWidth: "32px",
+      iconHeight: "32px",
+      cornerRadius: 8,
     } as IIconButtonStyle,
   },
 
@@ -230,6 +239,23 @@ export const GUI_STYLES = {
     WINNER: { top: "-80px" },
     SCORE: { top: "20px" },
     BUTTON: { top: "150px" },
+  },
+
+  PAUSE_TITLE: {
+    color: "#FFFBFC90",
+    fontSize: 32,
+    fontWeight: "bold",
+    shadowColor: "#01040080",
+    shadowOffsetX: 1,
+    shadowOffsetY: 1,
+    shadowBlur: 4,
+    horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+  } as ITextStyle,
+
+  PAUSE_POSITIONS: {
+    TITLE: { top: "-100px" },
+    RESUME_BUTTON: { top: "50px" },
+    QUIT_BUTTON: { top: "130px" },
   },
 
   DEBUG: {

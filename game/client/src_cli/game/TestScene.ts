@@ -64,9 +64,9 @@ export class TestScene {
         // Create UI Manager
         this._uiManager = new GameUIManager(this.scene, () => {
             console.log('[TestScene] Back to menu clicked');
-        });
+        }, undefined);
         this._uiManager.showGameHUD('Player 1', 'Player 2');
-        this._uiManager.hud.updateScores(5, 3);
+        this._uiManager.hud.updateScores(5, 3, '10');
 
         // Create Touch Controls
         this._touchControls = new TouchControls(this._uiManager.texture);

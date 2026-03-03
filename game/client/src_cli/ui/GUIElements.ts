@@ -46,6 +46,7 @@ export class GUIElements {
     btn.color = style.color;
     btn.background = style.background;
     btn.cornerRadius = style.cornerRadius;
+    btn.thickness = 0;
     btn.fontSize = style.fontSize;
 
     if (style.horizontalAlignment) btn.horizontalAlignment = style.horizontalAlignment;
@@ -97,7 +98,7 @@ export class GUIElements {
     rect.background = style.background;
     rect.cornerRadius = style.cornerRadius;
     rect.thickness = style.thickness;
-    rect.verticalAlignment = style.verticalAlignment;
+    rect.verticalAlignment = style.verticalAlignment ?? Control.VERTICAL_ALIGNMENT_CENTER;
     if (style.width) rect.width = style.width;
     if (style.height) rect.height = style.height;
     rect.adaptWidthToChildren = true;

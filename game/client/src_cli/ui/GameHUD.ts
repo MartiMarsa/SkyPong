@@ -1,4 +1,4 @@
-import { AdvancedDynamicTexture, TextBlock, StackPanel } from "@babylonjs/gui";
+import { AdvancedDynamicTexture, TextBlock, StackPanel, Control } from "@babylonjs/gui";
 import { GUI_STYLES } from "../config/GUIStyles";
 import { GUIElements } from "./GUIElements";
 
@@ -56,6 +56,20 @@ export class GameHUD {
     this._texture.addControl(this._countdownText);
   }
 
+  public showPauseButton(onClick: () => void): void {
+      const pauseBtn = GUIElements.CreateIconButton(
+          'pauseButton',
+          GUI_STYLES.ICON_BUTTON.PAUSE,
+          onClick,
+          () => {}
+      );
+      pauseBtn.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+      pauseBtn.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+      pauseBtn.top = "20px";
+      pauseBtn.left = "-20px";
+      this._texture.addControl(pauseBtn);
+  }
+  
   public show(player1Name: string, player2Name: string): void {
     this._player1Name = player1Name;
     this._player2Name = player2Name;
