@@ -29,7 +29,7 @@ interface UserAuth {
 }
 
 export async function issueSession(user: UserAuth, reply: FastifyReply, isNew: boolean = false) {
-	const accessToken = generateToken({
+	const accessToken = await generateToken({
 		id: user.id,
 		password_version: user.password_version || 1,
 		token_version: user.token_version || 0

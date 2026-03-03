@@ -138,7 +138,19 @@ export function initDB(): Promise<void> {
             'needs_password'
           );
 
-          db.run(`
+
+		  db.run(`
+			CREATE TABLE IF NOT EXISTS user_sessions (
+				id TEXT PRIMARY KEY,
+				user_id TEXT NOT NULL,
+			  	issued_at TEXT NOT NULL,
+			  	expires_at TEXT NOT NULL,
+			  	token_version INTEGER NOT NULL,
+			  	created_at TEXT DEFAULT CURRENT_TIMESTAMP
+				);
+			`);
+
+		  db.run(`
             CREATE UNIQUE INDEX IF NOT EXISTS idx_oauth
             ON users(provider, provider_id)
           `);

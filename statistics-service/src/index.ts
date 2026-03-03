@@ -2,7 +2,7 @@ import Fastify from 'fastify';
 import chalk from 'chalk';
 import { leaderboardLoop, getLeaderboardByIndex } from './leaderboardWorker';
 import { statisticsLoop } from './statsWorker';
-import { addGameStats } from './gameresults';
+import { addGameStats, getGamesHistoryByUserId } from './gameresults';
 import { initStatisticsDB, getStatisticsDB, closeStatisticsDB } from './dbStats';
 import { initLeaderboardDB, getLeaderboardDB, closeLeaderboardDB } from './dbLeaderboard';
 import * as StatsTypes from './stats.types';
@@ -157,6 +157,24 @@ fastify.get<{ Querystring: StatsTypes.LeaderboardQuery; }>('/statistics/leaderbo
       	}
 });
 
+// --- GIVE ALL GAMES BY USER ID ---
+fastify.get('/internal/statistics/games/history/:id', { preHandler: requireServiceAuth }, async (req: any, reply) => {
+    try {
+      const userId = req.params.id;
+
+      const games = await getGamesHistoryByUserId(userId);
+
+      return reply.send(games);
+
+    } catch (err) {
+      req.log.error(err, 'Failed to get games history');
+      return reply.status(500).send({
+        error: 'Internal error',
+      });
+    }
+  }
+);
+
 // --- START SERVER ---
 async function start() {
       	console.log('[Main] starting service');
@@ -209,7 +227,8 @@ async function start() {
 	    	console.log('[Main] workers started');
 
 	    	// --- START SERVER ---
-	    	await fastify.listen({ port: 6000, host: '0.0.0.0' });
+	    	console.log(fastify.printRoutes());
+			await fastify.listen({ port: 6000, host: '0.0.0.0' });
 
 	    	console.log(chalk.green.bold('Statistics service is running on :6000'));
 

@@ -79,3 +79,37 @@ export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 	    	signal?.addEventListener('abort', onAbort);
       	});
 }
+
+export async function hasColumn(
+  db: sqlite3.Database,
+  table: string,
+  column: string
+): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    db.all(`PRAGMA table_info(${table})`, (err, rows: any[]) => {
+      if (err) return reject(err);
+      resolve(rows.some(r => r.name === column));
+    });
+  });
+}
+
+export async function addColumnIfMissing(
+  db: sqlite3.Database,
+  table: string,
+  columnDef: string,
+  columnName: string
+): Promise<void> {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const exists = await hasColumn(db, table, columnName);
+      if (exists) return resolve();
+
+      db.run(
+        `ALTER TABLE ${table} ADD COLUMN ${columnDef}`,
+        err => err ? reject(err) : resolve()
+      );
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
