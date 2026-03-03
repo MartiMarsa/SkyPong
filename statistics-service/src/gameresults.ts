@@ -1,25 +1,11 @@
 import { getStatisticsDB } from './dbStats';
 import { getDbHelpers } from './helpers';
+import * as StatsTypes from './stats.types';
 
 // --- DB ---
 const db = getDbHelpers(getStatisticsDB());
 
-// --- TYPES ---
- type PlayerResult = {
-       	 user_id: string;
-       	 user_score: number;
-       	 user_result: 'win' | 'loss';
-};
-
-type GameResult = {
-      	game_id: string;
-      	start_at: string;
-      	end_at: string;
-      
-	players: PlayerResult[];
-};
-
-export async function addGameStats(game: GameResult): Promise<void> {
+export async function addGameStats(game: StatsTypes.GameResult): Promise<void> {
 
       	const { run } = db;
 

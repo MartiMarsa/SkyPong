@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getStatisticsDB } from './dbStats';
 import { sleep, getDbHelpers } from './helpers';
+import * as StatsTypes from './stats.types';
 
 // --- CONFIG ---
 //const PROFILE_API = 'http://profile-service:8082/internal/profile/gameresult/update';
@@ -15,15 +16,6 @@ let interval = 2000; // 2 sec
 // --- DB ---
 const db = getDbHelpers(getStatisticsDB());
 
-// --- TYPES ---
-type GameRow = {
-      	game_id: string;
-      	user1_id: string;
-      	user2_id: string;
-      	user1_result: string;
-      	user2_result: string;
-};
-
 // --- Main logic ---
 
 async function lockGames(): Promise<GameRow[]> {
@@ -33,7 +25,7 @@ async function lockGames(): Promise<GameRow[]> {
 	try {
 		await exec('BEGIN IMMEDIATE');
 
-		const games = await all<GameRow>(`SELECT * FROM games_and_results WHERE processed = 0 AND processing = 0 LIMIT ?`, 
+		const games = await all<StatsTypes.GameRow>(`SELECT * FROM games_and_results WHERE processed = 0 AND processing = 0 LIMIT ?`, 
 						    [BATCH_SIZE]);
 
 		if (games.length === 0) {
@@ -55,7 +47,7 @@ async function lockGames(): Promise<GameRow[]> {
 	}
 }
 
-function buildPayload(game: GameRow) {
+function buildPayload(game: StatsTypes.GameRow) {
 	return {
 		game_id: game.game_id,
 
@@ -72,7 +64,7 @@ function buildPayload(game: GameRow) {
 	};
 }
 
-async function processGame(game: GameRow) {
+async function processGame(game: StatsTypes.GameRow) {
 
 	const payload = buildPayload(game);
 
