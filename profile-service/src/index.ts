@@ -56,12 +56,7 @@ interface Player {
 		avatar?: string;
 }
 
-/*
-fastify.register(fastifyStatic, {
-      	root: path.join(process.cwd(), 'uploads'),
-      	prefix: '/static/'
-});
-*/
+
 declare module 'fastify' {
   interface FastifyRequest {
     user: {
@@ -185,6 +180,9 @@ fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
 
 		await ensureAvatarIsAlive(userId, player.avatarUrl);
 
+
+		await ensureAvatarIsAlive(userId, player.avatarUrl);
+
         console.info("----> Sending player profile info: ", player);
 		return reply.send(player 
         );
@@ -296,6 +294,19 @@ fastify.get('/internal/profile/leaderboard/updates', { preHandler: requireServic
 	} catch (err) {
 		req.log.error(err);
 		reply.status(500).send({ error: 'LEADERBOARD_UPDATE_FAILED'});
+	}
+});
+
+fastify.get('/profile/leaderboard', { preHandler: verifyToken }, async (req: any, reply) => {
+
+    	const since = req.query?.since || '2025-12-01'; //UPDATE THIS TO A SUITABLE DATE: THIS MONTH?
+
+	try {
+		const leaderboard = await getLeaderboard(since);
+	      	reply.send(leaderboard);
+	} catch (err) {
+		req.log.error(err);
+		reply.status(500).send({ error: 'LEADERBOARD_FETCH_FAILED'});
 	}
 });
 
@@ -477,6 +488,90 @@ fastify.get('/profile/avatars/:filename', async (req, reply) => {
   }
 });
 
+/*
+fastify.get('/profile/avatars/:filename', async (req, reply) => {
+  try {
+    const { filename } = req.params as { filename: string };
+
+    if (
+      !filename.endsWith('.webp') ||
+      filename.includes('..') ||
+      filename.includes('/') ||
+      filename.includes('\\')
+    ) {
+      return reply.status(400).send({ error: 'Invalid filename' });
+    }
+
+    const userAvatarPath = path.join(AVATARS_DIR, filename);
+
+    try {
+      await fs.access(userAvatarPath);
+
+      return reply
+        .type('image/webp')
+        .header('Cache-Control', 'public, max-age=3600')
+        .send(await fs.readFile(userAvatarPath));
+
+    } catch {
+      // fallback → default avatar
+
+	  const userId = filename.replace('.webp', '');
+      await ensureAvatarIsAlive(userId, DEFAULT_AVATAR_PATH);
+
+      return reply
+        .type('image/png')
+        .header('Cache-Control', 'public, max-age=86400')
+        .send(await fs.readFile(DEFAULT_AVATAR_PATH));
+    }
+
+  } catch (error) {
+    console.error('Error serving avatar:', error);
+    return reply.status(500).send({ error: 'Failed to serve avatar' });
+  }
+});
+
+/*
+fastify.get('/profile/avatars/:filename', async (req, reply) => {
+  try {
+    const { filename } = req.params as { filename: string };
+
+    if (
+      !filename.endsWith('.webp') ||
+      filename.includes('..') ||
+      filename.includes('/') ||
+      filename.includes('\\')
+    ) {
+      return reply.status(400).send({ error: 'Invalid filename' });
+    }
+
+    const userAvatarPath = path.join(AVATARS_DIR, filename);
+
+    try {
+      await fs.access(userAvatarPath);
+
+      return reply
+        .type('image/webp')
+        .header('Cache-Control', 'public, max-age=3600')
+        .send(await fs.readFile(userAvatarPath));
+
+    } catch {
+      // fallback → default avatar
+
+	  const userId = filename.replace('.webp', '');
+      await ensureAvatarIsAlive(userId, DEFAULT_AVATAR_PATH);
+
+      return reply
+        .type('image/png')
+        .header('Cache-Control', 'public, max-age=86400')
+        .send(await fs.readFile(DEFAULT_AVATAR_PATH));
+    }
+
+  } catch (error) {
+    console.error('Error serving avatar:', error);
+    return reply.status(500).send({ error: 'Failed to serve avatar' });
+  }
+});
+*/
 
 fastify.addHook('onRequest', async (request, reply) => {
   console.log(`Recibida petición: ${request.method} ${request.url}`);
