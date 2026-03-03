@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
+import { hasColumn, addColumnIfMissing } from './helpers';
 
 const profileDataDir =  process.env.PROFILE_DATA_DIR?.trim() || path.resolve(process.cwd(), 'data');
 
@@ -17,40 +18,6 @@ const db = new sqlite3.Database(profileDbPath, sqlite3.OPEN_READWRITE | sqlite3.
 	}
 })
 ;
-
-async function hasColumn(
-  db: sqlite3.Database,
-  table: string,
-  column: string
-): Promise<boolean> {
-  return new Promise((resolve, reject) => {
-    db.all(`PRAGMA table_info(${table})`, (err, rows: any[]) => {
-      if (err) return reject(err);
-      resolve(rows.some(r => r.name === column));
-    });
-  });
-}
-
-async function addColumnIfMissing(
-  db: sqlite3.Database,
-  table: string,
-  columnDef: string,
-  columnName: string
-): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const exists = await hasColumn(db, table, columnName);
-      if (exists) return resolve();
-
-      db.run(
-        `ALTER TABLE ${table} ADD COLUMN ${columnDef}`,
-        err => err ? reject(err) : resolve()
-      );
-    } catch (e) {
-      reject(e);
-    }
-  });
-}
 
 function run(db: sqlite3.Database, sql: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -181,6 +148,7 @@ export async function initProfileDB(): Promise<void> {
 
     await addColumnIfMissing(db, 'players', 'last_access_at TEXT', 'last_access_at');
     await addColumnIfMissing(db, 'players', 'logged INTEGER DEFAULT 0', 'logged');
+	await addColumnIfMissing(db, 'players', 'access_expires_at TEXT', 'access_expires_at');
 
     await run(db, `
       CREATE UNIQUE INDEX IF NOT EXISTS players_nickname_unique
@@ -200,9 +168,27 @@ export async function initProfileDB(): Promise<void> {
       )
     `);
 
+	await run(db, `
+      CREATE TABLE IF NOT EXISTS player_ai_stats (
+        user_id TEXT PRIMARY KEY,
+        played INTEGER DEFAULT 0,
+        wins INTEGER DEFAULT 0,
+        losses INTEGER DEFAULT 0,
+        winrate REAL DEFAULT 0,
+        rate INTEGER DEFAULT 0,
+        updated_at TEXT,
+        FOREIGN KEY(user_id) REFERENCES players(user_id) ON DELETE CASCADE
+      )
+    `);
+
     await run(db, `
       CREATE INDEX IF NOT EXISTS idx_stats_user
       ON player_stats(user_id)
+    `);
+
+	await run(db, `
+      CREATE INDEX IF NOT EXISTS idx_stats_user_ai
+      ON player_ai_stats(user_id)
     `);
 
     await run(db, `

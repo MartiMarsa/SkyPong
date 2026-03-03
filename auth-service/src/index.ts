@@ -8,7 +8,7 @@ import { signup, login, generateEmail } from './auth';
 import { initDB, getDB } from './db';
 import { initTokenDB, getTokenDB } from './dbTokens';
 import { privateKey, publicKey } from './keys';
-import { generateToken, generate2FAToken } from './token';
+import { generateToken, generate2FAToken, deleteUserSession } from './token';
 import { generate2FA, verify2FA } from './twofa';
 import { createRefreshToken, verifyRefreshToken, revokeRefreshToken, revokeRefreshTokenById, isTokenRevoked } from './refresh';
 import { hashPassword, verifyPassword } from './password';
@@ -198,8 +198,57 @@ async function requireAuth(req: any, reply: any) {
         
         return reply.status(200).send({ id: user.id, email: user.email, username: profile?.nickname ?? 'Unknown', twofa_enabled: user.twofa_enabled });
     });
-    
-    // --- SIGNUP ---
+
+// --- AUTH INTERNAL MIDDLEWARE ---
+async function requireServiceAuth(req: any, reply: any) {
+
+        const auth = req.headers.authorization;
+
+        if (!auth) {
+            return reply.status(401).send({ error: 'Missing auth' });
+        }
+
+        const token = auth.replace('Bearer ', '');
+
+    /* TODO uncomment process.env.SERVICE_OKEN in prod */
+
+    if (token !== SERVICE_TOKEN) {
+//          if (token !== process.env.SERVICE_TOKEN) {
+            return reply.status(403).send({ error: 'Forbidden' });
+        }
+}
+
+// --- INTERNAL AUTH ROUTE ---
+fastify.get<{ Params: { id: string } }>('/internal/auth/session_state/:id', { preHandler: requireServiceAuth }, async (req, reply) => {
+  try {
+    const userId = req.params.id;
+    const db = getDB();
+
+    const row = await new Promise<{ user_id: string; expires_at: string } | undefined>((resolve, reject) => {
+      db.get(
+        `SELECT user_id, expires_at FROM user_sessions WHERE user_id = ? LIMIT 1`,
+        [userId],
+        (err, result) => {
+          if (err) return reject(err);
+          resolve(result as { user_id: string; expires_at: string } | undefined);
+        }
+      );
+    });
+
+    if (!row) {
+      return reply.status(404).send({ error: 'Session not found' });
+    }
+
+    // возвращаем просто строку с датой истечения
+    return reply.send({ exp: row.expires_at });
+
+  } catch (err) {
+    req.log.error(err, 'Error fetching session state');
+    return reply.status(500).send({ error: 'SESSION_STATE_FAILED' });
+  }
+});
+
+// --- SIGNUP ---
     fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, reply) => {
         
         const { email, password } = req.body as AuthBody;
@@ -214,7 +263,7 @@ async function requireAuth(req: any, reply: any) {
         try {
             const user = await signup(email, password);
             
-            const token = generateToken({ 
+            const token = await generateToken({ 
                 id: user.id, 
                 password_version: user.password_version || 1,
                 token_version: user.token_version || 0
@@ -252,7 +301,7 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
             return reply.send({ twofa_required: true, twofa_token: twofaToken });
         }
         
-        const token = generateToken({ 
+        const token = await generateToken({ 
             id: user.id, 
             password_version: user.password_version,
             token_version: user.token_version
@@ -369,6 +418,8 @@ fastify.post('/auth/logout', { preHandler: requireAuth }, async (req: any, reply
             if (payload) await revokeRefreshToken(payload.tokenId).catch(() => {});
         }
 
+		await deleteUserSession(user.id);
+
 		const res = await fetch(`${PROFILE_SERVICE_URL}/internal/profile/logout/${user.id}`, { headers: { Authorization: `Bearer ${SERVICE_TOKEN}`, }, signal: controller.signal, });
 
     } catch (err) { /* ignore */ }
@@ -462,6 +513,8 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
             });
         });
 
+		await deleteUserSession(userId);
+
 		const res = await fetch(`${PROFILE_SERVICE_URL}/internal/profile/logout/${userId}`, { headers: { Authorization: `Bearer ${SERVICE_TOKEN}`, }, signal: controller.signal, });
 		// 4. Clear cookies
 	    	reply
@@ -488,6 +541,8 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
 
     	await revokeRefreshToken(payload.tokenId);
 
+		await deleteUserSession(payload.userId);
+
     	const db = getDB();
     	const user = await new Promise<any>((res, rej) => {
 		db.get(
@@ -499,7 +554,7 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
 
     	if (!user) return reply.status(401).send({ error: 'User not found' });
 
-    	const newAccess = generateToken({
+    	const newAccess = await generateToken({
 		id: user.id,
 		password_version: user.password_version,
 		token_version: user.token_version,
@@ -631,7 +686,7 @@ fastify.post('/auth/2fa/verify', async (req, reply) => {
 		return reply.status(401).send({ error: 'Invalid 2FA code' });
     	}
 
-    	const accessToken = generateToken({
+    	const accessToken = await generateToken({
 		id: user.id,
 		password_version: user.password_version,
 		token_version: user.token_version,

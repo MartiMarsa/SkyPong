@@ -151,7 +151,8 @@ export async function leaderboardLoop(abortSignal: AbortSignal, onError: (err: u
 		  	interval = data.players.length ? 1000 : 4000;
 
 	    	} catch (err) {
-		  	console.error('[LeaderboardWorker] error:', err);
+//		  	console.error('[LeaderboardWorker] error:', err);
+			console.error('[LeaderboardWorker] error:');
 
 		  	onError(err);
 

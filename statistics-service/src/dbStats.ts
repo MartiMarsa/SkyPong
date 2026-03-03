@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
+import { addColumnIfMissing, hasColumn } from './helpers';
 
 const statsDataDir =  process.env.STATS_DATA_DIR?.trim() || path.resolve(process.cwd(), 'data');
 
@@ -53,8 +54,10 @@ export async function initStatisticsDB(): Promise<void> {
 			      		CHECK (user1_id != user2_id)
 				)`);
 
-				await run(`CREATE TABLE IF NOT EXISTS sync_state (
-			      		id INTEGER PRIMARY KEY,
+				 await addColumnIfMissing(db, 'games_and_results', 'game_mode TEXT', 'game_mode');
+
+ 				 await run(`CREATE TABLE IF NOT EXISTS sync_state (
+						id INTEGER PRIMARY KEY,
 			      		last_sync TEXT
 				)`);
 

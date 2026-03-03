@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
@@ -18,7 +19,8 @@ import {
   updatePlayerStats,
   getLeaderboard,
   softdeletePlayer,
-  getUserPublicProfile 
+  getUserPublicProfile,
+  getUserGameHistory
 } from './player';
 import * as friendService from './friendService';
 import { publicKey } from './keys';
@@ -163,6 +165,7 @@ fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
 	try {
         const userId = req.user?.sub;
 
+
         console.info("User /me:", req.user);
         if (!userId) {
             return reply.status(401).send("User not found.");
@@ -177,6 +180,8 @@ fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
             console.info("Creating new player for user:", userId);
             player = await createPlayer(userId);
       	}
+
+		await updatePlayerOnlineStatus(userId, true);
 
 		await ensureAvatarIsAlive(userId, player.avatarUrl);
 
@@ -238,6 +243,21 @@ fastify.patch('/profile/updateme', { preHandler: verifyToken }, async (req, repl
         fastify.log.error(err);
         reply.status(500).send();
     } 
+});
+
+// --- GET ALL USER GAMES ---
+fastify.get('/profile/game-history/:id', async (req, reply) => {
+  const { id: userId } = req.params as { id: string };
+
+  try {
+    const games = await getUserGameHistory(userId);
+    return reply.send(games);
+  } catch (err) {
+    req.log.error(err, 'Failed to get game history from statistics-service');
+    return reply.status(500).send({
+      error: 'Failed to fetch game history',
+    });
+  }
 });
 
 // --- UPDATE USER STATS ---

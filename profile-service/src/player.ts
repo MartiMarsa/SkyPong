@@ -3,6 +3,7 @@ import { getDbHelpers } from './helpers';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import axios from 'axios';
 
 // --- CONFIG ---
 const MAX_RETRIES = 5;
@@ -10,6 +11,11 @@ const MAX_RETRIES = 5;
 const AVATARS_DIR = path.join('/app/uploads', 'avatars');
 const DEFAULT_AVATAR_PATH = path.join('/app/static', 'default-avatar.webp');
 const DEFAULT_AVATAR = '/static/default-avatar.webp';
+
+const AUTH_API = process.env.AUTH_SERVICE_URL ?? 'http://auth-service:8081';
+const STATS_API = process.env.STATS_SERVICE_URL ?? 'http://statistics-service:6000';
+
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN || 'secret';
 
 // --- DB ---
 const db = getDbHelpers(getProfileDB());
@@ -45,8 +51,39 @@ interface PlayerInfo {
     created_at: string;
 	last_access_at: string;
 	logged: number;
+	access_expires_at: string | null;
     stats: PlayerStats;
 }
+
+interface PlayerGamesHistoryData {
+  id: string;
+  nickname: string;
+  avatar: string | null;
+  points: number;
+  session_expires_at: string | null;
+  last_access: string | null;
+  logged: number;
+}
+
+interface AIGamesHistoryData {
+  id: AIUserType;
+  nickname: string;
+  avatar: string | null;
+  points: number;
+  session_expires_at: null;
+  last_access: null;
+  logged: number;
+}
+
+interface GameHistoryItem {
+  gameId: string;
+  gameMode: 'ai' | 'remote-pvp';
+  gameDate: string;
+  player1: PlayerGamesHistoryData | AIGamesHistoryData;
+  player2: PlayerGamesHistoryData | AIGamesHistoryData;
+  winner: number;
+}
+
 
 type LeaderboardRow = {
   user_id: string;
@@ -64,6 +101,20 @@ type LeaderboardRow = {
 type ApplyResult =
   | { applied: false }
   | { applied: true; rate: number };
+
+export enum AIUserType {
+  EASY = 'ai-easy',
+  MEDIUM = 'ai-medium',
+  HARD = 'ai-hard',
+}
+
+const AI_USER_IDS = new Set<string>(Object.values(AIUserType));
+
+const AI_RATES: Record<AIUserType, number> = {
+	[AIUserType.EASY]: 800,
+	[AIUserType.MEDIUM]: 1200,
+	[AIUserType.HARD]: 1600,
+};
 
 // --- UTILS ---
 
@@ -91,6 +142,71 @@ function calculateRate(
   const final = Math.round(userRate + K * (score - expected));
 
   return Math.max(final, 0);
+}
+
+function calculateHumanAiRate(
+  humanRate: number,
+  aiUserId: string,
+  result: 'win' | 'loss'
+): number {
+  const aiRate = AI_RATES[aiUserId as AIUserType];
+  return calculateRate(humanRate, aiRate, result);
+}
+
+async function apply(
+      userId: string,
+      result: 'win' | 'loss',
+      rate: number
+    ) {
+
+      await db.run(
+        `
+        UPDATE player_stats
+        SET
+          wins = wins + ?,
+          losses = losses + ?,
+          played = played + 1,
+          winrate = ((wins + ?) * 1.0 / (played + 1)),
+          rate = ?,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = ?
+        `,
+        [
+          result === 'win' ? 1 : 0,
+          result === 'loss' ? 1 : 0,
+          result === 'win' ? 1 : 0,
+          rate,
+          userId
+        ]
+      );
+}
+
+async function applyAi(
+      userId: string,
+      result: 'win' | 'loss',
+      rate: number
+    ) {
+
+      await db.run(
+        `
+        UPDATE player_ai_stats
+        SET
+          wins = wins + ?,
+          losses = losses + ?,
+          played = played + 1,
+          winrate = ((wins + ?) * 1.0 / (played + 1)),
+          rate = ?,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE user_id = ?
+        `,
+        [
+          result === 'win' ? 1 : 0,
+          result === 'loss' ? 1 : 0,
+          result === 'win' ? 1 : 0,
+          rate,
+          userId
+        ]
+      );
 }
 
 export async function ensureAvatarIsAlive(userId: string, avatarUrl: string | null) {
@@ -123,6 +239,9 @@ const PROFILE_QUERY = `
     p.winPhrase,
     p.localization,
     p.created_at,
+	p.last_access_at,
+    p.logged,
+    p.access_expires_at,
 
     s.played,
     s.wins,
@@ -156,6 +275,7 @@ export async function getPlayerById(userId: string): Promise<PlayerInfo | null> 
 			created_at: row.created_at,
 			last_access_at: row.last_access_at,
 			logged: row.logged,
+			access_expires_at: row.access_expires_at,
 
 			stats: {
 					played: row.played ?? 0,
@@ -180,10 +300,14 @@ export async function createPlayer(userId: string) {
 
     try {
 
+		let exp = await getUserSessionExpire(userId);
+
+		if (!exp) { exp = '2025-12-01'; }
+
       await db.run(
-        `INSERT INTO players (user_id, nickname, last_access_at, logged)
-         VALUES (?, ?, CURRENT_TIMESTAMP, 1)`,
-        [userId, nickname]
+        `INSERT INTO players (user_id, nickname, last_access_at, logged, access_expires_at)
+         VALUES (?, ?, CURRENT_TIMESTAMP, 1, ?)`,
+        [userId, nickname, exp]
       );
 
       await db.run(`
@@ -194,6 +318,15 @@ export async function createPlayer(userId: string) {
 		   `, 
 		   [userId]
 		  );
+
+	  await db.run(`
+           INSERT OR IGNORE INTO player_ai_stats
+           (user_id, played, wins, losses, winrate, rate, updated_at)
+           VALUES
+           (?, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
+           `,
+           [userId]
+          );
 
       const player = await getPlayerById(userId);
 
@@ -286,19 +419,67 @@ export async function updatePlayerAvatar(
 // --------------------------------------------------
 // UPDATE PLAYER'S ONLINE STATUS
 // --------------------------------------------------
+
+export async function getUserSessionExpire(userId: string): Promise<string | null> {
+  try {
+    const url = `${AUTH_API}/internal/auth/session_state/${userId}`;
+    const response = await axios.get<{ exp: string }>(url, {
+      headers: {
+        Authorization: `Bearer ${SERVICE_TOKEN}`,
+      },
+    });
+
+    return response.data.exp ?? null;
+  } catch (err: any) {
+    console.error('Failed to get user session expire:', err.message);
+    return null;
+  }
+}
+
 export async function updatePlayerOnlineStatus(userId: string, logged: boolean) {
 
 	const repoDate = '2025-12-01';
 
 	console.info("Updating player state...");
 
-	if (logged) {
-		await db.run(`UPDATE players SET last_access_at = CURRENT_TIMESTAMP, logged = 1 WHERE user_id = ?`, [userId]);
-		console.info("User set as logged with date ...");
-	} else {
-		await db.run(`UPDATE players SET last_access_at = ?, logged = 0 WHERE user_id = ?`, [repoDate, userId]);
-        console.info("User set as logged OUT with REPO date ...");
-	}
+    try {
+        const exp = await getUserSessionExpire(userId);
+        console.log("-----------> EXP DATE: ", exp);
+
+        if (logged) {
+            if (exp) {
+                await db.run(
+                    `UPDATE players 
+                     SET last_access_at = CURRENT_TIMESTAMP, logged = 1, access_expires_at = ? 
+                     WHERE user_id = ?`,
+                    [exp, userId]
+                );
+            } else {
+                await db.run(
+                    `UPDATE players 
+                     SET last_access_at = CURRENT_TIMESTAMP, logged = 0, access_expires_at = ? 
+                     WHERE user_id = ?`,
+                    [repoDate, userId]
+                );
+            }
+
+			console.info("User set as logged with date ...");
+
+		} else {
+            await db.run(
+                `UPDATE players 
+                 SET last_access_at = CURRENT_TIMESTAMP, logged = 0, access_expires_at = ? 
+                 WHERE user_id = ?`,
+                [repoDate, userId]
+            );
+
+			console.info("User set as logged OUT with REPO date ...");
+
+		}
+    } catch (err) {
+
+		console.error("Failed to update player online status:", err);
+    }
 }
 
 // --------------------------------------------------
@@ -318,7 +499,8 @@ export async function softdeletePlayer(userId: string) {
 			 	   nickname = ?,
 			 	   avatarUrl = ?,
 			 	   deleted = 1,
-			 	   deleted_at = CURRENT_TIMESTAMP
+			 	   deleted_at = CURRENT_TIMESTAMP,
+				   access_expires_at = '2025-12-01'
 			   	   WHERE user_id = ?
 			   	   `,
 			   	   [nickname, DEFAULT_AVATAR, userId]
@@ -367,6 +549,46 @@ export async function updatePlayerStats(
       return { applied: false };
     }
 
+	if (AI_USER_IDS.has(p1.user_id) || AI_USER_IDS.has(p2.user_id)) {
+		const humanUserId = AI_USER_IDS.has(p1.user_id) ? p2.user_id : p1.user_id;
+		const aiUserId = AI_USER_IDS.has(p1.user_id) ? p1.user_id : p2.user_id;
+
+		console.log('Human player ID:', humanUserId);
+
+		const player = await db.all<{
+				user_id: string;
+				wins: number;
+				losses: number;
+				rate: number;
+		}>(`
+		   SELECT user_id, wins, losses, rate
+		   FROM player_ai_stats
+		   WHERE user_id = ?
+		   `, [humanUserId]
+		   );
+
+		if (player.length !== 1) {
+			await db.exec('ROLLBACK');
+			return { applied: false };
+		}
+
+		const humanResult = p1.user_id === humanUserId ? p1.result : p2.result;
+
+		const newHumanRate = calculateHumanAiRate(player[0].rate, aiUserId, humanResult); 
+
+		console.log('New human rate:', newHumanRate);
+
+		await applyAi(player[0].user_id, humanResult, newHumanRate);
+
+		await db.exec('COMMIT');
+
+		return {
+				applied: true,
+				rate: newHumanRate
+		};
+
+	} else {
+
     // load players
     const players = await db.all<{
       user_id: string;
@@ -394,34 +616,6 @@ export async function updatePlayerStats(
     const newA = calculateRate(A.rate, B.rate, p1.result);
     const newB = calculateRate(B.rate, A.rate, p2.result);
 
-    async function apply(
-      userId: string,
-      result: 'win' | 'loss',
-      rate: number
-    ) {
-
-      await db.run(
-        `
-        UPDATE player_stats
-        SET
-          wins = wins + ?,
-          losses = losses + ?,
-          played = played + 1,
-          winrate = ((wins + ?) * 1.0 / (played + 1)),
-          rate = ?,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE user_id = ?
-        `,
-        [
-          result === 'win' ? 1 : 0,
-          result === 'loss' ? 1 : 0,
-          result === 'win' ? 1 : 0,
-          rate,
-          userId
-        ]
-      );
-    }
-
     await apply(A.user_id, p1.result, newA);
     await apply(B.user_id, p2.result, newB);
 
@@ -431,6 +625,7 @@ export async function updatePlayerStats(
       applied: true,
       rate: newA
     };
+	}
 
   } catch (err) {
 
@@ -494,6 +689,7 @@ export async function getUserPublicProfile(userId: string): Promise<PlayerInfo |
             created_at: row.created_at,
 			last_access_at: row.last_access_at,
             logged: row.logged,
+			access_expires_at: row.access_expires_at,
 
             stats: {
                     played: row.played ?? 0,
@@ -505,4 +701,96 @@ export async function getUserPublicProfile(userId: string): Promise<PlayerInfo |
             },
     };
 
+}
+
+// --------------------------------------------------
+// HISTORY OF USER'S GAMES
+// --------------------------------------------------
+
+export async function getUserGameHistory(userId: string): Promise<GameHistoryItem[]> {
+  try {
+    const url = `${STATS_API}/internal/statistics/games/history/${userId}`;
+    const response = await axios.get<any[]>(url, {
+      headers: { Authorization: `Bearer ${SERVICE_TOKEN}` },
+    });
+
+    const games = response.data;
+
+	// Распечатываем весь ответ от axios
+	console.log('Games:', games);
+
+    const result: GameHistoryItem[] = [];
+
+    for (const game of games) {
+      // Player 1
+      let player1: PlayerGamesHistoryData | AIGamesHistoryData;
+      if (Object.values(AIUserType).includes(game.user1_id)) {
+        player1 = {
+          id: game.user1_id,
+          nickname: game.user1_id,
+          avatar: null,
+          points: game.user1_score,
+          session_expires_at: null,
+          last_access: null,
+          logged: 1,
+        };
+      } else {
+        const p1 = await getPlayerById(game.user1_id);
+        if (!p1) continue;
+        player1 = {
+          id: p1.id,
+          nickname: p1.nickname,
+          avatar: p1.avatarUrl,
+          points: game.user1_score,
+          session_expires_at: p1.access_expires_at,
+          last_access: p1.last_access_at,
+          logged: p1.logged,
+        };
+      }
+
+      // Player 2
+      let player2: PlayerGamesHistoryData | AIGamesHistoryData;
+      if (Object.values(AIUserType).includes(game.user2_id)) {
+        player2 = {
+          id: game.user2_id,
+          nickname: game.user2_id,
+          avatar: null,
+          points: game.user2_score,
+          session_expires_at: null,
+          last_access: null,
+          logged: 1,
+        };
+      } else {
+        const p2 = await getPlayerById(game.user2_id);
+        if (!p2) continue;
+        player2 = {
+          id: p2.id,
+          nickname: p2.nickname,
+          avatar: p2.avatarUrl,
+          points: game.user2_score,
+          session_expires_at: p2.access_expires_at,
+          last_access: p2.last_access_at,
+          logged: p2.logged,
+        };
+      }
+
+      // Winner - if User1 - 0, if User2 - 1 - for serializacion at frontend
+      const winner =
+        game.user1_result === 'win' ? 0 : 1;
+
+      result.push({
+        gameId: game.game_id,
+        gameMode: game.game_mode || 'local-pvp',
+        gameDate: game.end_at,
+        player1,
+        player2,
+        winner,
+      });
+    }
+
+    return result;
+  } catch (err) {
+    console.error('Failed to fetch game history', err);
+    return [];
+  }
 }
