@@ -80,6 +80,7 @@ export class Game {
         onBackToMenuCallback,
         () => {
           this._gameLoop?.resume();
+          this._roomManager?.sendResume();
         },
       );
       const { ball, table, paddle, paddle2, gui, touchControls } = entities;
@@ -157,6 +158,7 @@ export class Game {
             gui.hud.showPauseButton(() => {
               gui.pauseOverlay.show();
               this._gameLoop?.pause();
+              this._roomManager?.sendPause();
             });
           }
 

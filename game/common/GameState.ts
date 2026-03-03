@@ -45,6 +45,7 @@ export class MyGameState extends Schema {
     @type("string") winner: string = ""; // SessionId of winner, empty if no winner
     @type("boolean") gameOver: boolean = false;
     @type("boolean") gameStarted: boolean = false;
+    @type("boolean") isPaused: boolean = false;
     
     // Client readiness (for loading sync in PvP)
     @type("boolean") player1Ready: boolean = false;
