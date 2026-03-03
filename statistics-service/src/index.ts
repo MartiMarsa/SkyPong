@@ -169,7 +169,7 @@ fastify.get<{ Querystring: LeaderboardQuery; }>('/statistics/leaderboard', async
 		  	offset
 	    	);
 
-	    	reply.send({ liderboard: data });
+	    	reply.send({ leaderboard: data });
 
       	} catch (err) {
 		reply.status(400).send({
