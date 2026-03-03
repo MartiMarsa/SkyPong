@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import multipart from '@fastify/multipart';
 import fastifyStatic from '@fastify/static';
 import sharp from 'sharp';
@@ -26,6 +27,137 @@ import * as friendService from './friendService';
 import { publicKey } from './keys';
 
 const fastify = Fastify({logger: true});
+
+type ChatClient = {
+  socket: any;
+  userId: string;
+  sender: string;
+  buffer: Buffer;
+};
+
+const chatClients = new Set<ChatClient>();
+
+function encodeWebSocketTextFrame(text: string): Buffer {
+  const payload = Buffer.from(text, 'utf8');
+  const payloadLength = payload.length;
+
+  if (payloadLength < 126) {
+    return Buffer.concat([Buffer.from([0x81, payloadLength]), payload]);
+  }
+
+  if (payloadLength <= 0xffff) {
+    const header = Buffer.alloc(4);
+    header[0] = 0x81;
+    header[1] = 126;
+    header.writeUInt16BE(payloadLength, 2);
+    return Buffer.concat([header, payload]);
+  }
+
+  const header = Buffer.alloc(10);
+  header[0] = 0x81;
+  header[1] = 127;
+  header.writeBigUInt64BE(BigInt(payloadLength), 2);
+  return Buffer.concat([header, payload]);
+}
+
+function encodeWebSocketPongFrame(payload: Buffer): Buffer {
+  return Buffer.concat([Buffer.from([0x8a, payload.length]), payload]);
+}
+
+function decodeWebSocketFrames(buffer: Buffer): { frames: { opcode: number; payload: Buffer; fin: boolean }[]; remaining: Buffer } {
+  const frames: { opcode: number; payload: Buffer; fin: boolean }[] = [];
+  let offset = 0;
+
+  while (offset + 2 <= buffer.length) {
+    const byte1 = buffer[offset];
+    const byte2 = buffer[offset + 1];
+    const fin = (byte1 & 0x80) !== 0;
+    const opcode = byte1 & 0x0f;
+    const masked = (byte2 & 0x80) !== 0;
+    let payloadLength = byte2 & 0x7f;
+    let headerLength = 2;
+
+    if (payloadLength === 126) {
+      if (offset + 4 > buffer.length) break;
+      payloadLength = buffer.readUInt16BE(offset + 2);
+      headerLength += 2;
+    } else if (payloadLength === 127) {
+      if (offset + 10 > buffer.length) break;
+      const lengthAsBigInt = buffer.readBigUInt64BE(offset + 2);
+      if (lengthAsBigInt > BigInt(Number.MAX_SAFE_INTEGER)) {
+        break;
+      }
+      payloadLength = Number(lengthAsBigInt);
+      headerLength += 8;
+    }
+
+    const maskLength = masked ? 4 : 0;
+    const frameLength = headerLength + maskLength + payloadLength;
+    if (offset + frameLength > buffer.length) break;
+
+    const payloadStart = offset + headerLength + maskLength;
+    const payload = buffer.subarray(payloadStart, payloadStart + payloadLength);
+    const unmaskedPayload = Buffer.from(payload);
+
+    if (masked) {
+      const mask = buffer.subarray(offset + headerLength, offset + headerLength + 4);
+      for (let i = 0; i < payloadLength; i += 1) {
+        unmaskedPayload[i] = payload[i] ^ mask[i % 4];
+      }
+    }
+
+    frames.push({ opcode, payload: unmaskedPayload, fin });
+    offset += frameLength;
+  }
+
+  return { frames, remaining: buffer.subarray(offset) };
+}
+
+function broadcastChatMessage(message: { sender: string; text: string; timestamp: string }): void {
+  const payload = encodeWebSocketTextFrame(JSON.stringify(message));
+  for (const client of chatClients) {
+    if (!client.socket.destroyed) {
+      client.socket.write(payload);
+    }
+  }
+}
+
+function parseCookies(cookieHeader: string | undefined): Record<string, string> {
+  if (!cookieHeader) return {};
+
+  return cookieHeader.split(';').reduce((acc, item) => {
+    const [rawKey, ...rest] = item.trim().split('=');
+    if (!rawKey || rest.length === 0) return acc;
+    acc[rawKey] = decodeURIComponent(rest.join('='));
+    return acc;
+  }, {} as Record<string, string>);
+}
+
+async function getChatUserFromUpgrade(req: any): Promise<{ userId: string; sender: string } | null> {
+  const cookies = parseCookies(req.headers.cookie);
+  const accessToken = cookies.access_token;
+
+  if (!accessToken) return null;
+
+  try {
+    const verified = jwt.verify(accessToken, publicKey, {
+      algorithms: ['RS256'],
+      issuer: 'auth-service',
+      audience: 'transcendence',
+    }) as any;
+
+    const userId = verified?.sub;
+    if (!userId) return null;
+
+    const player = await getPlayerById(userId);
+    return {
+      userId,
+      sender: player?.nickname || userId,
+    };
+  } catch {
+    return null;
+  }
+}
 
 // Registrar el plugin de métricas
 fastify.register(require('fastify-metrics'), { 
@@ -899,6 +1031,103 @@ fastify.get('/profile/friends/status/:targetId', { preHandler: verifyToken }, as
 //     	const { otherId } = req.params as { otherId: string };
 //     	return friendService.getFriendStatusService(userId, otherId);
 // });
+
+
+fastify.server.on('upgrade', (req, socket, _head) => {
+  const requestPath = (req.url || '').split('?')[0];
+  if (requestPath !== '/chat/ws') {
+    socket.destroy();
+    return;
+  }
+
+  (async () => {
+    const user = await getChatUserFromUpgrade(req);
+    if (!user) {
+      socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    const wsKey = req.headers['sec-websocket-key'];
+    if (!wsKey || typeof wsKey !== 'string') {
+      socket.write('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
+      socket.destroy();
+      return;
+    }
+
+    const acceptKey = crypto
+      .createHash('sha1')
+      .update(`${wsKey}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`)
+      .digest('base64');
+
+    socket.write(
+      'HTTP/1.1 101 Switching Protocols\r\n' +
+      'Upgrade: websocket\r\n' +
+      'Connection: Upgrade\r\n' +
+      `Sec-WebSocket-Accept: ${acceptKey}\r\n\r\n`
+    );
+
+    const client: ChatClient = {
+      socket,
+      userId: user.userId,
+      sender: user.sender,
+      buffer: Buffer.alloc(0),
+    };
+
+    chatClients.add(client);
+
+    const cleanup = () => {
+      chatClients.delete(client);
+    };
+
+    socket.on('data', (chunk: Buffer) => {
+      client.buffer = Buffer.concat([client.buffer, chunk]);
+      const { frames, remaining } = decodeWebSocketFrames(client.buffer);
+      client.buffer = remaining;
+
+      for (const frame of frames) {
+        if (!frame.fin) {
+          socket.destroy();
+          return;
+        }
+
+        if (frame.opcode === 0x8) {
+          socket.end();
+          return;
+        }
+
+        if (frame.opcode === 0x9) {
+          socket.write(encodeWebSocketPongFrame(frame.payload));
+          continue;
+        }
+
+        if (frame.opcode !== 0x1) {
+          continue;
+        }
+
+        try {
+          const data = JSON.parse(frame.payload.toString('utf8')) as { text?: string };
+          const text = (data.text || '').trim();
+          if (!text) continue;
+
+          broadcastChatMessage({
+            sender: client.sender,
+            text: text.slice(0, 1000),
+            timestamp: new Date().toISOString(),
+          });
+        } catch {
+          continue;
+        }
+      }
+    });
+
+    socket.on('error', cleanup);
+    socket.on('close', cleanup);
+    socket.on('end', cleanup);
+  })().catch(() => {
+    socket.destroy();
+  });
+});
 
 // --- START SERVER ---
 const start = async () => {

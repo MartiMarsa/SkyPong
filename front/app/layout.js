@@ -6,6 +6,7 @@ config.autoAddCss = false;
 import { LanguageProvider } from './context/language-context';
 import { AuthProvider} from './context/auth-context'
 import { getCurrentLocale } from "./lib/i18n/locale-manager";
+import GlobalChatUI from './ui/global-chat-ui';
 
 export const metadata = {
   title: 'Transcendence',
@@ -27,7 +28,7 @@ export default function RootLayout({ children }) {
     <AuthProvider>
         <LanguageProvider>
             <html lang={getCurrentLocale()}>
-                <body>{children}</body>
+                <body>{children}<GlobalChatUI /></body>
             </html>
         </LanguageProvider>
     </AuthProvider>
