@@ -41,12 +41,12 @@ function useLeaderboard() {
         if (!res.ok) throw new Error('Failed to fetch leaderboard');
         const data: LeaderboardResponse = await res.json();
 
-        console.log("Num players: ", data.liderboard);
+        console.log("Num players: ", data.leaderboard);
         console.info("Statistics data: ", data);
-      if (data.liderboard.length > 0) {
+      if (data.leaderboard.length > 0) {
         setPlayers(prev => {
           const map = new Map(prev.map(p => [p.user_id, p]));
-          for (const p of data.liderboard) map.set(p.user_id, p);
+          for (const p of data.leaderboard) map.set(p.user_id, p);
           return Array.from(map.values()).sort((a, b) => b.rate - a.rate);
         });
         setLastSync(data.last);

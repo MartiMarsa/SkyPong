@@ -1,5 +1,6 @@
 import { getStatisticsDB } from './dbStats';
 import { getDbHelpers } from './helpers';
+import * as StatsTypes from './stats.types';
 
 // --- DB ---
 const db = getDbHelpers(getStatisticsDB());

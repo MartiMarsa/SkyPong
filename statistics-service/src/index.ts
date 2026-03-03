@@ -5,6 +5,7 @@ import { statisticsLoop } from './statsWorker';
 import { addGameStats, getGamesHistoryByUserId } from './gameresults';
 import { initStatisticsDB, getStatisticsDB, closeStatisticsDB } from './dbStats';
 import { initLeaderboardDB, getLeaderboardDB, closeLeaderboardDB } from './dbLeaderboard';
+import * as StatsTypes from './stats.types';
 
 // --- ENV ---
 /* TODO CHANGE SERVICE_TOKEN to env in prod*/
@@ -36,28 +37,6 @@ async function requireServiceAuth(req: any, reply: any) {
 	    	return reply.status(403).send({ error: 'Forbidden' });
       	}
 }
-
-// --- TYPES ---
-type PlayerResult = {
-	user_id: string;
-      	user_score: number;
-      	user_result: 'win' | 'loss';
-};
-
-type GameResult = {
-      	game_id: string;
-      	start_at: string;
-      	end_at: string;
-
-      	players: PlayerResult[];
-};
-
-type LeaderboardQuery = {
-      	by?: string;
-      	limit?: number;
-      	offset?: number;
-};
-
 // --- SCHEMAS ---
 const gameResultSchema = {
       	body: {
@@ -92,7 +71,7 @@ const gameResultSchema = {
 
 
 // --- ADD GAME STATISTICS ---
-fastify.post<{ Body: GameResult; }>('/internal/statistics/gameresult/update', { preHandler: requireServiceAuth, schema: gameResultSchema }, async (req: any, reply) => {
+fastify.post<{ Body: StatsTypes.GameResult; }>('/internal/statistics/gameresult/update', { preHandler: requireServiceAuth, schema: gameResultSchema }, async (req: any, reply) => {
 	try {
 
 	  	const {
@@ -155,7 +134,7 @@ fastify.post<{ Body: GameResult; }>('/internal/statistics/gameresult/update', { 
 });
 
 // --- GET LEADERBOARD --- 
-fastify.get<{ Querystring: LeaderboardQuery; }>('/statistics/leaderboard', async (req, reply) => {
+fastify.get<{ Querystring: StatsTypes.LeaderboardQuery; }>('/statistics/leaderboard', async (req, reply) => {
 
 	try {
 	    	const by = (req.query.by as string) || 'rate';
@@ -169,7 +148,7 @@ fastify.get<{ Querystring: LeaderboardQuery; }>('/statistics/leaderboard', async
 		  	offset
 	    	);
 
-	    	reply.send({ liderboard: data });
+	    	reply.send({ leaderboard: data });
 
       	} catch (err) {
 		reply.status(400).send({
@@ -209,9 +188,6 @@ async function start() {
 	    	controller.abort();
 
 	    	try {
-//		  	await fastify.close();
-//		  	console.log('[Main] HTTP server closed');
-
 			await closeStatisticsDB();
 			console.log('[Main] Statistics DB closed');
 
@@ -239,11 +215,13 @@ async function start() {
 
 	    	// --- START WORKERS ---
 		const statsWorker = statisticsLoop(signal, err => {
-		  	console.error('[StatsWorker] error', err);
+//		  	console.error('[StatsWorker] error', err);
+			console.error('[StatsWorker] error');
 	    	});
 
 	    	const leaderboardWorker = leaderboardLoop(signal, err => {
-		  	console.error('[LeaderboardWorker] error', err);
+//		  	console.error('[LeaderboardWorker] error', err);
+			console.error('[LeaderboardWorker] error');
 	    	});
 
 	    	console.log('[Main] workers started');

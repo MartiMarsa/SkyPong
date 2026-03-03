@@ -79,7 +79,7 @@ It tracks game results between players, updates a leaderboard, and synchronizes 
   * `by` — leaderboard index (`rate`, `winrate`, `wins`, `played`)
   * `limit` — number of results (default 50)
   * `offset` — offset for pagination (default 0)
-* Response: `liderboard` array with fields:
+* Response: `leaderboard` array with fields:
 
   * `user_id`
   * `played`

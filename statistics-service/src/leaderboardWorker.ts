@@ -1,10 +1,11 @@
 import axios from 'axios';
 import { getLeaderboardDB } from './dbLeaderboard';
 import { sleep, getDbHelpers } from './helpers';
+import * as StatsTypes from './stats.types';
+import * as StatsConst from './stats.const';
 
 // --- CONFIG ---
-//const PROFILE_API = 'http://profile-service:8082/internal/profile/leaderboard/updates';
-const PROFILE_API = process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:5000/internal/profile/leaderboard/updates';
+const PROFILE_API = process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:5000';
 
 const TOKEN = process.env.SERVICE_TOKEN || 'secret'; // process.env.SERVICE_TOKEN;
 let interval = 2000;
@@ -12,56 +13,6 @@ const MAX_FAILURES = 5;
 
 // --- DB ---
 const db = getDbHelpers(getLeaderboardDB());
-
-// --- TYPES ---
-type PlayerStat = {
-	user_id: number;
-
-      	played: number;
-      	wins: number;
-      	losses: number;
-
-      	winrate: number;
-      	rate: number;
-
-      	updated_at: string;
-};
-
-const LEADERBOARD_INDEXES = {
-      	rate: {
-	    	column: 'rate',
-	    	order: 'DESC',
-      	},
-
-      	winrate: {
-	    	column: 'winrate',
-	    	order: 'DESC',
-      	},
-
-      	played: {
-	    	column: 'played',
-	    	order: 'DESC',
-      	},
-
-      	wins: {
-	    	column: 'wins',
-	    	order: 'DESC',
-      	},
-} as const;
-
-type LeaderboardIndex = keyof typeof LEADERBOARD_INDEXES;
-
-type LeaderboardRow = {
-	user_id: string;
-
-	played: number;
-	wins: number;
-	losses: number;
-
-	winrate: number;
-	rate: number;
-	updated_at: string;
-};
 
 // --- GET LAST SYNCRONIZATION DATE ---
 async function getLastSync(): Promise<string> {
@@ -73,10 +24,10 @@ async function getLastSync(): Promise<string> {
 }
 
 // --- SYNCHRONIZE LEADERBOARD ---
-async function syncOnce(): Promise<{ players: PlayerStat[]; last: string }> {
+async function syncOnce(): Promise<{ players: StatsTypes.PlayerStat[]; last: string }> {
       	const lastSync = await getLastSync();
 
-      	const res = await axios.get(PROFILE_API, {
+      	const res = await axios.get(`${PROFILE_API}/internal/profile/leaderboard/updates`, {
 	    	params: { since: lastSync },
 	    	headers: { Authorization: `Bearer ${TOKEN}` },
 	    	timeout: 5000
@@ -86,7 +37,7 @@ async function syncOnce(): Promise<{ players: PlayerStat[]; last: string }> {
 }
 
 // --- UPSERT OF NEW DATA --- 
-async function upsert(p: PlayerStat) {
+async function upsert(p: StatsTypes.PlayerStat) {
 
       	await db.run(`INSERT INTO leaderboard_cache (
 
@@ -176,12 +127,12 @@ export async function leaderboardLoop(abortSignal: AbortSignal, onError: (err: u
 }
 
 // --- GET LEADERBOARD ---
-export async function getLeaderboardByIndex(index: LeaderboardIndex, limit = 50, offset = 0): Promise<LeaderboardRow[]> {
+export async function getLeaderboardByIndex(index: StatsConst.LeaderboardIndex, limit = 50, offset = 0): Promise<StatsTypes.LeaderboardRow[]> {
 
-	const cfg = LEADERBOARD_INDEXES[index];
+	const cfg = StatsConst.LEADERBOARD_INDEXES[index];
 
 	const sql = `SELECT * FROM leaderboard_cache ORDER BY ${cfg.column} ${cfg.order} LIMIT ? OFFSET ?`;
 
-	return db.all<LeaderboardRow>(sql, [limit, offset]);
+	return db.all<StatsTypes.LeaderboardRow>(sql, [limit, offset]);
 }
 
