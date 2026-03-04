@@ -1,10 +1,8 @@
 import { AdvancedDynamicTexture, TextBlock, StackPanel, Control } from "@babylonjs/gui";
 import { GUI_STYLES } from "../config/GUIStyles";
-import { UITexts } from "../config/UITexts";
+import { UITexts, Language, HUDTexts } from "../config/UITexts";
 import { GUIElements } from "./GUIElements";
 import { touchDetection } from "../utils/touchDetection";
-
-const TEXTS = UITexts.en.hud;
 
 export class GameHUD {
   private _player1Container: StackPanel;
@@ -16,14 +14,18 @@ export class GameHUD {
   private _player2ScoreText: TextBlock;
   private _countdownText: TextBlock;
 
-  private _player1Name: string = TEXTS.player1Default;
-  private _player2Name: string = TEXTS.player2Default;
+  private _player1Name: string;
+  private _player2Name: string;
   private _player1Score: number = 0;
   private _player2Score: number = 0;
   private _isMobile: boolean;
+  private _texts: HUDTexts;
 
-  constructor(private _texture: AdvancedDynamicTexture) {
+  constructor(private _texture: AdvancedDynamicTexture, language: Language = 'en') {
     this._isMobile = touchDetection();
+    this._texts = UITexts[language].hud;
+    this._player1Name = this._texts.player1Default;
+    this._player2Name = this._texts.player2Default;
 
     this._player2Container = GUIElements.CreateStackPanel(
       "player2Container",
@@ -35,7 +37,7 @@ export class GameHUD {
     this._player2Text = GUIElements.CreateText("player2Text", "", GUI_STYLES.TEXT.HUD_NAME);
     this._player2ScoreText = GUIElements.CreateText(
       "player2ScoreText",
-      TEXTS.scoreDefault,
+      this._texts.scoreDefault,
       GUI_STYLES.TEXT.HUD_SCORE,
     );
 
@@ -58,7 +60,7 @@ export class GameHUD {
 
     this._player1ScoreText = GUIElements.CreateText(
       "player1ScoreText",
-      TEXTS.scoreDefault,
+      this._texts.scoreDefault,
       GUI_STYLES.TEXT.HUD_SCORE,
     );
     this._player1Text = GUIElements.CreateText("player1Text", "", GUI_STYLES.TEXT.HUD_NAME);

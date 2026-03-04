@@ -1,10 +1,8 @@
 import { AdvancedDynamicTexture, Button, Control } from '@babylonjs/gui';
 import { GUI_STYLES } from '../config/GUIStyles';
-import { UITexts } from '../config/UITexts';
+import { UITexts, Language, GameOverTexts } from '../config/UITexts';
 import { GUIElements } from './GUIElements';
 import { GameSessionConfig } from '../types/GameSessionConfig';
-
-const TEXTS = UITexts.en.gameOver;
 
 export class GameOverOverlay {
     private _container: ReturnType<typeof GUIElements.CreateContainer>;
@@ -16,15 +14,18 @@ export class GameOverOverlay {
     private _isVisible: boolean = false;
     private _config: GameSessionConfig;
     private _onRetry: (() => void) | null = null;
+    private _texts: GameOverTexts;
 
     constructor(
         private _texture: AdvancedDynamicTexture,
         private _onBackClick: () => void,
         config: GameSessionConfig,
-        onRetry?: () => void
+        onRetry?: () => void,
+        language: Language = 'en',
     ) {
         this._config = config;
         this._onRetry = onRetry || null;
+        this._texts = UITexts[language].gameOver;
         this._container = GUIElements.CreateContainer('gameOverContainer', GUI_STYLES.CONTAINER.OVERLAY);
         this._container.isVisible = false;
         this._container.isHitTestVisible = true;
@@ -37,7 +38,7 @@ export class GameOverOverlay {
             ...GUI_STYLES.TEXT.GAME_OVER_TITLE,
             top: GUI_STYLES.GAME_OVER_POSITIONS.TITLE.top,
         };
-        this._titleText = GUIElements.CreateText('gameOverTitle', TEXTS.title, titleStyle);
+        this._titleText = GUIElements.CreateText('gameOverTitle', this._texts.title, titleStyle);
         this._container.addControl(this._titleText);
 
         const winnerStyle = {
@@ -67,7 +68,7 @@ export class GameOverOverlay {
             };
             this._retryButton = GUIElements.CreateTextButton(
                 'retryButton',
-                TEXTS.playAgain,
+                this._texts.playAgain,
                 retryButtonStyle,
                 () => {
                     console.log('[GameOverOverlay] Retry button clicked');
@@ -87,7 +88,7 @@ export class GameOverOverlay {
         };
         this._backButton = GUIElements.CreateTextButton(
             'backButton',
-            TEXTS.backToMenu,
+            this._texts.backToMenu,
             buttonStyle,
             () => {
                 console.log('[GameOverOverlay] Back button clicked');
@@ -105,7 +106,7 @@ export class GameOverOverlay {
         player1Name: string,
         player2Name: string
     ): void {
-        this._winnerText.text = TEXTS.winner.replace('{winnerName}', winnerName);
+        this._winnerText.text = this._texts.winner.replace('{winnerName}', winnerName);
         this._winnerText.color = isWinnerPlayer1 ? '#7eb8ff' : '#ff7e7e';
 
         this._scoreText.text = `${player1Name}: ${player1Score} - ${player2Name}: ${player2Score}`;

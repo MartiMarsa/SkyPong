@@ -69,6 +69,7 @@ export class TestScene {
             gameMode: 'local-2p',
             player2Name: 'Player 2',
             player2Color: '#F6511D',
+            language: 'en',
         };
         
         this._uiManager = new GameUIManager(this.scene, testConfig, () => {

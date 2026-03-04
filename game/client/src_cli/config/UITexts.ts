@@ -1,4 +1,31 @@
-export const UITexts = {
+// Type definitions for flexible i18n strings
+export interface HUDTexts {
+  player1Default: string;
+  player2Default: string;
+  scoreDefault: string;
+}
+
+export interface PauseTexts {
+  title: string;
+  resume: string;
+  quitToMenu: string;
+}
+
+export interface GameOverTexts {
+  title: string;
+  playAgain: string;
+  backToMenu: string;
+  winner: string;
+  score: string;
+}
+
+export interface LanguageTexts {
+  gameOver: GameOverTexts;
+  pause: PauseTexts;
+  hud: HUDTexts;
+}
+
+export const UITexts: Record<string, LanguageTexts> = {
   en: {
     gameOver: {
       title: "GAME OVER",
@@ -56,6 +83,6 @@ export const UITexts = {
       scoreDefault: "0",
     },
   },
-} as const;
+};
 
 export type Language = keyof typeof UITexts;

@@ -4,6 +4,7 @@ import { GameHUD } from "./GameHUD";
 import { GameOverOverlay } from "./GameOverOverlay";
 import { PauseOverlay } from "./PauseOverlay";
 import { GameSessionConfig } from "../types/GameSessionConfig";
+import { Language } from "../config/UITexts";
 
 export class GameUIManager {
   public texture: AdvancedDynamicTexture;
@@ -23,6 +24,8 @@ export class GameUIManager {
       (this.texture.layer as any).renderingGroupId = 2;
     }
 
+    const language: Language = config.language ?? 'en';
+
     this.pauseOverlay = new PauseOverlay(
       this.texture,
       () => {
@@ -33,10 +36,11 @@ export class GameUIManager {
         this.pauseOverlay.hide();
         onBackToMenu();
       },
+      language,
     );
 
-    this.hud = new GameHUD(this.texture);
-    this.gameOverOverlay = new GameOverOverlay(this.texture, onBackToMenu, config, onRetry);
+    this.hud = new GameHUD(this.texture, language);
+    this.gameOverOverlay = new GameOverOverlay(this.texture, onBackToMenu, config, onRetry, language);
   }
 
   public showGameHUD(player1Name: string, player2Name: string): void {

@@ -1,6 +1,8 @@
 // /game/client/src_cli/types/GameSessionConfig.ts
 // Unified configuration interface for game entrypoint
 
+import { Language } from '../config/UITexts';
+
 export type GameMode =
   | 'ai-easy'
   | 'ai-medium'
@@ -26,6 +28,7 @@ export interface GameSessionConfig {
   roomId?: string;              // Required for online-join mode
   cameraView?: 'angled' | 'top-down';
   winningScore?: number;         // Points needed to win (3, 5, 7, 9, 11)
+  language?: Language;           // UI language (defaults to 'en')
 }
 
 export interface ValidationError {

@@ -1,9 +1,7 @@
 import { AdvancedDynamicTexture, Button, Control } from "@babylonjs/gui";
 import { GUI_STYLES } from "../config/GUIStyles";
-import { UITexts } from "../config/UITexts";
+import { UITexts, Language, PauseTexts } from "../config/UITexts";
 import { GUIElements } from "./GUIElements";
-
-const TEXTS = UITexts.en.pause;
 
 export class PauseOverlay {
   private _container: ReturnType<typeof GUIElements.CreateContainer>;
@@ -11,12 +9,15 @@ export class PauseOverlay {
   private _resumeButton: Button;
   private _quitButton: Button;
   private _isVisible: boolean = false;
+  private _texts: PauseTexts;
 
   constructor(
     private _texture: AdvancedDynamicTexture,
     private _onResume: () => void,
     private _onQuit: () => void,
+    language: Language = 'en',
   ) {
+    this._texts = UITexts[language].pause;
     this._container = GUIElements.CreateContainer("pauseContainer", GUI_STYLES.CONTAINER.OVERLAY);
     this._container.isVisible = false;
     this._container.zIndex = 100;
@@ -28,7 +29,7 @@ export class PauseOverlay {
       ...GUI_STYLES.PAUSE_TITLE,
       top: GUI_STYLES.PAUSE_POSITIONS.TITLE.top,
     };
-    this._titleText = GUIElements.CreateText("pauseTitle", TEXTS.title, titleStyle);
+    this._titleText = GUIElements.CreateText("pauseTitle", this._texts.title, titleStyle);
     this._container.addControl(this._titleText);
 
     const resumeStyle = {
@@ -37,7 +38,7 @@ export class PauseOverlay {
       zIndex: 101,
       background: "#235789",
     };
-    this._resumeButton = GUIElements.CreateTextButton("resumeButton", TEXTS.resume, resumeStyle, () =>
+    this._resumeButton = GUIElements.CreateTextButton("resumeButton", this._texts.resume, resumeStyle, () =>
       this._onResume(),
     );
     this._container.addControl(this._resumeButton);
@@ -47,7 +48,7 @@ export class PauseOverlay {
       zIndex: 101,
       background: "#987284",
     };
-    this._quitButton = GUIElements.CreateTextButton("quitButton", TEXTS.quitToMenu, quitStyle, () =>
+    this._quitButton = GUIElements.CreateTextButton("quitButton", this._texts.quitToMenu, quitStyle, () =>
       this._onQuit(),
     );
     this._container.addControl(this._quitButton);
