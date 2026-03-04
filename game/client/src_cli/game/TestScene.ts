@@ -14,6 +14,7 @@ import { MAT } from "../config/Materials";
 import { CAMERA, ANIMATION } from '../config';
 import { GameUIManager } from '../ui/GameUIManager';
 import { TouchControls } from '../ui/TouchControls';
+import { GameSessionConfig } from '../types/GameSessionConfig';
 
 export class TestScene {
     private engine: Engine;
@@ -61,10 +62,20 @@ export class TestScene {
         camera.minZ = CAMERA.TEST_SCENE.MIN_Z;
         camera.wheelPrecision = CAMERA.TEST_SCENE.WHEEL_PRECISION;
 
-        // Create UI Manager
-        this._uiManager = new GameUIManager(this.scene, () => {
+        // Create UI Manager with test config
+        const testConfig: GameSessionConfig = {
+            playerName: 'Player 1',
+            playerColor: '#00A6ED',
+            gameMode: 'local-2p',
+            player2Name: 'Player 2',
+            player2Color: '#F6511D',
+        };
+        
+        this._uiManager = new GameUIManager(this.scene, testConfig, () => {
             console.log('[TestScene] Back to menu clicked');
-        }, undefined);
+        }, undefined, () => {
+            console.log('[TestScene] Retry clicked');
+        });
         this._uiManager.showGameHUD('Player 1', 'Player 2');
         this._uiManager.hud.updateScores(5, 3, '10');
 

@@ -1,19 +1,27 @@
 import { AdvancedDynamicTexture, Button, Control } from '@babylonjs/gui';
 import { GUI_STYLES } from '../config/GUIStyles';
 import { GUIElements } from './GUIElements';
+import { GameSessionConfig } from '../types/GameSessionConfig';
 
 export class GameOverOverlay {
     private _container: ReturnType<typeof GUIElements.CreateContainer>;
     private _titleText: ReturnType<typeof GUIElements.CreateText>;
     private _winnerText: ReturnType<typeof GUIElements.CreateText>;
     private _scoreText: ReturnType<typeof GUIElements.CreateText>;
+    private _retryButton: Button | null = null;
     private _backButton: Button;
     private _isVisible: boolean = false;
+    private _config: GameSessionConfig;
+    private _onRetry: (() => void) | null = null;
 
     constructor(
         private _texture: AdvancedDynamicTexture,
-        private _onBackClick: () => void
+        private _onBackClick: () => void,
+        config: GameSessionConfig,
+        onRetry?: () => void
     ) {
+        this._config = config;
+        this._onRetry = onRetry || null;
         this._container = GUIElements.CreateContainer('gameOverContainer', GUI_STYLES.CONTAINER.OVERLAY);
         this._container.isVisible = false;
         this._container.isHitTestVisible = true;
@@ -42,6 +50,30 @@ export class GameOverOverlay {
         };
         this._scoreText = GUIElements.CreateText('finalScoreText', '', scoreStyle);
         this._container.addControl(this._scoreText);
+
+        // Show retry button only for local/AI modes (not for online modes)
+        const showRetryButton = ['ai-easy', 'ai-medium', 'ai-hard', 'local-2p'].includes(this._config.gameMode);
+        
+        if (showRetryButton && this._onRetry) {
+            const retryButtonStyle = {
+                ...GUI_STYLES.BUTTON.DEFAULT,
+                top: '100px',
+                zIndex: 101,
+                background: '#235789',
+            };
+            this._retryButton = GUIElements.CreateTextButton(
+                'retryButton',
+                'Play Again',
+                retryButtonStyle,
+                () => {
+                    console.log('[GameOverOverlay] Retry button clicked');
+                    if (this._onRetry) {
+                        this._onRetry();
+                    }
+                }
+            );
+            this._container.addControl(this._retryButton);
+        }
 
         const buttonStyle = {
             ...GUI_STYLES.BUTTON.DEFAULT,

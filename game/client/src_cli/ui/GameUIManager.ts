@@ -3,6 +3,7 @@ import { AdvancedDynamicTexture } from "@babylonjs/gui";
 import { GameHUD } from "./GameHUD";
 import { GameOverOverlay } from "./GameOverOverlay";
 import { PauseOverlay } from "./PauseOverlay";
+import { GameSessionConfig } from "../types/GameSessionConfig";
 
 export class GameUIManager {
   public texture: AdvancedDynamicTexture;
@@ -10,7 +11,7 @@ export class GameUIManager {
   public gameOverOverlay: GameOverOverlay;
   public pauseOverlay: PauseOverlay;
 
-  constructor(scene: Scene, onBackToMenu: () => void, onResume?: () => void) {
+  constructor(scene: Scene, config: GameSessionConfig, onBackToMenu: () => void, onResume?: () => void, onRetry?: () => void) {
     this.texture = AdvancedDynamicTexture.CreateFullscreenUI("GameUI", true, scene);
     
     // Only apply idealWidth scaling on desktop/tablet (width >= 768px)
@@ -35,7 +36,7 @@ export class GameUIManager {
     );
 
     this.hud = new GameHUD(this.texture);
-    this.gameOverOverlay = new GameOverOverlay(this.texture, onBackToMenu);
+    this.gameOverOverlay = new GameOverOverlay(this.texture, onBackToMenu, config, onRetry);
   }
 
   public showGameHUD(player1Name: string, player2Name: string): void {

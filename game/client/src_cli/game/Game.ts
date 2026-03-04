@@ -10,6 +10,7 @@ import { LoadingManager } from "./LoadingManager";
 import { adjustCamera } from "../utils/Camera";
 import { GameSessionConfig } from "../types/GameSessionConfig";
 import { LoadingState } from "../types/LoadingTypes";
+import { encodeConfig } from "../utils/configDecoder";
 
 // Module-level lock to prevent duplicate game instances (React StrictMode)
 let gameInstanceLock = false;
@@ -69,6 +70,17 @@ export class Game {
       }
     };
 
+    const onRetryCallback = () => {
+      console.log('[Game] Retry requested - restarting game with same config');
+      // Dispose current game
+      this._cleanup();
+      gameInstanceLock = false;
+      
+      // Reload page with same config
+      const encodedConfig = encodeConfig(config);
+      window.location.href = `/game-engine/canvas?config=${encodedConfig}`;
+    };
+
     (async () => {
       const clientEngine = new ClientEngine(canvas, config);
       this._clientEngine = clientEngine;
@@ -82,6 +94,7 @@ export class Game {
           this._gameLoop?.resume();
           this._roomManager?.sendResume();
         },
+        onRetryCallback,
       );
       const { ball, table, paddle, paddle2, gui, touchControls } = entities;
       this._gui = gui;

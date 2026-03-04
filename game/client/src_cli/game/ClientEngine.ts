@@ -24,8 +24,10 @@ export class ClientEngine {
     public scene: Scene;
     private _entities: GameEntities | null = null;
     private _touchControls: TouchControls | null = null;
+    private _config: GameSessionConfig;
 
     constructor(canvas: HTMLCanvasElement, config: GameSessionConfig) {
+        this._config = config;
         const { gameMode, cameraView } = config;
         const isLocal2P = gameMode === 'local-2p';
 
@@ -37,7 +39,7 @@ export class ClientEngine {
         this.scene = this.engineSetup.scene;
     }
 
-    public async init(player1Name: string, player2Name: string, onBackToMenu?: () => void, onResume?: () => void): Promise<GameEntities> {
+    public async init(player1Name: string, player2Name: string, onBackToMenu?: () => void, onResume?: () => void, onRetry?: () => void): Promise<GameEntities> {
         const scene = this.scene;
         const engine = this.engineSetup.engine;
 
@@ -64,7 +66,7 @@ export class ClientEngine {
         const paddle = createPaddle("paddle1");
         const paddle2 = createPaddle("paddle2");
 
-        const gui = new GameUIManager(scene, onBackToMenu || (() => { }), onResume);
+        const gui = new GameUIManager(scene, this._config, onBackToMenu || (() => { }), onResume, onRetry);
 
         const hasTouch = touchDetection();
         const touchControls = new TouchControls(gui.texture);
