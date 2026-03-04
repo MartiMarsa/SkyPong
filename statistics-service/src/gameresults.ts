@@ -1,63 +1,25 @@
 import { getStatisticsDB } from './dbStats';
 import { getDbHelpers } from './helpers';
 import * as StatsTypes from './stats.types';
+export * as StatsEnums from './stats.enums.ts';
 
 // --- DB ---
 const db = getDbHelpers(getStatisticsDB());
 
-// --- TYPES ---
- type PlayerResult = {
-       	 user_id: string;
-       	 user_score: number;
-       	 user_result: 'win' | 'loss';
-};
+const AI_USER_IDS = new Set<string>(Object.values(StatsEnums.AIUserType));
 
-type GameResult = {
-      	game_id: string;
-      	start_at: string;
-      	end_at: string;
-      
-	players: PlayerResult[];
-};
-
-export enum AIUserType {
-	EASY = 'ai-easy',
-	MEDIUM = 'ai-medium',
-	HARD = 'ai-hard',
-}
-
-export enum GameMode {
-	AI = 'ai',
-	REMOTE = 'remote-pvp',
-}
-
-const AI_USER_IDS = new Set<string>(Object.values(AIUserType));
-
-function detectGameMode(user1Id: string, user2Id: string): GameMode {
+function detectGameMode(user1Id: string, user2Id: string): StatsEnums.GameMode {
   	if (AI_USER_IDS.has(user1Id) || AI_USER_IDS.has(user2Id)) {
-		return GameMode.AI;
+		return StatsEnums.GameMode.AI;
   	}
 
-  	return GameMode.REMOTE;
+  	return StatsEnums.GameMode.REMOTE;
 }
 
-export type GameHistoryRow = {
-  game_id: string;
-  user1_id: string;
-  user2_id: string;
-  user1_score: number;
-  user2_score: number;
-  user1_result: 'win' | 'loss';
-  user2_result: 'win' | 'loss';
-  start_at: string;
-  end_at: string;
-  game_mode: GameMode | 'local-pvp' | null;
-};
-
-export async function getGamesHistoryByUserId(userId: string): Promise<GameHistoryRow[]> {
+export async function getGamesHistoryByUserId(userId: string): Promise<StatsTypes.GameHistoryRow[]> {
   const { all } = db;
 
-  const rows = await all<GameHistoryRow>(
+  const rows = await all<StatsTypes.GameHistoryRow>(
     `
     SELECT
       game_id,
@@ -80,7 +42,7 @@ export async function getGamesHistoryByUserId(userId: string): Promise<GameHisto
   return rows ?? [];
 }
 
-export async function addGameStats(game: GameResult): Promise<void> {
+export async function addGameStats(game: StatsTypes.GameResult): Promise<void> {
 
       	const { run } = db;
 

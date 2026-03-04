@@ -1,3 +1,18 @@
+export * as StatsEnums from './stats.enums.ts';
+
+export type GameHistoryRow = {
+				game_id: string;
+				user1_id: string;
+				user2_id: string;
+				user1_score: number;
+				user2_score: number;
+				user1_result: 'win' | 'loss';
+				user2_result: 'win' | 'loss';
+				start_at: string;
+				end_at: string;
+				game_mode: StatsEnums.GameMode | 'local-pvp' | null;
+};
+
 export type GameResult = {
 				game_id: string;
                 start_at: string;
