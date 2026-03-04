@@ -252,7 +252,7 @@ fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, repl
 		   		 return reply.status(400).send({
 						error: {
 							code: "VALIDATION_ERROR",
-				  			message: result.error.errors[0].message,
+				  			message: result.error.issues[0].message,
 							},
 					  		});
 			 	 }
@@ -292,12 +292,13 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
 			 const result = signUpSchema.safeParse(req.body);
 
 			 if (!result.success) {
-				 return reply.status(400).send({
+			 	return reply.status(400).send({
 						error: {
 							code: "VALIDATION_ERROR",
-							message: result.error.errors[0].message;                            },
+							message: result.error.issues[0].message,
+					  		},
 							});
-				 }
+			  	}
 
 			const { email, password }: AuthBody = result.data;
 
@@ -342,7 +343,7 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
 		 		 return reply.status(400).send({
 							error: {
 								code: "VALIDATION_ERROR",
-								message: result.error.errors[0].message,
+								message: result.error.issues[0].message,
 						  		},
 								});
 			   	 }
