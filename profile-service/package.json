@@ -22,7 +22,8 @@
     "fastify-metrics": "^12.1.0",
     "jsonwebtoken": "^9.0.3",
     "sharp": "^0.34.5",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^5.1.7",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^9.0.10",
