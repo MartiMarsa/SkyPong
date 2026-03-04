@@ -1,7 +1,10 @@
 import { AdvancedDynamicTexture, Button, Control } from '@babylonjs/gui';
 import { GUI_STYLES } from '../config/GUIStyles';
+import { UITexts } from '../config/UITexts';
 import { GUIElements } from './GUIElements';
 import { GameSessionConfig } from '../types/GameSessionConfig';
+
+const TEXTS = UITexts.en.gameOver;
 
 export class GameOverOverlay {
     private _container: ReturnType<typeof GUIElements.CreateContainer>;
@@ -34,7 +37,7 @@ export class GameOverOverlay {
             ...GUI_STYLES.TEXT.GAME_OVER_TITLE,
             top: GUI_STYLES.GAME_OVER_POSITIONS.TITLE.top,
         };
-        this._titleText = GUIElements.CreateText('gameOverTitle', 'GAME OVER', titleStyle);
+        this._titleText = GUIElements.CreateText('gameOverTitle', TEXTS.title, titleStyle);
         this._container.addControl(this._titleText);
 
         const winnerStyle = {
@@ -64,7 +67,7 @@ export class GameOverOverlay {
             };
             this._retryButton = GUIElements.CreateTextButton(
                 'retryButton',
-                'Play Again',
+                TEXTS.playAgain,
                 retryButtonStyle,
                 () => {
                     console.log('[GameOverOverlay] Retry button clicked');
@@ -84,7 +87,7 @@ export class GameOverOverlay {
         };
         this._backButton = GUIElements.CreateTextButton(
             'backButton',
-            'Back to Menu',
+            TEXTS.backToMenu,
             buttonStyle,
             () => {
                 console.log('[GameOverOverlay] Back button clicked');
@@ -102,7 +105,7 @@ export class GameOverOverlay {
         player1Name: string,
         player2Name: string
     ): void {
-        this._winnerText.text = `${winnerName} Wins!`;
+        this._winnerText.text = TEXTS.winner.replace('{winnerName}', winnerName);
         this._winnerText.color = isWinnerPlayer1 ? '#7eb8ff' : '#ff7e7e';
 
         this._scoreText.text = `${player1Name}: ${player1Score} - ${player2Name}: ${player2Score}`;

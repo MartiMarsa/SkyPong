@@ -1,6 +1,9 @@
 import { AdvancedDynamicTexture, Button, Control } from "@babylonjs/gui";
 import { GUI_STYLES } from "../config/GUIStyles";
+import { UITexts } from "../config/UITexts";
 import { GUIElements } from "./GUIElements";
+
+const TEXTS = UITexts.en.pause;
 
 export class PauseOverlay {
   private _container: ReturnType<typeof GUIElements.CreateContainer>;
@@ -25,7 +28,7 @@ export class PauseOverlay {
       ...GUI_STYLES.PAUSE_TITLE,
       top: GUI_STYLES.PAUSE_POSITIONS.TITLE.top,
     };
-    this._titleText = GUIElements.CreateText("pauseTitle", "PAUSED", titleStyle);
+    this._titleText = GUIElements.CreateText("pauseTitle", TEXTS.title, titleStyle);
     this._container.addControl(this._titleText);
 
     const resumeStyle = {
@@ -34,7 +37,7 @@ export class PauseOverlay {
       zIndex: 101,
       background: "#235789",
     };
-    this._resumeButton = GUIElements.CreateTextButton("resumeButton", "Resume", resumeStyle, () =>
+    this._resumeButton = GUIElements.CreateTextButton("resumeButton", TEXTS.resume, resumeStyle, () =>
       this._onResume(),
     );
     this._container.addControl(this._resumeButton);
@@ -44,7 +47,7 @@ export class PauseOverlay {
       zIndex: 101,
       background: "#987284",
     };
-    this._quitButton = GUIElements.CreateTextButton("quitButton", "Quit to Menu", quitStyle, () =>
+    this._quitButton = GUIElements.CreateTextButton("quitButton", TEXTS.quitToMenu, quitStyle, () =>
       this._onQuit(),
     );
     this._container.addControl(this._quitButton);
