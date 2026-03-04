@@ -47,33 +47,6 @@ export async function generateToken(user: {
     return token;
 }
 
-export function generate2FAToken(userId: string) {
-	return jwt.sign(
-		{
-			sub: userId,
-			type: '2fa'
-		},
-		privateKey,
-		{
-		  	algorithm: 'RS256',
-		  	expiresIn: '5m',
-		  	issuer: 'auth-service',
-	    	});
-}
-
-export function generateOAuthTempToken(userId: string) {
-  	return jwt.sign(
-		{
-			sub: userId,
-			type: 'oauth-setup'
-		},
-		privateKey,
-		{
-			algorithm: 'RS256',
-			expiresIn: '10m'
-		});
-}
-
 export async function deleteUserSession(userId: string): Promise<void> {
   const db = getDB();
 
