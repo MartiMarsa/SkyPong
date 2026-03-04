@@ -137,8 +137,7 @@ export class Game {
             isOnline: isOnlineMode,
             initialGameStarted: room.state?.gameStarted ?? false,
             camera: clientEngine.engineSetup.camera,
-            tableMesh: table.mesh,
-            engine: engine,
+            cameraView: config.cameraView || (gameMode === 'local-2p' ? 'top-down' : 'angled'),
             onGameReady: this._onGameReady ?? undefined,
           });
 
