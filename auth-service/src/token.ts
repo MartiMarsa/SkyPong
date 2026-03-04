@@ -8,6 +8,11 @@ export async function generateToken(user: {
     password_version: number;
     token_version: number;
 }) {
+
+	function toSqlDatetime(date: Date): string {
+	 	return date.toISOString().slice(0, 19).replace('T', ' ');
+	}
+
     const issuedAt = new Date();
     const expiresAt = new Date(issuedAt.getTime() + 60 * 60 * 1000); // 1h
 
@@ -36,8 +41,8 @@ export async function generateToken(user: {
             [
                 crypto.randomUUID(),
                 user.id,
-                issuedAt.toISOString(),
-                expiresAt.toISOString(),
+                toSqlDatetime(issuedAt),
+                toSqlDatetime(expiresAt),
                 user.token_version,
             ],
             (err) => (err ? reject(err) : resolve())
