@@ -1,7 +1,7 @@
 import { getStatisticsDB } from './dbStats';
 import { getDbHelpers } from './helpers';
 import * as StatsTypes from './stats.types';
-export * as StatsEnums from './stats.enums.ts';
+import * as StatsEnums from './stats.enums';
 
 // --- DB ---
 const db = getDbHelpers(getStatisticsDB());

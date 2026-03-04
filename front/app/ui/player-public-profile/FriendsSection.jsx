@@ -24,7 +24,7 @@ import { useState, useEffect, useCallback } from "react";
 import api from "../../api/api";
 import Toast from "../messaging/toast";
 // ─── Config ───────────────────────────────────────────────────────────────────
-const ACTIVE_DAYS = 7;
+const ACTIVE_MINS = 0.5;
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
@@ -35,6 +35,7 @@ const C = {
   accent: "#00d2be",
   accentDim: "rgba(0,210,190,0.1)",
   green: "#22c55e",
+  absent: "#ed9511",
   greenDim: "rgba(34,197,94,0.12)",
   danger: "#ef4444",
   dangerDim: "rgba(239,68,68,0.1)",
@@ -51,9 +52,13 @@ const mono = "'Courier New', monospace";
 
 
 
-function isActive(lastLogin) {
+function isAbsent(lastLogin) {
   if (!lastLogin) return false;
-  return (Date.now() - new Date(lastLogin).getTime()) / 86400000 <= ACTIVE_DAYS;
+  const date = (Date.now() - new Date(lastLogin).getTime());
+  const mins = date / 60000;
+  const isAbsent = mins >= ACTIVE_MINS;
+  console.info("Last logged: ", date, "\nElapsed Mins: ", mins, " last_acces >= elapsed time ", isAbsent);
+  return (isAbsent);
 }
 
 function isBlocked(status) {
@@ -144,7 +149,8 @@ function Pill({ onClick, disabled, color, bgColor, borderColor, children }) {
 
 // ─── Friend row ───────────────────────────────────────────────────────────────
 function FriendRow({ friend, onRemove, onBlock, onProfile, onUnblock, busy, blocked }) {
-  const active = isActive(friend.last_login);
+  const absent = isAbsent(friend.last_access_at);
+  console.info("Friend is absent: ", absent, " | last_acces=", friend.last_access_at, " isLogged:", friend.logged);
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: "12px",
@@ -155,14 +161,19 @@ function FriendRow({ friend, onRemove, onBlock, onProfile, onUnblock, busy, bloc
       onMouseEnter={e => e.currentTarget.style.borderColor = C.borderAccent}
       onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
     >
-      <Avatar url={friend.avatarUrl} nickname={friend.nickname} size={38} showDot active={active} />
+      <Avatar url={friend.avatarUrl} nickname={friend.nickname} size={38} showDot active={absent} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: mono, fontSize: "13px", color: C.text, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {friend.nickname}
         </div>
-        <div style={{ fontFamily: mono, fontSize: "10px", color: active ? C.green : C.textDim, marginTop: "2px" }}>
-          {active ? "● ACTIVO" : "○ INACTIVO"}
-        </div>
+        { absent && friend.logged ? (
+            <div style={{ fontFamily: mono, fontSize: "10px", color: C.absent, marginTop: "2px" }}>
+                ● ABSENT
+            </div>
+        ) : (
+        <div style={{ fontFamily: mono, fontSize: "10px", color: friend.logged ? C.green : C.textDim, marginTop: "2px" }}>
+          {friend.logged ? "● ACTIVO" : "○ INACTIVO"}
+        </div>)}
       </div>
       <div style={{ display: "flex", gap: "4px" }}>
         {console.info("Friend id: ", friend.user_id)}
@@ -315,8 +326,8 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
   const handleBlock     = id => act(() => api(`/api/profile/friends/${id}/block`, { method: "POST", headers: { 'x-csrf-token': csrf }, body: { userId: currentUserId}}), "Usuario bloqueado");
   const handleUnblock   = id => act(() => api(`/api/profile/friends/${id}/unblock`, { method: "POST", headers: { 'x-csrf-token': csrf }, body: { userId: currentUserId}}), "Usuario desbloqueado");
 
-  const activeFriends   = friends.filter(f => (isActive(f.last_login) && !isBlocked(f.status)));
-  const inactiveFriends = friends.filter(f => (!isActive(f.last_login) && !isBlocked(f.status)));
+  const activeFriends   = friends.filter(f => (f.logged && !isBlocked(f.status)));
+  const inactiveFriends = friends.filter(f => ((isAbsent(f.last_login) || !f.logged) && !isBlocked(f.status)));
   const blockedFriends  = friends.filter(f => isBlocked(f.status));
 
   const tabs = [

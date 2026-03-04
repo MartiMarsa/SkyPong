@@ -1,4 +1,4 @@
-export * as StatsEnums from './stats.enums.ts';
+import * as StatsEnums from './stats.enums';
 
 export type GameHistoryRow = {
 				game_id: string;

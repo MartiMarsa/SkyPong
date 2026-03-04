@@ -1,9 +1,9 @@
 import { getProfileDB } from './dbPlayers';
 import { getDbHelpers } from './helpers';
 import crypto from 'crypto';
+import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
-import axios from 'axios';
 
 // --- CONFIG ---
 const MAX_RETRIES = 5;
@@ -12,14 +12,13 @@ const AVATARS_DIR = path.join('/app/uploads', 'avatars');
 const DEFAULT_AVATAR_PATH = path.join('/app/static', 'default-avatar.webp');
 const DEFAULT_AVATAR = '/static/default-avatar.webp';
 
+// --- DB ---
+const db = getDbHelpers(getProfileDB());
+
 const AUTH_API = process.env.AUTH_SERVICE_URL ?? 'http://auth-service:8081';
 const STATS_API = process.env.STATS_SERVICE_URL ?? 'http://statistics-service:6000';
 
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN || 'secret';
-
-// --- DB ---
-const db = getDbHelpers(getProfileDB());
-
 // --- TYPES ---
 
 interface UpdatePlayerInfo {

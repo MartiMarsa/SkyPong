@@ -51,7 +51,7 @@ function FriendCard({ friend, currentUserId, csrfToken, onVisit }) {
             border: "1.5px solid rgba(255,255,255,0.1)",
           }}
         />
-        {friend.is_online && (
+        {friend.logged && (
           <span style={{
             position: "absolute", bottom: 1, right: 1,
             width: "9px", height: "9px",
