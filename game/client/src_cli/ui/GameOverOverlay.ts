@@ -18,6 +18,8 @@ export class GameOverOverlay {
         this._container.isVisible = false;
         this._container.isHitTestVisible = true;
         this._container.zIndex = 100;
+        this._container.adaptWidthToChildren = false;
+        this._container.adaptHeightToChildren = false;
         this._texture.addControl(this._container);
 
         const titleStyle = {
