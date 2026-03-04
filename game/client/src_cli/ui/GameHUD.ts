@@ -1,6 +1,7 @@
 import { AdvancedDynamicTexture, TextBlock, StackPanel, Control } from "@babylonjs/gui";
 import { GUI_STYLES } from "../config/GUIStyles";
 import { GUIElements } from "./GUIElements";
+import { touchDetection } from "../utils/touchDetection";
 
 export class GameHUD {
   private _player1Container: StackPanel;
@@ -16,8 +17,11 @@ export class GameHUD {
   private _player2Name: string = "Player 2";
   private _player1Score: number = 0;
   private _player2Score: number = 0;
+  private _isMobile: boolean;
 
   constructor(private _texture: AdvancedDynamicTexture) {
+    this._isMobile = touchDetection();
+
     this._player2Container = GUIElements.CreateStackPanel(
       "player2Container",
       GUI_STYLES.CONTAINER.HUD_PLAYER2,
@@ -40,6 +44,13 @@ export class GameHUD {
       GUI_STYLES.CONTAINER.HUD_PLAYER1,
       true,
     );
+
+  
+    if (this._isMobile) {
+      this._player1Container.paddingBottom = "100px";
+      this._player1Container.top = "0px";
+    }
+
     this._texture.addControl(this._player1Container);
 
     this._player1ScoreText = GUIElements.CreateText(
@@ -57,9 +68,10 @@ export class GameHUD {
   }
 
   public showPauseButton(onClick: () => void): void {
+      const iconStyles = this._isMobile ? GUI_STYLES.ICON_BUTTON_MOBILE : GUI_STYLES.ICON_BUTTON;
       const pauseBtn = GUIElements.CreateIconButton(
           'pauseButton',
-          GUI_STYLES.ICON_BUTTON.PAUSE,
+          iconStyles.PAUSE,
           onClick,
           () => {}
       );

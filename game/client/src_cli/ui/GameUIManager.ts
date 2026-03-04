@@ -12,6 +12,11 @@ export class GameUIManager {
 
   constructor(scene: Scene, onBackToMenu: () => void, onResume?: () => void) {
     this.texture = AdvancedDynamicTexture.CreateFullscreenUI("GameUI", true, scene);
+    
+    // Only apply idealWidth scaling on desktop/tablet (width >= 768px)
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      this.texture.idealWidth = 1920;
+    }
 
     if (this.texture.layer) {
       (this.texture.layer as any).renderingGroupId = 2;
