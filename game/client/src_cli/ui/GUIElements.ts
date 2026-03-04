@@ -53,6 +53,9 @@ export class GUIElements {
     if (style.verticalAlignment) btn.verticalAlignment = style.verticalAlignment;
     if (style.top) btn.top = style.top;
     if (style.zIndex) btn.zIndex = style.zIndex;
+    if (style.adaptWidthToChildren) btn.adaptWidthToChildren = style.adaptWidthToChildren;
+    if (style.paddingLeft) btn.paddingLeft = style.paddingLeft;
+    if (style.paddingRight) btn.paddingRight = style.paddingRight;
 
     if (onClick) {
       btn.onPointerUpObservable.add(onClick);

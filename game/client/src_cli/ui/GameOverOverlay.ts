@@ -60,6 +60,7 @@ export class GameOverOverlay {
                 top: '100px',
                 zIndex: 101,
                 background: '#235789',
+                width: '280px',
             };
             this._retryButton = GUIElements.CreateTextButton(
                 'retryButton',
@@ -77,12 +78,13 @@ export class GameOverOverlay {
 
         const buttonStyle = {
             ...GUI_STYLES.BUTTON.DEFAULT,
-            ...GUI_STYLES.GAME_OVER_POSITIONS.BUTTON,
+            top: '180px',
             zIndex: 101,
+            width: '280px',
         };
         this._backButton = GUIElements.CreateTextButton(
             'backButton',
-            'Back to Game Selection',
+            'Back to Menu',
             buttonStyle,
             () => {
                 console.log('[GameOverOverlay] Back button clicked');

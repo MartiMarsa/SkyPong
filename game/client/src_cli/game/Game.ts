@@ -332,11 +332,11 @@ export class Game {
         let bottomScore = player1Score;
         let topScore = player2Score;
         if (room.sessionId === room.state.player1Id) {
-          bottomScore = player2Score;
-          topScore = player1Score;
-        } else if (room.sessionId === room.state.player2Id) {
           bottomScore = player1Score;
           topScore = player2Score;
+        } else if (room.sessionId === room.state.player2Id) {
+          bottomScore = player2Score;
+          topScore = player1Score;
         }
         gui.hud.updateScores(bottomScore, topScore, this._winningScore);
       },

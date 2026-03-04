@@ -33,6 +33,9 @@ export interface IButtonStyle {
   top?: string;
   zIndex?: number;
   thickness?: number;
+  adaptWidthToChildren?: boolean;
+  paddingLeft?: string;
+  paddingRight?: string;
 }
 
 export interface IIconButtonStyle {
