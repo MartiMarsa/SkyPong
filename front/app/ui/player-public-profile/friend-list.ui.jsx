@@ -141,7 +141,7 @@ export default function FriendsList({ currentUserId, targetId, csrfToken, onVisi
 
   if (!friends.length) return (
     <p style={{ fontFamily: mono, fontSize: "11px", color: "#3a5060", letterSpacing: "0.08em" }}>
-      ESTE JUGADOR AÚN NO TIENE AMIGOS.
+     {t?.player?.nofriends || "Player has no friends yet..."} 
     </p>
   );
 
@@ -152,7 +152,7 @@ export default function FriendsList({ currentUserId, targetId, csrfToken, onVisi
         letterSpacing: "0.12em", color: "#3a5060",
         marginBottom: "4px",
       }}>
-        {friends.length} AMIGO{friends.length !== 1 && "S"}
+        {friends.length} {t?.player?.friend}{friends.length !== 1 && "S"}
       </p>
       {friends.map(f => (
         <FriendCard
