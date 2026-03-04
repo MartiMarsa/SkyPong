@@ -12,6 +12,7 @@ import { generateToken, generate2FAToken, deleteUserSession } from './token';
 import { generate2FA, verify2FA } from './twofa';
 import { createRefreshToken, verifyRefreshToken, revokeRefreshToken, revokeRefreshTokenById, isTokenRevoked } from './refresh';
 import { hashPassword, verifyPassword } from './password';
+import { signUpSchema, loginSchema, changePasswordSchema } from "./validation/checkInput";
 
 
 const fastify = Fastify({ logger: true });
@@ -52,12 +53,7 @@ interface AuthBody {
 	password: string;
 }
 
-interface LoginBody {
-    email: string;
-      	password: string;
-    }
-
-    interface ChangePassword {
+interface ChangePassword {
 	old_password: string;
 	new_password: string;
 }
@@ -239,7 +235,6 @@ fastify.get<{ Params: { id: string } }>('/internal/auth/session_state/:id', { pr
       return reply.status(404).send({ error: 'Session not found' });
     }
 
-    // возвращаем просто строку с датой истечения
     return reply.send({ exp: row.expires_at });
 
   } catch (err) {
@@ -249,17 +244,21 @@ fastify.get<{ Params: { id: string } }>('/internal/auth/session_state/:id', { pr
 });
 
 // --- SIGNUP ---
-    fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, reply) => {
-        
-        const { email, password } = req.body as AuthBody;
-        //    const next = req.query.next || req.cookies?.last_page || '/me';
-        
-        if (!email || !password) {
-            return reply.status(400).send({
-                error: { code: 'VALIDATION_ERROR', message: 'Invalid input: username, email and password required' },
-            });
-        }
-        
+fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, reply) => {
+			 
+			 const result = signUpSchema.safeParse(req.body);
+
+			 if (!result.success) {
+		   		 return reply.status(400).send({
+						error: {
+							code: "VALIDATION_ERROR",
+				  			message: result.error.issues[0].message,
+							},
+					  		});
+			 	 }
+
+			const { email, password }: AuthBody = result.data;
+	 
         try {
             const user = await signup(email, password);
             
@@ -284,15 +283,25 @@ fastify.get<{ Params: { id: string } }>('/internal/auth/session_state/:id', { pr
 	});
 } catch (err: any) {
     reply.status(409).send({ error: { code: 'EMAIL_OR_USERNAME_TAKEN', message: 'Already exists' } });
-    //	  reply.status(500).send({ error: { code: err.code, message: err.message }});
     }
 });
 
 // --- LOGIN ---
 fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply) => {
-    const { email, password } = req.body as LoginBody;
-    if (!email || !password) return reply.status(400).send('Email and password required');
-    
+
+			 const result = signUpSchema.safeParse(req.body);
+
+			 if (!result.success) {
+			 	return reply.status(400).send({
+						error: {
+							code: "VALIDATION_ERROR",
+							message: result.error.issues[0].message,
+					  		},
+							});
+			  	}
+
+			const { email, password }: AuthBody = result.data;
+
     try {
         const user = await login(email, password);
         
@@ -327,25 +336,21 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
 
 // --- CHANGE USER PASSWORD ---
 fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, reply) => {
-    const { old_password, new_password } = req.body as ChangePassword;
-    
-    console.log("Changing password...");
-    // 1. Validaciones básicas
-    if (!old_password || !new_password) {
-        return reply.status(400).send({
-            error: { code: 'VALIDATION_ERROR', message: 'Missing fields' },
-        });
-    }
 
-    if (new_password.length < 8) {
-        return reply.status(400).send({
-            error: { code: 'WEAK_PASSWORD', message: 'Password too short' },
-        });
-    } else if (new_password === old_password) {
-        return reply.status(400).send({
-            error: { code: 'SAME_PASSWORD', message: 'New password must be different' },
-        });
-    }
+			 const result = changePasswordSchema.safeParse(req.body);
+
+		   	 if (!result.success) {
+		 		 return reply.status(400).send({
+							error: {
+								code: "VALIDATION_ERROR",
+								message: result.error.issues[0].message,
+						  		},
+								});
+			   	 }
+
+			const { old_password, new_password }: ChangePassword = result.data;
+
+    console.log("Changing password...");
 
     const userId = req.user.id;
     const db = getDB();
@@ -432,37 +437,6 @@ fastify.post('/auth/logout', { preHandler: requireAuth }, async (req: any, reply
         .status(200) // Siempre devolvemos 200 para que el navegador procese el borrado
         .send({ status: 'logged_out' });
 });
-
-// // --- LOGOUT ---
-// fastify.post('/auth/logout', {preHandler: requireAuth }, async (req: any, reply) => {
-// 	const refreshToken = req.cookies?.refresh_token;
-
-//     	if (refreshToken) {
-//             const payload = await verifyRefreshToken(refreshToken);
-//             if (payload) {
-//                     await revokeRefreshToken(payload.tokenId);
-//             }
-//     	}
-
-// 	const db = getDB();
-
-// 	await new Promise<void>((resolve, reject) => {
-// 		db.run(`
-// 		       UPDATE users
-// 		       SET token_version = token_version + 1
-// 		       WHERE id = ?
-// 		       `,
-// 		       [req.user.id],
-// 		       err => err ? reject(err) : resolve()
-// 		      );
-// 	});
-	
-// 	reply
-//         .clearCookie('access_token', { path: '/' })
-//         .clearCookie('refresh_token', { path: '/auth/refresh' })
-//         .clearCookie('csrf_token', { path: '/' })
-//         .send({ status: 'logged_out' });
-// });
 
 fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, reply) => {
       	const userId = req.user.id;
