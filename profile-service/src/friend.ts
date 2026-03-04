@@ -197,6 +197,7 @@ export async function getFriends(userId: string): Promise<any[]> {
         p.avatarUrl,
 		p.last_access_at,
         p.logged,
+		p.access_expires_at,
         f.status,
         CASE WHEN f.blocked_by = ? THEN 1 ELSE 0 END AS blocked_by_me
        FROM friends f
@@ -224,7 +225,8 @@ export async function getFriendsOfTarget(currentUserId: string, targetId: string
         p.nickname, 
         p.avatarUrl,
 		p.last_access_at,
-        p.logged
+        p.logged,
+		p.access_expires_at
        FROM friends f
        JOIN players p ON p.user_id = CASE 
          WHEN f.user1_id = ? THEN f.user2_id 
@@ -259,6 +261,7 @@ export async function getIncomingRequests(userId: string): Promise<any[]> {
 			   p.avatarUrl,
 			   p.last_access_at,
 	   		   p.logged,
+			   p.access_expires_at,
 			   f.created_at 
 			   FROM friends f 
 			   JOIN players p ON p.user_id = f.requester_id 
@@ -293,21 +296,28 @@ export async function getOutgoingRequests(userId: string): Promise<any[]> {
   const db = getProfileDB();
 
   return new Promise((resolve, reject) => {
-    db.all(
-      `SELECT p.user_id, p.nickname, p.avatarUrl, p.last_access_at, p.logged, f.created_at 
-       FROM friends f 
-       JOIN players p ON p.user_id = CASE 
-         WHEN f.user1_id = ? THEN f.user2_id 
-         ELSE f.user1_id 
-       END
-       WHERE f.status = 'pending' 
-         AND f.requester_id = ?`,
-      [userId, userId],
-      (err, rows) => {
-        if (err) return reject(err);
-        resolve(rows);
-      }
-    );
+    db.all(`
+		   SELECT 
+	 	   p.user_id, 
+		   p.nickname, 
+		   p.avatarUrl, 
+		   p.last_access_at, 
+		   p.logged, 
+		   p.access_expires_at,
+		   f.created_at 
+		   FROM friends f 
+		   JOIN players p ON p.user_id = CASE 
+  		   WHEN f.user1_id = ? THEN f.user2_id 
+  		   ELSE f.user1_id 
+		   END
+		   WHERE f.status = 'pending' 
+  		   AND f.requester_id = ?`,
+	 	   [userId, userId],
+	 	   (err, rows) => {
+   		   if (err) return reject(err);
+   		   resolve(rows);
+	 	   }
+	   	   );
   });
 }
 
@@ -316,12 +326,28 @@ export async function getBlocklist(userId: string): Promise<FriendUser[]> {
 	const db = getProfileDB();
 
 	return new Promise((resolve, reject) => {
-		db.all<FriendUser>(`SELECT p.user_id, p.nickname, p.avatarUrl, p.last_access_at, p.logged, f.created_at FROM friends f JOIN players p ON p.user_id = CASE WHEN f.user1_id = ? THEN f.user2_id ELSE f.user1_id END WHERE f.status = 'blocked' AND f.blocked_by = ? AND (f.user1_id = ? OR f.user2_id = ?)`,
-			[userId, userId, userId, userId],
-			(err, rows) => {
-				if (err) return reject(err);
-				resolve(rows ?? []);
-			});
+		db.all<FriendUser>(`
+						   SELECT 
+						   p.user_id, 
+						   p.nickname, 
+						   p.avatarUrl, 
+						   p.last_access_at, 
+						   p.logged, 
+						   p.access_expires_at,
+						   f.created_at 
+						   FROM friends f 
+						   JOIN players p ON p.user_id = CASE 
+						   WHEN f.user1_id = ? THEN f.user2_id 
+						   ELSE f.user1_id 
+						   END 
+						   WHERE f.status = 'blocked' 
+						   AND f.blocked_by = ? 
+						   AND (f.user1_id = ? OR f.user2_id = ?)`,
+			   			   [userId, userId, userId, userId],
+			   			   (err, rows) => {
+		   				   if (err) return reject(err);
+		   				   resolve(rows ?? []);
+			   			   });
 	});
 }
 
@@ -331,11 +357,18 @@ export async function getFriendStatus(userId: string, otherId: string): Promise<
 	const [u1, u2] = normalizeId(userId, otherId);
 
 	return new Promise((resolve, reject) => {
-		db.get<RelationRow>(`SELECT status, requester_id, blocked_by FROM friends WHERE user1_id = ? AND user2_id = ?`,
-			[u1, u2],
-			(err, row) => {
-				if (err) return reject(err);
-				resolve(row ?? null);
-			});
-	});
+		db.get<RelationRow>(`
+							SELECT 
+							status, 
+							requester_id, 
+							blocked_by 
+							FROM friends 
+							WHERE user1_id = ? 
+							AND user2_id = ?`,
+							[u1, u2],
+							(err, row) => {
+							if (err) return reject(err);
+							resolve(row ?? null);
+							});
+		});
 }
