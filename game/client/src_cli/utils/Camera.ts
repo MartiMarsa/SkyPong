@@ -1,5 +1,68 @@
-import { FreeCamera, Mesh, Vector3, Engine } from "@babylonjs/core";
+import { FreeCamera, Mesh, Vector3, Engine, Animation, CubicEase, EasingFunction } from "@babylonjs/core";
 import { CAMERA } from '../config';
+
+export function animateCameraIntro(
+    camera: FreeCamera,
+    tableMesh: Mesh,
+    engine: Engine,
+    onComplete: () => void
+): void {
+    const boundingInfo = tableMesh.getBoundingInfo();
+    const center = boundingInfo.boundingBox.centerWorld;
+
+    const forward = camera.getForwardRay().direction.normalize();
+    const refUp = camera.upVector;
+    const right = Vector3.Cross(refUp, forward).normalize();
+    const up = Vector3.Cross(forward, right).normalize();
+
+    const fov = camera.fov;
+    const aspectRatio = engine.getAspectRatio(camera);
+
+    const tanVFov = Math.tan(fov / 2);
+    const tanHFov = tanVFov * aspectRatio;
+
+    const corners = boundingInfo.boundingBox.vectorsWorld;
+    let requiredDistance = 0;
+
+    corners.forEach((corner) => {
+        const vecToCorner = corner.subtract(center);
+        const vDist = Math.abs(Vector3.Dot(vecToCorner, up));
+        const hDist = Math.abs(Vector3.Dot(vecToCorner, right));
+        const dOffset = Vector3.Dot(vecToCorner, forward);
+        const distV = vDist / tanVFov - dOffset;
+        const distH = hDist / tanHFov - dOffset;
+        requiredDistance = Math.max(requiredDistance, distV, distH);
+    });
+
+    requiredDistance *= CAMERA.MARGIN;
+
+    const targetPosition = center.subtract(forward.scale(requiredDistance));
+
+    camera.position = CAMERA.INTRO_START_POSITION.clone();
+
+    const easingFunction = new CubicEase();
+    easingFunction.setEasingMode(CubicEase.EASINGMODE_EASEOUT);
+
+    const positionAnimation = new Animation(
+        "cameraIntro",
+        "position",
+        60,
+        Animation.ANIMATIONTYPE_VECTOR3,
+        Animation.ANIMATIONLOOPMODE_CONSTANT
+    );
+
+    const keys = [
+        { frame: 0, value: camera.position.clone() },
+        { frame: 90, value: targetPosition }
+    ];
+
+    positionAnimation.setKeys(keys);
+    positionAnimation.setEasingFunction(easingFunction);
+
+    camera.animations = [positionAnimation];
+
+    camera.getScene().beginAnimation(camera, 0, 90, false, 1, onComplete);
+}
 
 export function delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));

@@ -136,6 +136,9 @@ export class Game {
             isPvP: isPvPMode,
             isOnline: isOnlineMode,
             initialGameStarted: room.state?.gameStarted ?? false,
+            camera: clientEngine.engineSetup.camera,
+            tableMesh: table.mesh,
+            engine: engine,
             onGameReady: this._onGameReady ?? undefined,
           });
 
