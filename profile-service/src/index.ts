@@ -191,7 +191,6 @@ interface Player {
 		avatar?: string;
 }
 
-
 declare module 'fastify' {
   interface FastifyRequest {
     user: {
@@ -314,11 +313,6 @@ fastify.get('/profile/me', { preHandler: verifyToken }, async (req, reply) => {
             player = await createPlayer(userId);
       	}
 
-		await updatePlayerOnlineStatus(userId, true);
-
-		await ensureAvatarIsAlive(userId, player.avatarUrl);
-
-
 		await ensureAvatarIsAlive(userId, player.avatarUrl);
 
         console.info("----> Sending player profile info: ", player);
@@ -340,6 +334,16 @@ fastify.get('/profile/:id', {preHandler: verifyToken }, async (req, reply) => {
 
 			const user = await getUserPublicProfile(id);
 
+			if (!user) {
+				return reply.status(404).send({
+				  	error: { 
+							code: "USER_NOT_FOUND", 
+							message: "User not found" 
+					}
+	    		});
+			}
+
+			await ensureAvatarIsAlive(user.id, user.avatarUrl);
 			if (!user) {
 				return reply.status(404).send({
 				  	error: { 
@@ -654,6 +658,8 @@ fastify.get('/profile/avatars/:filename', async (req, reply) => {
 });
 
 
+
+
 fastify.addHook('onRequest', async (request, reply) => {
   console.log(`Recibida petición: ${request.method} ${request.url}`);
 });
@@ -662,50 +668,14 @@ fastify.addHook('onRequest', async (request, reply) => {
 // GET friends
 fastify.get('/profile/friends', { preHandler: verifyToken }, async (req, reply) => {
     const userId = req.user.sub;
-
-	try {
-        const friends = await friendService.getFriendsService(userId);
-        console.log('--->>> FROM /profile/friends');
-		console.log(`\n=== Friends for user ${userId} ===`);
-        friends.forEach(friend => {
-            console.log(`- ${friend.nickname} (ID: ${friend.user_id})`);
-            console.log(`  Avatar: ${friend.avatarUrl}`);
-            console.log(`  Last access: ${friend.last_access_at}`);
-            console.log(`  Logged: ${friend.logged}`);
-        });
-        console.log('=== End of friends list ===\n');
-        return friends;
-    } catch (err) {
-        console.error('Error fetching friends:', err);
-        reply.status(500).send({ error: 'Failed to fetch friends' });
-    }
-//    return friendService.getFriendsService(userId);
+    return friendService.getFriendsService(userId);
 });
 
 // GET friends of target
 fastify.get('/profile/friends/:targetId', { preHandler: verifyToken }, async (req, reply) => {
     const userId = req.user.sub;
 	const { targetId } = req.params as { targetId: string};
-
-	try {
-        const friends = await friendService.getFriendsOfTargetService(userId, targetId);
-        console.log('--- >>>> FROM /profile/friends/:targetId: Friends for user');
-		console.log(`\n=== Friends for user ${userId} ===`);
-        friends.forEach(friend => {
-            console.log(`- ${friend.nickname} (ID: ${friend.user_id})`);
-            console.log(`  Avatar: ${friend.avatarUrl}`);
-            console.log(`  Last access: ${friend.last_access_at}`);
-            console.log(`  Logged: ${friend.logged}`);
-        });
-        console.log('=== End of friends list ===\n');
-        return friends;
-    } catch (err) {
-        console.error('Error fetching friends:', err);
-        reply.status(500).send({ error: 'Failed to fetch friends' });
-    }
-
-
-//    return friendService.getFriendsOfTargetService(userId, targetId);
+    return friendService.getFriendsOfTargetService(userId, targetId);
 });
 
 // GET incoming requests

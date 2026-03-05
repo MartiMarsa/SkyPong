@@ -85,7 +85,7 @@ clean:
 # Limpio "hard": borra volúmenes (pierdes SQLite, Prometheus, Grafana, etc.)
 clean-hard:
 	$(DC) $(DCFLAGS) down -v --remove-orphans
-	rm -Rvf ./volumes/*
+	rm -Rvf /volumes/*
 
 # Prunes (ojo: globales, no solo tu proyecto)
 prune-images:

@@ -21,11 +21,12 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "../../hooks/use-translation";
 import api from "../../api/api";
 import Toast from "../messaging/toast";
+import Loader from "../loader/loader-ui";
 // ─── Config ───────────────────────────────────────────────────────────────────
-const ACTIVE_DAYS = 7;
-
+const ACTIVE_MINS = 1 * 60 * 1000;
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
   bg: "#07090c",
@@ -35,6 +36,7 @@ const C = {
   accent: "#00d2be",
   accentDim: "rgba(0,210,190,0.1)",
   green: "#22c55e",
+  absent: "#ed9511",
   greenDim: "rgba(34,197,94,0.12)",
   danger: "#ef4444",
   dangerDim: "rgba(239,68,68,0.1)",
@@ -49,11 +51,19 @@ const C = {
 
 const mono = "'Courier New', monospace";
 
+function isExpired(sessionexpiredat)
+{
+  const date = (Date.now() - new Date(sessionexpiredat).getTime());
+  return (!(date > 0));
+}
 
-
-function isActive(lastLogin) {
+function isAbsent(lastLogin) {
   if (!lastLogin) return false;
-  return (Date.now() - new Date(lastLogin).getTime()) / 86400000 <= ACTIVE_DAYS;
+  const date = (Date.now() - new Date(lastLogin).getTime());
+  const mins = date; //milliseconds 1s * 1000 = 1000 ms | 1min * 60 * 1000 = 60000 ms
+  const isAbsent = mins >= ACTIVE_MINS;
+  console.info("Last logged: ", date, "\nElapsed Mins: ", mins, " last_acces >= elapsed time ", isAbsent);
+  return (isAbsent);
 }
 
 function isBlocked(status) {
@@ -144,7 +154,11 @@ function Pill({ onClick, disabled, color, bgColor, borderColor, children }) {
 
 // ─── Friend row ───────────────────────────────────────────────────────────────
 function FriendRow({ friend, onRemove, onBlock, onProfile, onUnblock, busy, blocked }) {
-  const active = isActive(friend.last_login);
+    const absent = isAbsent(friend.last_access_at);
+    const expired = isExpired(friend?.session_expired_at);
+    const { t } = useTranslation();
+  console.info("Friend is absent: ", absent, " | last_acces=", friend.last_access_at, " isLogged:", friend.logged);
+  console.info("Friend ", friend.nickname, " session expired=", expired);
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: "12px",
@@ -155,20 +169,25 @@ function FriendRow({ friend, onRemove, onBlock, onProfile, onUnblock, busy, bloc
       onMouseEnter={e => e.currentTarget.style.borderColor = C.borderAccent}
       onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
     >
-      <Avatar url={friend.avatarUrl} nickname={friend.nickname} size={38} showDot active={active} />
+      <Avatar url={friend.avatarUrl} nickname={friend.nickname} size={38} showDot active={absent} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: mono, fontSize: "13px", color: C.text, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {friend.nickname}
         </div>
-        <div style={{ fontFamily: mono, fontSize: "10px", color: active ? C.green : C.textDim, marginTop: "2px" }}>
-          {active ? "● ACTIVO" : "○ INACTIVO"}
-        </div>
+        { absent && friend.logged && !expired ? (
+            <div style={{ fontFamily: mono, fontSize: "10px", color: C.absent, marginTop: "2px" }}>
+                ● {t?.player.absent}
+            </div>
+        ) : (
+        <div style={{ fontFamily: mono, fontSize: "10px", color: friend.logged ? C.green : C.textDim, marginTop: "2px" }}>
+          {friend.logged && !expired ? "● " + t?.player?.active : "○ " + t?.player?.inactive }
+        </div>)}
       </div>
       <div style={{ display: "flex", gap: "4px" }}>
         {console.info("Friend id: ", friend.user_id)}
-        <Pill onClick={() => onProfile(friend.user_id)} color={C.accent} bgColor={C.accentDim}>👤 perfil</Pill>
+        <Pill onClick={() => onProfile(friend.user_id)} color={C.accent} bgColor={C.accentDim}>👤 {t?.navigation?.profile || "profile" }</Pill>
         { !blocked ? (<>
-            <Pill onClick={() => onRemove(friend.user_id)} disabled={busy} color={C.danger} bgColor={C.dangerDim}>✕ quitar</Pill>
+            <Pill onClick={() => onRemove(friend.user_id)} disabled={busy} color={C.danger} bgColor={C.dangerDim}>✕ {t?.player?.remove || "eliminar"}</Pill>
             <Pill onClick={() => onBlock(friend.user_id)} disabled={busy} color={C.warn} bgColor="rgba(245,158,11,0.1)">🚫</Pill>
             </>
         ) : (
@@ -181,6 +200,7 @@ function FriendRow({ friend, onRemove, onBlock, onProfile, onUnblock, busy, bloc
 
 // ─── Incoming request row ─────────────────────────────────────────────────────
 function IncomingRow({ r, onAccept, onReject, busy }) {
+    const { t } = useTranslation();
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: "12px",
@@ -190,7 +210,7 @@ function IncomingRow({ r, onAccept, onReject, busy }) {
       <Avatar url={r.avatarUrl} nickname={r.nickname} size={38} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: mono, fontSize: "13px", color: C.text, fontWeight: 700 }}>{r.nickname}</div>
-        <div style={{ fontFamily: mono, fontSize: "10px", color: C.pending, marginTop: "2px" }}>◈ SOLICITUD ENTRANTE</div>
+        <div style={{ fontFamily: mono, fontSize: "10px", color: C.pending, marginTop: "2px" }}>◈ {t?.player?.incomingReqest || 'INCOMING REQUEST'}</div>
       </div>
       <div style={{ display: "flex", gap: "6px" }}>
         <button onClick={() => onAccept(r.user_id)} disabled={busy} style={{
@@ -198,13 +218,13 @@ function IncomingRow({ r, onAccept, onReject, busy }) {
           borderRadius: "7px", padding: "6px 14px",
           fontFamily: mono, fontSize: "11px", letterSpacing: "0.06em",
           color: C.green, cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.5 : 1,
-        }}>✓ ACEPTAR</button>
+        }}>✓ {t?.player?.accept || 'ACCEPT'}</button>
         <button onClick={() => onReject(r.user_id)} disabled={busy} style={{
           background: C.dangerDim, border: `1px solid ${C.danger}55`,
           borderRadius: "7px", padding: "6px 14px",
           fontFamily: mono, fontSize: "11px", letterSpacing: "0.06em",
           color: C.danger, cursor: busy ? "not-allowed" : "pointer", opacity: busy ? 0.5 : 1,
-        }}>✕ RECHAZAR</button>
+        }}>✕ {t?.player?.reject || 'REJECT'}</button>
       </div>
     </div>
   );
@@ -221,9 +241,9 @@ function OutgoingRow({ r, onCancel, busy }) {
       <Avatar url={r.avatarUrl} nickname={r.nickname} size={38} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: mono, fontSize: "13px", color: C.text, fontWeight: 700 }}>{r.nickname}</div>
-        <div style={{ fontFamily: mono, fontSize: "10px", color: C.warn, marginTop: "2px" }}>◌ PENDIENTE DE RESPUESTA</div>
+        <div style={{ fontFamily: mono, fontSize: "10px", color: C.warn, marginTop: "2px" }}>◌ {t?.player?.pendingResponse || 'PENDING RESPONSE'}</div>
       </div>
-      <Pill onClick={() => onCancel(r.user_id)} disabled={busy} color={C.textDim} bgColor={C.muted}>CANCELAR</Pill>
+      <Pill onClick={() => onCancel(r.user_id)} disabled={busy} color={C.textDim} bgColor={C.muted}>{t?.form?.cancel}</Pill>
     </div>
   );
 }
@@ -274,6 +294,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
   const [busy, setBusy] = useState(false);
   const [fetchError, setFetchError] = useState(null);
   const [toast, setToast] = useState(null);
+  const { t } = useTranslation();
 
   const csrf = csrfToken;
 
@@ -315,14 +336,14 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
   const handleBlock     = id => act(() => api(`/api/profile/friends/${id}/block`, { method: "POST", headers: { 'x-csrf-token': csrf }, body: { userId: currentUserId}}), "Usuario bloqueado");
   const handleUnblock   = id => act(() => api(`/api/profile/friends/${id}/unblock`, { method: "POST", headers: { 'x-csrf-token': csrf }, body: { userId: currentUserId}}), "Usuario desbloqueado");
 
-  const activeFriends   = friends.filter(f => (isActive(f.last_login) && !isBlocked(f.status)));
-  const inactiveFriends = friends.filter(f => (!isActive(f.last_login) && !isBlocked(f.status)));
+  const activeFriends   = friends.filter(f => (f.logged && !isBlocked(f.status)));
+  const inactiveFriends = friends.filter(f => ((isAbsent(f.last_login) || !f.logged) && !isBlocked(f.status)));
   const blockedFriends  = friends.filter(f => isBlocked(f.status));
 
   const tabs = [
-    { key: "friends",  label: "Amigos",    count: friends.length },
-    { key: "incoming", label: "Entrantes",  count: incoming.length },
-    { key: "outgoing", label: "Enviadas",   count: outgoing.length },
+    { key: "friends",  label: `${t?.player?.friends || 'Friends' }`,    count: friends.length },
+    { key: "incoming", label: `${t?.player?.incoming || 'Incoming' }`,  count: incoming.length },
+    { key: "outgoing", label: `${t?.player?.outgoing || 'Outgoing' }`,   count: outgoing.length },
   ];
 
   return (
@@ -348,9 +369,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
       <TabBar tabs={tabs} active={tab} onChange={setTab} />
 
       {loading ? (
-        <div style={{ textAlign: "center", padding: "44px", fontFamily: mono, fontSize: "11px", color: C.textDim, letterSpacing: "0.1em" }}>
-          CARGANDO...
-        </div>
+            <Loader classes="" message={t?.form?.loading || 'LOADING...'} />
       ) : fetchError ? (
         <div style={{ textAlign: "center", padding: "30px", fontFamily: mono, fontSize: "12px", color: C.danger }}>
           ⚠ {fetchError}
@@ -361,10 +380,10 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
           {/* Friends */}
           {tab === "friends" && (
             friends.length === 0
-              ? <Empty icon="👾" text="AÚN NO TIENES AMIGOS" />
+              ? <Empty icon="👾" text={t?.player?.younofriends || 'You still have no friends'} />
               : <>
                   {activeFriends.length > 0 && <>
-                    <SectionLabel label={`ACTIVOS — ${activeFriends.length}`} color={C.green} />
+                    <SectionLabel label={`${t?.player?.actives || 'ACTIVES'} — ${activeFriends.length}`} color={C.green} />
                     {activeFriends.map(f => (
                       <FriendRow key={f.user_id} friend={f}
                         onRemove={handleRemove} onBlock={handleBlock}
@@ -372,7 +391,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
                     ))}
                   </>}
                   {inactiveFriends.length > 0 && <>
-                    <SectionLabel label={`INACTIVOS — ${inactiveFriends.length}`} color={C.textDim} />
+                    <SectionLabel label={`${t?.player?.inactives || 'INACTIVES'} — ${inactiveFriends.length}`} color={C.textDim} />
                     {inactiveFriends.map(f => (
                       <FriendRow key={f.user_id} friend={f}
                         onRemove={handleRemove} onBlock={handleBlock}
@@ -380,7 +399,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
                     ))}
                   </>}
                 {blockedFriends.length > 0 && <>
-                    <SectionLabel label={`Bloqueados — ${blockedFriends.length}`} color={C.textDimRed} />
+                    <SectionLabel label={`${t?.player?.bloqueds || 'BLOCKED'} — ${blockedFriends.length}`} color={C.textDimRed} />
                     {blockedFriends.map(f => (
                       <FriendRow key={f.user_id} friend={f}
                         onRemove={handleRemove} onUnblock={handleUnblock}
@@ -393,7 +412,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
           {/* Incoming */}
           {tab === "incoming" && (
             incoming.length === 0
-              ? <Empty icon="📭" text="SIN SOLICITUDES PENDIENTES" />
+              ? <Empty icon="📭" text={t?.player.noincomingRequests || 'NO INCOMING REQUESTS'} />
               : incoming.map(r => (
                   <IncomingRow key={r.user_id} r={r}
                     onAccept={handleAccept} onReject={handleReject} busy={busy} />
@@ -403,7 +422,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
           {/* Outgoing */}
           {tab === "outgoing" && (
             outgoing.length === 0
-              ? <Empty icon="📤" text="SIN SOLICITUDES ENVIADAS" />
+              ? <Empty icon="📤" text={t?.player?.nooutgoingRequests || 'NO OUTGOING REQUESTS'} />
               : outgoing.map(r => (
                   <OutgoingRow key={r.user_id} r={r} onCancel={handleCancel} busy={busy} />
                 ))
