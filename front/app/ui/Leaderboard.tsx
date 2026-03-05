@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import AddFriendButton from '../ui/player-public-profile/AddFriendButton'
+import { useAuth } from '../context/auth-context';
 
 interface PlayerStat {
   user_id: string;
@@ -104,34 +106,43 @@ function LeaderboardRow({
   player,
   rank,
 }: {
-  player: PlayerStat;
-  rank: number;
+    player: PlayerStat;
+    rank: number;
 }) {
-  return (
-    <div className="lb-row">
-      <span className="lb-rank">{rank}.</span>
-      <div className="lb-info">
-        <div className="lb-name-row">
-          <span className="lb-name">{player.user_id}</span>
-          <span
-            className="lb-dot"
-            style={{ background: statusDot(player.rate) }}
-          />
-        </div>
-        <span className="lb-sub">Total games: {player.played}</span>
-        <span className="lb-sub">
-          Win rate:{' '}
-          {player.winrate != null ? `${Math.round(player.winrate)}%` : '—'}
-        </span>
-      </div>
-      <WinLossBar wins={player.wins} losses={player.losses} />
-    </div>
-  );
+    const { user } = useAuth();
+    const getCookie = (name) => {
+        return document.cookie
+            .split('; ')
+            .find(row => row.startsWith(name + '='))
+            ?.split('=')[1];
+    }; 
+    return (
+        <>
+            <div className="lb-row">
+            <span className="lb-rank">{rank}.</span>
+            <div className="lb-info">
+                <div className="lb-name-row">
+                <span className="lb-name">{player.user_id}</span>
+                <span
+                    className="lb-dot"
+                    style={{ background: statusDot(player.rate) }}
+                    />
+                </div>
+                <span className="lb-sub">Total games: {player.played}</span>
+                <span className="lb-sub">
+                Win rate:{' '}
+                {player.winrate != null ? `${Math.round(player.winrate)}%` : '—'}
+                </span>
+            </div>
+            <WinLossBar wins={player.wins} losses={player.losses} />
+            </div>
+            <AddFriendButton currentUserId={user?.id} targetId={player.user_id} csrfToken={getCookie('x-xsrf-token')}/>
+        </>
+    );
 }
 
 export default function Leaderboard() {
   const { players, loading, error } = useLeaderboard();
-
   return (
     <>
       <style>{`
