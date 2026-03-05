@@ -8,6 +8,7 @@ import { useAuth } from '../context/auth-context';
 import { useStyles } from '../hooks/use-styles';
 import FooterTermsPolicy from '../ui/footer-terms-policy';
 import NavigationAppUI from '../ui/navigation-app-ui';
+import { Button } from '../ui/base';
 
 const STATES = {
   SELECT_MODE: 'SELECT_MODE',
@@ -46,9 +47,6 @@ const mobileStyles = {
 const desktopStyles = {
   main: 'h-dvh overflow-hidden bg-[#d9d9d9] px-6 text-slate-900 lg:px-10',
 };
-
-const panelButton =
-  'w-full rounded-2xl border-2 border-slate-700 bg-[#efefef] px-5 py-3 text-base font-semibold text-slate-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60';
 
 function ColorPicker({ selectedColor, onColorSelect, label }) {
   return (
@@ -225,77 +223,77 @@ export default function PlayPage() {
 
             {state === STATES.SELECT_MODE && (
               <PlayPanel title="Pong" subtitle="Choose game mode">
-                <button
-                  type="button"
-                  className={panelButton}
+                <Button
+                  variant="primary"
+                  className="w-full"
                   onClick={() => {
                     setConfig((prev) => ({ ...prev, gameMode: 'local-2p' }));
                     setState(STATES.LOCAL_P1_SETUP);
                   }}
                 >
                   1 vs 1 · Local
-                </button>
-                <button
-                  type="button"
-                  className={panelButton}
+                </Button>
+                <Button
+                  variant="primary"
+                  className="w-full"
                   onClick={() => {
                     setConfig((prev) => ({ ...prev, gameMode: 'ai-easy' }));
                     setState(STATES.AI_SELECT_DIFFICULTY);
                   }}
                 >
                   1 vs AI
-                </button>
+                </Button>
                 {hasCredentials && (
-                  <button type="button" className={panelButton} onClick={() => setState(STATES.MULTIPLAYER_MENU)}>
+                  <Button variant="primary" className="w-full" onClick={() => setState(STATES.MULTIPLAYER_MENU)}>
                     Multiplayer
-                  </button>
+                  </Button>
                 )}
-                <button type="button" className={panelButton} onClick={() => router.push('/')}>Back</button>
+                <Button variant="secondary" className="w-full" onClick={() => router.push('/')}>Back</Button>
               </PlayPanel>
             )}
 
             {state === STATES.AI_SELECT_DIFFICULTY && (
               <PlayPanel title="AI" subtitle="Select difficulty">
-                <button type="button" className={panelButton} onClick={() => {
+                <Button variant="primary" className="w-full" onClick={() => {
                   setConfig((prev) => ({ ...prev, gameMode: 'ai-easy' }));
                   setState(STATES.CONFIGURE_GAME);
                 }}>
                   Easy
-                </button>
-                <button type="button" className={panelButton} onClick={() => {
+                </Button>
+                <Button variant="primary" className="w-full" onClick={() => {
                   setConfig((prev) => ({ ...prev, gameMode: 'ai-medium' }));
                   setState(STATES.CONFIGURE_GAME);
                 }}>
                   Medium
-                </button>
-                <button type="button" className={panelButton} onClick={() => {
+                </Button>
+                <Button variant="primary" className="w-full" onClick={() => {
                   setConfig((prev) => ({ ...prev, gameMode: 'ai-hard' }));
                   setState(STATES.CONFIGURE_GAME);
                 }}>
                   Hard
-                </button>
-                <button type="button" className={panelButton} onClick={() => setState(STATES.SELECT_MODE)}>Back</button>
+                </Button>
+                <Button variant="secondary" className="w-full" onClick={() => setState(STATES.SELECT_MODE)}>Back</Button>
               </PlayPanel>
             )}
 
             {state === STATES.MULTIPLAYER_MENU && hasCredentials && (
               <PlayPanel title="Multiplayer" subtitle="Choose a mode">
-                <button type="button" className={panelButton} onClick={() => setState(STATES.ONLINE_LOBBY)}>
+                <Button variant="primary" className="w-full" onClick={() => setState(STATES.ONLINE_LOBBY)}>
                   Online PVP
-                </button>
-                <button type="button" className={panelButton} onClick={() => {
+                </Button>
+                <Button variant="primary" className="w-full" onClick={() => {
                   setConfig((prev) => ({ ...prev, gameMode: 'local-2p' }));
                   setState(STATES.LOCAL_P1_SETUP);
                 }}>
                   Local PVP
-                </button>
-                <button type="button" className={panelButton} onClick={() => setState(STATES.SELECT_MODE)}>Back</button>
+                </Button>
+                <Button variant="secondary" className="w-full" onClick={() => setState(STATES.SELECT_MODE)}>Back</Button>
               </PlayPanel>
             )}
 
             {state === STATES.ONLINE_LOBBY && (
               <PlayPanel title="Online" subtitle="Multiplayer lobby">
-                <button type="button" className={panelButton} onClick={() => {
+                <Button variant="primary" className="w-full" onClick={() => {
                   setConfig((prev) => ({
                     ...prev,
                     playerName: user?.nickname || prev.playerName || 'Player 1',
@@ -304,48 +302,48 @@ export default function PlayPage() {
                   setState(STATES.CONFIGURE_GAME);
                 }}>
                   Create room
-                </button>
-                <button type="button" className={panelButton} onClick={() => {
+                </Button>
+                <Button variant="primary" className="w-full" onClick={() => {
                   refreshRooms();
                   setState(STATES.ONLINE_JOIN_ROOM);
                 }}>
                   Join room
-                </button>
-                <button type="button" className={panelButton} onClick={() => setState(STATES.MULTIPLAYER_MENU)}>Back</button>
+                </Button>
+                <Button variant="secondary" className="w-full" onClick={() => setState(STATES.MULTIPLAYER_MENU)}>Back</Button>
               </PlayPanel>
             )}
 
             {state === STATES.ONLINE_JOIN_ROOM && (
               <PlayPanel title="Rooms" subtitle="Choose an available room">
-                <button type="button" className={panelButton} onClick={refreshRooms} disabled={loadingRooms}>
+                <Button variant="primary" className="w-full" onClick={refreshRooms} disabled={loadingRooms}>
                   {loadingRooms ? 'Loading...' : 'Refresh'}
-                </button>
+                </Button>
                 {roomError && <p className="text-sm font-semibold text-red-600">{roomError}</p>}
                 {rooms.length === 0 && !loadingRooms && <p className="text-sm text-slate-700">No rooms available</p>}
                 {rooms.map((room) => (
                   <div key={room.id} className="flex items-center justify-between rounded-xl border border-slate-500 bg-white/70 px-3 py-2">
                     <span className="text-sm font-medium">{room.creatorName ? `${room.creatorName}'s room` : room.name}</span>
-                    <button
-                      type="button"
-                      className="rounded-lg border border-slate-700 px-3 py-1 text-sm font-semibold hover:bg-slate-100"
+                    <Button
+                      variant="primary"
+                      size="sm"
                       onClick={() => {
                         setConfig((prev) => ({ ...prev, gameMode: 'online-join', roomId: room.id }));
                         setState(STATES.CONFIGURE_GAME);
                       }}
                     >
                       Join
-                    </button>
+                    </Button>
                   </div>
                 ))}
-                <button type="button" className={panelButton} onClick={() => setState(STATES.ONLINE_LOBBY)}>Back</button>
+                <Button variant="secondary" className="w-full" onClick={() => setState(STATES.ONLINE_LOBBY)}>Back</Button>
               </PlayPanel>
             )}
 
             {state === STATES.ONLINE_WAITING && (
               <PlayPanel title="Online" subtitle="Waiting for opponent...">
-                <button type="button" className={panelButton} onClick={() => setState(STATES.ONLINE_LOBBY)}>
+                <Button variant="secondary" className="w-full" onClick={() => setState(STATES.ONLINE_LOBBY)}>
                   Cancel
-                </button>
+                </Button>
               </PlayPanel>
             )}
 
@@ -386,9 +384,9 @@ export default function PlayPage() {
                   onColorSelect={(hex) => setConfig((prev) => ({ ...prev, playerColor: hex }))}
                   label="Paddle color"
                 />
-                <button
-                  type="button"
-                  className={panelButton}
+                <Button
+                  variant="primary"
+                  className="w-full"
                   onClick={() => {
                     const finalConfig = { ...config, playerName: config.playerName || 'Player 1' };
                     if (finalConfig.gameMode === 'online-create') {
@@ -400,10 +398,10 @@ export default function PlayPage() {
                   }}
                 >
                   {config.gameMode === 'online-create' ? 'Create & Wait' : 'Play'}
-                </button>
-                <button
-                  type="button"
-                  className={panelButton}
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="w-full"
                   onClick={() => {
                     if (config.gameMode.startsWith('ai-')) setState(STATES.AI_SELECT_DIFFICULTY);
                     else if (config.gameMode === 'online-create') setState(STATES.ONLINE_LOBBY);
@@ -412,7 +410,7 @@ export default function PlayPage() {
                   }}
                 >
                   Back
-                </button>
+                </Button>
               </PlayPanel>
             )}
 
@@ -432,19 +430,19 @@ export default function PlayPage() {
                   onColorSelect={(hex) => setConfig((prev) => ({ ...prev, playerColor: hex }))}
                   label="Paddle color"
                 />
-                <button
-                  type="button"
-                  className={panelButton}
+                <Button
+                  variant="primary"
+                  className="w-full"
                   onClick={() => {
                     setConfig((prev) => ({ ...prev, playerName: prev.playerName || 'Player 1' }));
                     setState(STATES.LOCAL_P2_SETUP);
                   }}
                 >
                   Next
-                </button>
-                <button type="button" className={panelButton} onClick={() => setState(STATES.SELECT_MODE)}>
+                </Button>
+                <Button variant="secondary" className="w-full" onClick={() => setState(STATES.SELECT_MODE)}>
                   Back
-                </button>
+                </Button>
               </PlayPanel>
             )}
 
@@ -464,9 +462,9 @@ export default function PlayPage() {
                   onColorSelect={(hex) => setConfig((prev) => ({ ...prev, player2Color: hex }))}
                   label="Paddle color"
                 />
-                <button
-                  type="button"
-                  className={panelButton}
+                <Button
+                  variant="primary"
+                  className="w-full"
                   onClick={() => {
                     const finalConfig = {
                       ...config,
@@ -478,10 +476,10 @@ export default function PlayPage() {
                   }}
                 >
                   Play
-                </button>
-                <button type="button" className={panelButton} onClick={() => setState(STATES.LOCAL_P1_SETUP)}>
+                </Button>
+                <Button variant="secondary" className="w-full" onClick={() => setState(STATES.LOCAL_P1_SETUP)}>
                   Back
-                </button>
+                </Button>
               </PlayPanel>
             )}
           </div>
