@@ -362,8 +362,8 @@ function AchievementCategory({ categoryKey, achievements, t }) {
 export default function AchievementsSection({ stats, t }) {
   const achievements = useMemo(() => computeAchievements(stats, t), [stats, t]);
 
-    console.info("T achievements:", t?.achievements);
-    console.info("Stats prop:", stats);
+    // console.info("T achievements:", t?.achievements);
+    // console.info("Stats prop:", stats);
   const grouped = useMemo(() => {
     return {
       log: achievements.filter((a) => a.category === "log"),
@@ -372,8 +372,8 @@ export default function AchievementsSection({ stats, t }) {
     };
   }, [achievements]);
 
-    console.info("Achievements calculados:", achievements);  // ← añade esto
-    console.info("Grouped:", grouped);
+    // console.info("Achievements calculados:", achievements);  // ← añade esto
+    // console.info("Grouped:", grouped);
   if (!achievements.length) return null;
 
   const totalUnlocked = achievements.filter((a) => a.unlocked).length;
@@ -445,7 +445,7 @@ export default function AchievementsSection({ stats, t }) {
 
       {/* Categories */}
       {Object.entries(grouped).map(([key, list]) => {
-        {console.info("Achievement:", key, "=> ", list)}
+        // {console.info("Achievement:", key, "=> ", list)}
         return (
         <AchievementCategory
           key={key}
