@@ -55,13 +55,13 @@ function isConnected(sessionexpiredat, isLogged)
 {
     if (!sessionexpiredat || !isLogged) return false;
     const expired = Date.now() < new Date(sessionexpiredat.replace(' ', 'T') + 'Z').getTime();
-    console.log({
-  sessionexpiredat,
-  isLogged,
-  now: new Date().toISOString(),
-  expiresAt: new Date(sessionexpiredat.replace(' ', 'T') + 'Z').toISOString(),
-  connected: expired
-});
+//     console.log({
+//   sessionexpiredat,
+//   isLogged,
+//   now: new Date().toISOString(),
+//   expiresAt: new Date(sessionexpiredat.replace(' ', 'T') + 'Z').toISOString(),
+//   connected: expired
+// });
     return (expired);
 }
 
@@ -71,7 +71,7 @@ function isAbsent(lastLogin) {
     const date = (now - new Date(lastLogin.replace(' ', 'T') + 'Z').getTime());
     const mins = date / 60000; //milliseconds 1s * 1000 = 1000 ms | 1min * 60 * 1000 = 60000 ms
     const isAbsent = mins >= ACTIVE_MINS;
-    console.info("Now", now, "Last logged: ", lastLogin, "\nElapsed Mins: ", mins, " Active_mins", ACTIVE_MINS," last_access >= elapsed time ", isAbsent);
+    // console.info("Now", now, "Last logged: ", lastLogin, "\nElapsed Mins: ", mins, " Active_mins", ACTIVE_MINS," last_access >= elapsed time ", isAbsent);
     return (isAbsent);
 }
 
@@ -167,7 +167,7 @@ function FriendRow({ friend, onRemove, onBlock, onProfile, onUnblock, busy, bloc
     console.info("Friend access epried at: ", friend.access_expires_at);
     const connected = isConnected(friend?.access_expires_at, friend.logged);
     const { t } = useTranslation();
-  console.info("Friend is absent: ", absent, " | last_acces=", friend.last_access_at, " isLogged:", connected);
+//   console.info("Friend is absent: ", absent, " | last_acces=", friend.last_access_at, " isLogged:", connected);
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: "12px",
@@ -192,13 +192,13 @@ function FriendRow({ friend, onRemove, onBlock, onProfile, onUnblock, busy, bloc
                 ● {t?.player?.absent}
             </div>
         ) : (
-            <div style={{ fontFamily: mono, fontSize: "10px", color: C.active, marginTop: "2px" }}>
+            <div style={{ fontFamily: mono, fontSize: "10px", color: C.green, marginTop: "2px" }}>
                 ● {t?.player?.active}
             </div>
         )}
       </div>
       <div style={{ display: "flex", gap: "4px" }}>
-        {console.info("Friend id: ", friend.user_id)}
+        {/* {console.info("Friend id: ", friend.user_id)} */}
         <Pill onClick={() => onProfile(friend.user_id)} color={C.accent} bgColor={C.accentDim}>👤 {t?.navigation?.profile || "profile" }</Pill>
         { !blocked ? (<>
             <Pill onClick={() => onRemove(friend.user_id)} disabled={busy} color={C.danger} bgColor={C.dangerDim}>✕ {t?.player?.remove || "eliminar"}</Pill>
