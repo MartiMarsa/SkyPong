@@ -1,4 +1,4 @@
-import { typography, inputColors } from './global-styles';
+import { inputStyles } from './global-styles';
 
 interface TextFieldProps {
   label?: string;
@@ -21,24 +21,17 @@ export function TextField({
   className = '',
   disabled = false,
 }: TextFieldProps) {
-  const inputStyles = `
-    w-full
-    px-4 py-2
-    ${typography.body}
-    border
-    rounded-md
-    transition-colors
-    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-    disabled:opacity-50 disabled:cursor-not-allowed
-    ${error ? inputColors.error : inputColors.default}
-    ${inputColors.focus}
+  const inputClasses = `
+    ${inputStyles.base}
+    ${error ? inputStyles.states.error : inputStyles.states.default}
+    ${inputStyles.states.focus}
     ${className}
   `.trim().replace(/\s+/g, ' ');
 
   return (
-    <div className="w-full">
+    <div className={inputStyles.wrapper}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className={inputStyles.label}>
           {label}
         </label>
       )}
@@ -47,11 +40,11 @@ export function TextField({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
-        className={inputStyles}
+        className={inputClasses}
         disabled={disabled}
       />
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p className={inputStyles.errorText}>{error}</p>
       )}
     </div>
   );

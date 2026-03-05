@@ -1,6 +1,4 @@
-import { chipColors } from './global-styles';
-
-type ChipVariant = 'default' | 'success' | 'warning' | 'error';
+import { chipStyles, type ChipVariant } from './global-styles';
 
 interface ChipProps {
   variant?: ChipVariant;
@@ -9,18 +7,14 @@ interface ChipProps {
 }
 
 export function Chip({ variant = 'default', className = '', children }: ChipProps) {
-  const chipStyles = `
-    inline-flex items-center
-    px-2.5 py-0.5
-    text-xs md:text-sm
-    font-medium
-    rounded-full
-    ${chipColors[variant]}
+  const classes = `
+    ${chipStyles.base}
+    ${chipStyles.variants[variant]}
     ${className}
   `.trim().replace(/\s+/g, ' ');
 
   return (
-    <span className={chipStyles}>
+    <span className={classes}>
       {children}
     </span>
   );

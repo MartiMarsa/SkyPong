@@ -1,12 +1,16 @@
 import Link from 'next/link';
-import { colors, spacing, borderRadius } from './global-styles';
-
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost';
-type ButtonSize = 'sm' | 'md' | 'lg';
+import { 
+  buttonStyles,
+  type ColorVariant,
+  type Size,
+  type FontFamily,
+  fontWeights,
+} from './global-styles';
 
 interface ButtonProps {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
+  variant?: ColorVariant;
+  size?: Size;
+  font?: FontFamily;
   href?: string;
   className?: string;
   children: React.ReactNode;
@@ -18,6 +22,7 @@ interface ButtonProps {
 export function Button({
   variant = 'primary',
   size = 'md',
+  font = 'display',
   href,
   className = '',
   children,
@@ -26,20 +31,24 @@ export function Button({
   onClick,
 }: ButtonProps) {
   const baseStyles = `
-    inline-flex items-center justify-center
-    font-medium
-    transition-colors
-    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-    disabled:opacity-50 disabled:cursor-not-allowed
-    ${colors[variant]}
-    ${spacing[size]}
-    ${borderRadius.md}
+    ${buttonStyles.base}
+    ${buttonStyles.variants[variant]}
+    ${buttonStyles.sizes[size]}
     ${className}
   `.trim().replace(/\s+/g, ' ');
+  
+  const fontStyle = {
+    fontFamily: font === 'display' 
+      ? 'var(--font-space-mono), monospace' 
+      : font === 'mono' 
+        ? 'monospace' 
+        : 'var(--font-lora), serif',
+    fontWeight: buttonStyles.fontWeight,
+  };
 
   if (href) {
     return (
-      <Link href={href} className={baseStyles}>
+      <Link href={href} className={baseStyles} style={fontStyle}>
         {children}
       </Link>
     );
@@ -49,6 +58,7 @@ export function Button({
     <button
       type={type}
       className={baseStyles}
+      style={fontStyle}
       disabled={disabled}
       onClick={onClick}
     >

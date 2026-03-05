@@ -1,18 +1,18 @@
 import "./globals.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
-import { Bungee, Sansation } from "next/font/google";
+import { Space_Mono, Lora } from "next/font/google";
 config.autoAddCss = false;
 import { LanguageProvider } from "./context/language-context";
 import { AuthProvider } from "./context/auth-context";
 import { getCurrentLocale } from "./lib/i18n/locale-manager";
 import GlobalChatUI from "./ui/global-chat-ui";
 
-const bungee = Bungee({ weight: "400", subsets: ["latin"], variable: "--font-bungee" });
-const sansation = Sansation({
-  weight: ["300", "400", "700"],
+const spaceMono = Space_Mono({ weight: ["400", "700"], subsets: ["latin"], variable: "--font-space-mono" });
+const lora = Lora({
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
-  variable: "--font-sansation",
+  variable: "--font-lora",
 });
 
 export const metadata = {
@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
     <AuthProvider>
       <LanguageProvider>
         <html lang={getCurrentLocale()}>
-          <body>
+          <body className={`${lora.variable} ${spaceMono.variable} font-sans`}>
             {children}
             <GlobalChatUI />
           </body>

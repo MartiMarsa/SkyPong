@@ -24,8 +24,9 @@
   --animate-scale-from-right-0: scale-from-right 0.3s ease-out forwards;
   --animate-disapear: disapear 0.5s ease-in forwards;
 
-  --font-display: var(--font-bungee);
-  --font-sans: var(--font-sansation);
+  /* Font family definitions for Tailwind v4 */
+  --font-family-display: var(--font-space-mono), monospace;
+  --font-family-sans: var(--font-lora), serif;
 }
 
 /* Ahora sí puedes usarlas con @apply */
