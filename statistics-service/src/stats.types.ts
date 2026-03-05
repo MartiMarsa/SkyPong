@@ -48,6 +48,12 @@ export type LeaderboardRow = {
 				winrate: number;
 				rate: number;
 				updated_at: string;
+
+				nickname?: string;
+				avatarUrl?: string;
+			  	last_access_at?: string;
+			  	logged?: number;
+			  	access_expires_at?: string;
 };
 
 export type PlayerResult = {

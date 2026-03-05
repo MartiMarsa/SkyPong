@@ -10,6 +10,12 @@ interface PlayerStat {
   winrate: number;
   rate: number;
   updated_at: string;
+
+  nickname?: string;
+  avatarUrl?: string;
+  last_access_at?: string;
+  logged?: number;
+  access_expires_at?: string;
 }
 
 interface LeaderboardResponse {
@@ -112,7 +118,7 @@ function LeaderboardRow({
       <span className="lb-rank">{rank}.</span>
       <div className="lb-info">
         <div className="lb-name-row">
-          <span className="lb-name">{player.user_id}</span>
+          <span className="lb-name">{player.nickname ?? player.user_id}</span>
           <span
             className="lb-dot"
             style={{ background: statusDot(player.rate) }}
