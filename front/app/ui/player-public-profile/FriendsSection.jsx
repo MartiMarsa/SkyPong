@@ -164,7 +164,7 @@ function Pill({ onClick, disabled, color, bgColor, borderColor, children }) {
 // ─── Friend row ───────────────────────────────────────────────────────────────
 function FriendRow({ friend, onRemove, onBlock, onProfile, onUnblock, busy, blocked }) {
     const absent = isAbsent(friend.last_access_at);
-    console.info("Friend access epried at: ", friend.access_expires_at);
+    // console.info("Friend access epried at: ", friend.access_expires_at);
     const connected = isConnected(friend?.access_expires_at, friend.logged);
     const { t } = useTranslation();
 //   console.info("Friend is absent: ", absent, " | last_acces=", friend.last_access_at, " isLogged:", connected);
