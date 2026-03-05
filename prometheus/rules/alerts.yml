@@ -1,33 +1,29 @@
 groups:
   - name: core-alerts
     rules:
-      # 1) Un target está caído
       - alert: TargetDown
         expr: up == 0
         for: 30s
         labels:
           severity: critical
         annotations:
-          summary: "Target caído: {{ $labels.job }} ({{ $labels.instance }})"
-          description: "Prometheus no puede scrapear {{ $labels.job }} en {{ $labels.instance }}."
+          summary: "Target down: {{ $labels.job }} ({{ $labels.instance }})"
+          description: "Prometheus cannot scrape {{ $labels.job }} at {{ $labels.instance }}."
 
-      # 2) Nginx devolviendo 5xx (si usas nginx exporter con métricas de requests)
       - alert: HighNginx5xxRate
-        expr: rate(nginx_http_requests_total{status=~"5.."}[1m]) > 0
+        expr: sum(rate(nginx_http_requests_total{status=~"5.."}[2m])) > 0
         for: 1m
         labels:
           severity: warning
         annotations:
-          summary: "Errores 5xx en Nginx"
-          description: "Se detectan respuestas 5xx en el gateway (rate > 0 durante 1m)."
+          summary: "Nginx is returning 5xx responses"
+          description: "Gateway has returned at least one 5xx response per second over the last minute."
 
-      # 3) CPU alta en contenedores (cAdvisor)
-      # Nota: este umbral es ejemplo, ajustadlo si queréis.
       - alert: HighContainerCPU
-        expr: rate(container_cpu_usage_seconds_total{image!=""}[1m]) > 0.8
+        expr: sum by (name) (rate(container_cpu_usage_seconds_total{image!=""}[2m])) > 0.8
         for: 2m
         labels:
           severity: warning
         annotations:
-          summary: "CPU alta en contenedores"
-          description: "Al menos un contenedor supera CPU > 0.8 cores de forma sostenida."
+          summary: "High CPU usage on container {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is above 0.8 CPU cores for 2 minutes."
