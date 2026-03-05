@@ -15,6 +15,10 @@ export interface ITextStyle {
   verticalAlignment?: number;
   top?: string;
   textVerticalAlignment?: number;
+  paddingTop?: string;
+  paddingBottom?: string;
+  paddingLeft?: string;
+  paddingRight?: string;
 }
 
 export interface IButtonStyle {
@@ -28,6 +32,10 @@ export interface IButtonStyle {
   verticalAlignment?: number;
   top?: string;
   zIndex?: number;
+  thickness?: number;
+  adaptWidthToChildren?: boolean;
+  paddingLeft?: string;
+  paddingRight?: string;
 }
 
 export interface IIconButtonStyle {
@@ -46,9 +54,16 @@ export interface IContainerStyle {
   background: string;
   cornerRadius: number;
   thickness: number;
-  verticalAlignment: number;
+  verticalAlignment?: number;
+  horizontalAlignment?: number;
   width?: string;
   height?: string;
+  paddingTop?: string;
+  paddingBottom?: string;
+  paddingLeft?: string;
+  paddingRight?: string;
+  top?: string;
+  left?: string;
 }
 
 export const GUI_STYLES = {
@@ -60,30 +75,52 @@ export const GUI_STYLES = {
     } as ITextStyle,
     HUD_NAME: {
       color: "#FFFFFF",
-      fontSize: 52,
+      fontSize: 42,
       fontWeight: "bold",
-      shadowColor: "#80808080",
+      shadowColor: "#01040080",
+      shadowOffsetX: 1,
+      shadowOffsetY: 1,
+      shadowBlur: 4,
+      horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+    } as ITextStyle,
+    HUD_NAME_MOBILE: {
+      color: "#FFFFFF",
+      fontSize: 28,
+      fontWeight: "bold",
+      shadowColor: "#01040080",
       shadowOffsetX: 1,
       shadowOffsetY: 1,
       shadowBlur: 4,
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
     } as ITextStyle,
     HUD_SCORE: {
-      color: "#4CAF50",
-      fontSize: 48,
+      color: "#FFFBFC90",
+      fontSize: 32,
       fontWeight: "bold",
-      shadowColor: "#FFFFFF80",
+      shadowColor: "#01040080",
+      shadowOffsetX: 1,
+      shadowOffsetY: 1,
+      shadowBlur: 4,
+      horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+    } as ITextStyle,
+    HUD_SCORE_MOBILE: {
+      color: "#FFFBFC90",
+      fontSize: 22,
+      fontWeight: "bold",
+      shadowColor: "#01040080",
       shadowOffsetX: 1,
       shadowOffsetY: 1,
       shadowBlur: 4,
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
     } as ITextStyle,
     COUNTDOWN: {
-      color: "#4CAF50",
+      color: "#FFFBFC90",
       fontSize: 120,
       fontWeight: "bold",
-      outlineWidth: 4,
-      outlineColor: "black",
+      shadowColor: "#01040080",
+      shadowOffsetX: 1,
+      shadowOffsetY: 1,
+      shadowBlur: 4,
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
       verticalAlignment: Control.VERTICAL_ALIGNMENT_CENTER,
     } as ITextStyle,
@@ -120,35 +157,93 @@ export const GUI_STYLES = {
       fontSize: 24,
       cornerRadius: 10,
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+      thickness: 0,
     } as IButtonStyle,
   },
 
   ICON_BUTTON: {
     LEFT: {
-      width: "80px",
-      height: "60px",
+      width: "200px",
+      height: "180px",
       background: "transparent",
-      iconUrl:
-        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik0xNSA5bC03IDdsNyA3Ii8+PC9zdmc+",
-      iconWidth: "32px",
-      iconHeight: "32px",
+      iconUrl: "/icons/leftButton.svg",
+      iconWidth: "160px",
+      iconHeight: "160px",
       cornerRadius: 10,
       paddingRight: "20px",
     } as IIconButtonStyle,
     RIGHT: {
-      width: "80px",
-      height: "60px",
+      width: "200px",
+      height: "180px",
       background: "transparent",
-      iconUrl:
-        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik05IDlsNyA3bC03IDciLz48L3N2Zz4=",
-      iconWidth: "32px",
-      iconHeight: "32px",
+      iconUrl: "/icons/rightButton.svg",
+      iconWidth: "160px",
+      iconHeight: "160px",
       cornerRadius: 10,
       paddingLeft: "20px",
+    } as IIconButtonStyle,
+    PAUSE: {
+      width: "100px",
+      height: "100px",
+      background: "transparent",
+      iconUrl: "/icons/pause.svg",
+      iconWidth: "80px",
+      iconHeight: "80px",
+      cornerRadius: 8,
+    } as IIconButtonStyle,
+  },
+
+  ICON_BUTTON_MOBILE: {
+    LEFT: {
+      width: "82px",
+      height: "74px",
+      background: "transparent",
+      iconUrl: "/icons/leftButton.svg",
+      iconWidth: "66px",
+      iconHeight: "66px",
+      cornerRadius: 10,
+      paddingRight: "20px",
+    } as IIconButtonStyle,
+    RIGHT: {
+      width: "82px",
+      height: "74px",
+      background: "transparent",
+      iconUrl: "/icons/rightButton.svg",
+      iconWidth: "66px",
+      iconHeight: "66px",
+      cornerRadius: 10,
+      paddingLeft: "20px",
+    } as IIconButtonStyle,
+    PAUSE: {
+      width: "41px",
+      height: "41px",
+      background: "transparent",
+      iconUrl: "/icons/pause.svg",
+      iconWidth: "33px",
+      iconHeight: "33px",
+      cornerRadius: 8,
     } as IIconButtonStyle,
   },
 
   CONTAINER: {
+    HUD_PLAYER1: {
+      background: "transparent",
+      cornerRadius: 0,
+      thickness: 0,
+      verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
+      horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+      paddingBottom: "24px",
+      top: "-24px",
+    } as IContainerStyle,
+    HUD_PLAYER2: {
+      background: "transparent",
+      cornerRadius: 0,
+      thickness: 0,
+      verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
+      horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+      paddingBottom: "24px",
+      top: "32px",
+    } as IContainerStyle,
     DEFAULT: {
       background: "transparent",
       cornerRadius: 0,
@@ -166,29 +261,29 @@ export const GUI_STYLES = {
   },
 
   TOUCH_CONTAINER: {
-    height: "80px",
+    height: "200px",
     horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
     verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
   },
 
-  HUD_POSITIONS: {
-    PLAYER1_NAME: {
-      top: "-100px",
-      verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
-    },
-    PLAYER1_SCORE: {
-      top: "-50px",
-      verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
-    },
-    PLAYER2_NAME: {
-      top: "60px",
-      verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
-    },
-    PLAYER2_SCORE: {
-      top: "110px",
-      verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
-    },
-  },
+  // HUD_POSITIONS: {
+  //   PLAYER1_NAME: {
+  //     top: "-100px",
+  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
+  //   },
+  //   PLAYER1_SCORE: {
+  //     top: "-50px",
+  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
+  //   },
+  //   PLAYER2_NAME: {
+  //     top: "60px",
+  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
+  //   },
+  //   PLAYER2_SCORE: {
+  //     top: "110px",
+  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
+  //   },
+  // },
 
   GAME_OVER_POSITIONS: {
     TITLE: { top: "-200px" },
@@ -197,9 +292,20 @@ export const GUI_STYLES = {
     BUTTON: { top: "150px" },
   },
 
-  DEBUG: {
-    BOTTOM: "10px",
-    LEFT: "10px",
-    UPDATE_INTERVAL_FRAMES: 3,
+  PAUSE_TITLE: {
+    color: "#FFFBFC90",
+    fontSize: 32,
+    fontWeight: "bold",
+    shadowColor: "#01040080",
+    shadowOffsetX: 1,
+    shadowOffsetY: 1,
+    shadowBlur: 4,
+    horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+  } as ITextStyle,
+
+  PAUSE_POSITIONS: {
+    TITLE: { top: "-100px" },
+    RESUME_BUTTON: { top: "50px" },
+    QUIT_BUTTON: { top: "130px" },
   },
 };

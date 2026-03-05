@@ -14,7 +14,7 @@ export const RENDERING = {
     },
     
     ENVIRONMENT: {
-        TEXTURE_PATH: './environment/amsterdam.exr',
+      TEXTURE_PATH: './environment/dramatic-sky1.exr',
         TEXTURE_SIZE: 512,
         INTENSITY: 1,
         SKYBOX_SCALE: 1000,
