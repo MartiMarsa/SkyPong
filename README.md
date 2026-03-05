@@ -5,8 +5,8 @@ A galactic game of pong with steroids
 
 La orquestación principal ahora integra el contenido de `game/` dentro del stack general:
 
-- `game-service`: servidor Colyseus real (build desde `game/Dockerfile.server`, puerto `2567`).
-- `game-frontend`: frontend propio del engine (build desde `game/Dockerfile.client`).
+- `game-service`:d desde `game/Dockerfile.server`, puerto `2567`).
+- `game-frontend`: frontend propio del engine (build desde ` servidor Colyseus real (builgame/Dockerfile.client`).
 
 ### Rutas expuestas
 
