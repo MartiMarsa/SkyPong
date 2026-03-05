@@ -34,11 +34,14 @@ export class GameHUD {
     );
     this._texture.addControl(this._player2Container);
 
-    this._player2Text = GUIElements.CreateText("player2Text", "", GUI_STYLES.TEXT.HUD_NAME);
+    const player2TextStyle = this._isMobile ? GUI_STYLES.TEXT.HUD_NAME_MOBILE : GUI_STYLES.TEXT.HUD_NAME;
+    const player2ScoreStyle = this._isMobile ? GUI_STYLES.TEXT.HUD_SCORE_MOBILE : GUI_STYLES.TEXT.HUD_SCORE;
+
+    this._player2Text = GUIElements.CreateText("player2Text", "", player2TextStyle);
     this._player2ScoreText = GUIElements.CreateText(
       "player2ScoreText",
       this._texts.scoreDefault,
-      GUI_STYLES.TEXT.HUD_SCORE,
+      player2ScoreStyle,
     );
 
     this._player2Container.addControl(this._player2Text);
@@ -58,12 +61,15 @@ export class GameHUD {
 
     this._texture.addControl(this._player1Container);
 
+    const player1TextStyle = this._isMobile ? GUI_STYLES.TEXT.HUD_NAME_MOBILE : GUI_STYLES.TEXT.HUD_NAME;
+    const player1ScoreStyle = this._isMobile ? GUI_STYLES.TEXT.HUD_SCORE_MOBILE : GUI_STYLES.TEXT.HUD_SCORE;
+
     this._player1ScoreText = GUIElements.CreateText(
       "player1ScoreText",
       this._texts.scoreDefault,
-      GUI_STYLES.TEXT.HUD_SCORE,
+      player1ScoreStyle,
     );
-    this._player1Text = GUIElements.CreateText("player1Text", "", GUI_STYLES.TEXT.HUD_NAME);
+    this._player1Text = GUIElements.CreateText("player1Text", "", player1TextStyle);
 
     this._player1Container.addControl(this._player1ScoreText);
     this._player1Container.addControl(this._player1Text);

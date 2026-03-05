@@ -1,6 +1,5 @@
 import { Vector3, Scene, Engine, Observer, FreeCamera } from "@babylonjs/core";
 import { InputController } from "../input/InputController";
-import { DebugMonitor } from "../utils/DebugMonitor";
 import { ClientBall } from "../entities/ClientBall";
 import { ClientPaddle } from "../entities/ClientPaddle";
 import { RoomManager } from "./RoomManager";
@@ -15,7 +14,6 @@ export interface GameLoopConfig {
   ball: ClientBall;
   paddle: ClientPaddle;
   paddle2: ClientPaddle;
-  debugMonitor: DebugMonitor;
   camera: FreeCamera;
 }
 
@@ -27,7 +25,6 @@ export class GameLoop {
   private _ball: ClientBall;
   private _paddle: ClientPaddle;
   private _paddle2: ClientPaddle;
-  private _debugMonitor: DebugMonitor;
   private _camera: FreeCamera;
 
   private _targetPosition: Vector3 = new Vector3(0, 0, 0);
@@ -58,7 +55,6 @@ export class GameLoop {
     this._ball = config.ball;
     this._paddle = config.paddle;
     this._paddle2 = config.paddle2;
-    this._debugMonitor = config.debugMonitor;
     this._camera = config.camera;
 
     // Set default spawn positions until server state arrives
@@ -195,13 +191,6 @@ export class GameLoop {
     this._ball.update(this._targetPosition, ballLerpFactor, this._isBallEnabled, deltaTime);
     this._paddle.update(this._targetPaddlePosition, paddleLerpFactor, this._isPaddle1Enabled);
     this._paddle2.update(this._targetPaddle2Position, paddleLerpFactor, this._isPaddle2Enabled);
-    this._debugMonitor.update(
-      this._ball.mesh.position,
-      this._camera.position,
-      this._isBallEnabled,
-      collisionDetected,
-      this._speed,
-    );
 
     if (++this._inputSendCounter >= NETWORK.SYNC.INPUT_SEND_INTERVAL_FRAMES && !this._isGameOver) {
       this._roomManager.sendInput({

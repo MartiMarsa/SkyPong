@@ -82,8 +82,16 @@ export const GUI_STYLES = {
       shadowOffsetY: 1,
       shadowBlur: 4,
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
-      // paddingTop: "4px",
-      // paddingBottom: "4px",
+    } as ITextStyle,
+    HUD_NAME_MOBILE: {
+      color: "#FFFFFF",
+      fontSize: 28,
+      fontWeight: "bold",
+      shadowColor: "#01040080",
+      shadowOffsetX: 1,
+      shadowOffsetY: 1,
+      shadowBlur: 4,
+      horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
     } as ITextStyle,
     HUD_SCORE: {
       color: "#FFFBFC90",
@@ -94,8 +102,16 @@ export const GUI_STYLES = {
       shadowOffsetY: 1,
       shadowBlur: 4,
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
-      // paddingTop: "4px",
-      // paddingBottom: "4px",
+    } as ITextStyle,
+    HUD_SCORE_MOBILE: {
+      color: "#FFFBFC90",
+      fontSize: 22,
+      fontWeight: "bold",
+      shadowColor: "#01040080",
+      shadowOffsetX: 1,
+      shadowOffsetY: 1,
+      shadowBlur: 4,
+      horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
     } as ITextStyle,
     COUNTDOWN: {
       color: "#FFFBFC90",
@@ -291,11 +307,5 @@ export const GUI_STYLES = {
     TITLE: { top: "-100px" },
     RESUME_BUTTON: { top: "50px" },
     QUIT_BUTTON: { top: "130px" },
-  },
-
-  DEBUG: {
-    BOTTOM: "10px",
-    LEFT: "10px",
-    UPDATE_INTERVAL_FRAMES: 3,
   },
 };

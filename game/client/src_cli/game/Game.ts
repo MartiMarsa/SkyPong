@@ -1,6 +1,5 @@
 import { Scene, Vector3, Color3 } from "@babylonjs/core";
 import { InputController } from "../input/InputController";
-import { DebugMonitor } from "../utils/DebugMonitor";
 import { ClientEngine } from "./ClientEngine";
 import { RoomManager, RoomManagerCallbacks } from "./RoomManager";
 import { GameLoop } from "./GameLoop";
@@ -16,7 +15,6 @@ import { encodeConfig } from "../utils/configDecoder";
 let gameInstanceLock = false;
 
 export class Game {
-  private _debugMonitor: DebugMonitor | null = null;
   private _input: InputController | null = null;
   private _room: any = null;
   private _config: GameSessionConfig | null = null;
@@ -99,9 +97,6 @@ export class Game {
       const { ball, table, paddle, paddle2, gui, touchControls } = entities;
       this._gui = gui;
 
-      const debugMonitor = new DebugMonitor();
-      this._debugMonitor = debugMonitor;
-
       const createScene = async () => {
         const scene = clientEngine.scene;
 
@@ -156,7 +151,7 @@ export class Game {
 
           touchControls.setInputController(input);
 
-          const gameLoop = new GameLoop({
+          const           gameLoop = new GameLoop({
             engine,
             scene,
             inputController: input,
@@ -164,7 +159,6 @@ export class Game {
             ball,
             paddle,
             paddle2,
-            debugMonitor,
             camera: clientEngine.engineSetup.camera,
           });
           this._gameLoop = gameLoop;
@@ -246,8 +240,6 @@ export class Game {
     this._room = null;
     this._input?.dispose();
     this._input = null;
-    this._debugMonitor?.dispose();
-    this._debugMonitor = null;
     this._clientEngine?.dispose();
     this._clientEngine = null;
     this._gui = null;
