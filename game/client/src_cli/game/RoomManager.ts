@@ -273,6 +273,12 @@ export class RoomManager {
     sendLaunch(): void {
         this._room?.send('launch', {});
     }
+    sendPause(): void {
+        this._room?.send('pause', {});
+    }
+    sendResume(): void {
+        this._room?.send('resume', {});
+    }
     disconnect(): void {
         this._room?.leave();
         this._room?.removeAllListeners();

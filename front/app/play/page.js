@@ -6,6 +6,7 @@ import { encodeConfig } from '../lib/game/game-session-config';
 import { getAvailableRooms } from '../lib/game/room-service';
 import { useAuth } from '../context/auth-context';
 import { useStyles } from '../hooks/use-styles';
+import { useTranslation } from '../hooks/use-translation';
 import FooterTermsPolicy from '../ui/footer-terms-policy';
 import NavigationAppUI from '../ui/navigation-app-ui';
 import { Button } from '../ui/base';
@@ -123,6 +124,7 @@ export default function PlayPage() {
   const [gameUrl, setGameUrl] = useState('');
 
   const { user, hasCredentials } = useAuth();
+  const { locale } = useTranslation();
   const error = useMemo(() => searchParams.get('error'), [searchParams]);
 
   useEffect(() => {
@@ -140,6 +142,7 @@ export default function PlayPage() {
       ...config,
       playerId: user?.id,
       playerName: config.playerName || user?.nickname || 'Player 1',
+      language: locale,
     };
     const encoded = encodeConfig(finalConfig);
     const url = `/game-engine/canvas?config=${encodeURIComponent(encoded)}`;

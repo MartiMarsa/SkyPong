@@ -17,6 +17,7 @@ export interface GameSessionConfig {
   roomId?: string;
   cameraView?: 'angled' | 'top-down';
   winningScore?: number;
+  language?: 'en' | 'es' | 'it';
 }
 
 export const VALID_GAME_MODES: GameMode[] = [

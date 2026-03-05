@@ -113,6 +113,14 @@ export class AIGameRoom extends Room<MyGameState> {
       }
     });
 
+    // Handle pause/resume from client
+    this.onMessage("pause", (client, data) => {
+      this.state.isPaused = true;
+    });
+    this.onMessage("resume", (client, data) => {
+      this.state.isPaused = false;
+    });
+
     this.setSimulationInterval((deltaTime) => {
       this.update(deltaTime);
     }, SERVER_CONFIG.SIMULATION_INTERVAL_MS);
@@ -120,7 +128,7 @@ export class AIGameRoom extends Room<MyGameState> {
 
   update(deltaTime: number) {
     // Skip updates if game is over or player has left
-    if (this.state.gameOver || this.isDisposed || !this.playerClient) {
+    if (this.state.gameOver || this.isDisposed || !this.playerClient || this.state.isPaused) {
       return;
     }
 

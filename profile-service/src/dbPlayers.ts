@@ -141,14 +141,15 @@ export async function initProfileDB(): Promise<void> {
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         deleted INTEGER NOT NULL DEFAULT 0,
         deleted_at TEXT,
-        last_access_at TEXT,
-        logged INTEGER DEFAULT 0
+        last_access_at TEXT DEFAULT '2025-12-01',
+        logged INTEGER DEFAULT 0,
+		access_expires_at TEXT DEFAULT '2025-12-01'
       )
     `);
 
-    await addColumnIfMissing(db, 'players', 'last_access_at TEXT', 'last_access_at');
+    await addColumnIfMissing(db, 'players', `last_access_at TEXT DEFAULT '2025-12-01'`, 'last_access_at');
     await addColumnIfMissing(db, 'players', 'logged INTEGER DEFAULT 0', 'logged');
-	await addColumnIfMissing(db, 'players', 'access_expires_at TEXT', 'access_expires_at');
+	await addColumnIfMissing(db, 'players', `access_expires_at TEXT DEFAULT '2025-12-01'`, 'access_expires_at');
 
     await run(db, `
       CREATE UNIQUE INDEX IF NOT EXISTS players_nickname_unique

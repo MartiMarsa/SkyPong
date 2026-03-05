@@ -17,7 +17,7 @@ export class CloudObject {
     
     CloudObject.spriteManager = new SpriteManager(
       "cloudsManager",
-      "https://www.babylonjs.com/Scenes/Clouds/cloud.png",
+      "textures/cloud.png",
       100,
       256,
       scene

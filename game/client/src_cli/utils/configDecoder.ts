@@ -124,6 +124,20 @@ export function decodeConfig(base64String: string | null): DecodeResult {
     }
   }
 
+  // Validate optional language - if provided, must be valid
+  if (config.language !== undefined) {
+    const validLanguages = ['en', 'es', 'it'];
+    if (!validLanguages.includes(config.language)) {
+      return {
+        valid: false,
+        error: `Invalid language: '${config.language}'. Must be one of: ${validLanguages.join(', ')}`,
+      };
+    }
+  }
+
+  // Apply defaults
+  config.language ??= 'en';
+
   // All validations passed
   return {
     valid: true,

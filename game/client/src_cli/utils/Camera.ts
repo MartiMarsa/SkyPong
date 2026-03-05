@@ -1,5 +1,48 @@
-import { FreeCamera, Mesh, Vector3, Engine } from "@babylonjs/core";
+import { FreeCamera, Mesh, Vector3, Engine, Animation, CubicEase } from "@babylonjs/core";
 import { CAMERA } from '../config';
+
+export function animateCameraIntro(
+    camera: FreeCamera,
+    cameraView: 'angled' | 'top-down',
+    isPlayer2: boolean,
+    onComplete: () => void
+): void {
+    const isTopDown = cameraView === 'top-down';
+    const startPosition = isTopDown 
+        ? CAMERA.INTRO_START_POSITION_TOP_DOWN.clone()
+        : CAMERA.INTRO_START_POSITION.clone();
+
+    if (isPlayer2 && !isTopDown) {
+        startPosition.z = -startPosition.z;
+    }
+
+    const targetPosition = camera.position.clone();
+
+    camera.position = startPosition;
+
+    const easingFunction = new CubicEase();
+    easingFunction.setEasingMode(CubicEase.EASINGMODE_EASEOUT);
+
+    const positionAnimation = new Animation(
+        "cameraIntro",
+        "position",
+        60,
+        Animation.ANIMATIONTYPE_VECTOR3,
+        Animation.ANIMATIONLOOPMODE_CONSTANT
+    );
+
+    const keys = [
+        { frame: 0, value: camera.position.clone() },
+        { frame: 90, value: targetPosition }
+    ];
+
+    positionAnimation.setKeys(keys);
+    positionAnimation.setEasingFunction(easingFunction);
+
+    camera.animations = [positionAnimation];
+
+    camera.getScene().beginAnimation(camera, 0, 90, false, 1, onComplete);
+}
 
 export function delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));

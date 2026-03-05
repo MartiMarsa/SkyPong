@@ -1,5 +1,7 @@
 import { RoomManager } from "./RoomManager";
 import { CountdownManager } from "./CountdownManager";
+import { FreeCamera } from "@babylonjs/core";
+import { animateCameraIntro } from "../utils/Camera";
 
 export interface GameReadyManagerConfig {
     roomManager: RoomManager;
@@ -8,6 +10,8 @@ export interface GameReadyManagerConfig {
     isPvP: boolean;
     isOnline: boolean;
     initialGameStarted: boolean;
+    camera: FreeCamera;
+    cameraView: 'angled' | 'top-down';
     onGameReady?: (onLaunch: () => void, isWaitingForOpponent?: boolean) => void | null;
 }
 
@@ -22,6 +26,8 @@ export class GameReadyManager {
     private _onGameReady: ((onLaunch: () => void, isWaitingForOpponent?: boolean) => void) | undefined;
     private _savedLaunchCallback: (() => void) | null = null;
     private _hasLaunched: boolean = false;
+    private _camera: FreeCamera;
+    private _cameraView: 'angled' | 'top-down';
 
     constructor(config: GameReadyManagerConfig) {
         this._roomManager = config.roomManager;
@@ -31,6 +37,8 @@ export class GameReadyManager {
         this._isOnline = config.isOnline;
         this._gameStarted = config.initialGameStarted;
         this._onGameReady = config.onGameReady ?? undefined;
+        this._camera = config.camera;
+        this._cameraView = config.cameraView;
     }
 
     public start(): void {
@@ -99,6 +107,11 @@ export class GameReadyManager {
     private _startCountdown(): void {
         if (this._hasLaunched) return;
         this._hasLaunched = true;
-        this._countdownManager.start();
+
+        const isPlayer2 = this._roomManager.isPlayer2;
+
+        animateCameraIntro(this._camera, this._cameraView, isPlayer2, () => {
+            this._countdownManager.start();
+        });
     }
 }
