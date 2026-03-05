@@ -1,5 +1,7 @@
 import * as StatsEnums from './stats.enums';
 
+export { StatsEnums };
+
 export type GameHistoryRow = {
 				game_id: string;
 				user1_id: string;

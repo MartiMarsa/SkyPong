@@ -122,22 +122,11 @@ export function initDB(): Promise<void> {
               password_hashed TEXT NOT NULL,
               password_version INTEGER DEFAULT 1,
               twofa_enabled INTEGER DEFAULT 0,
-              twofa_secret TEXT,
               token_version INTEGER DEFAULT 0,
               created_at TEXT DEFAULT CURRENT_TIMESTAMP,
               deleted_at TEXT
             )
           `);
-
-          await addColumnIfMissing(db, 'users', 'provider TEXT', 'provider');
-          await addColumnIfMissing(db, 'users', 'provider_id TEXT', 'provider_id');
-          await addColumnIfMissing(
-            db,
-            'users',
-            'needs_password INTEGER DEFAULT 0',
-            'needs_password'
-          );
-
 
 		  db.run(`
 			CREATE TABLE IF NOT EXISTS user_sessions (
@@ -149,11 +138,6 @@ export function initDB(): Promise<void> {
 			  	created_at TEXT DEFAULT CURRENT_TIMESTAMP
 				);
 			`);
-
-		  db.run(`
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_oauth
-            ON users(provider, provider_id)
-          `);
 
           resolve();
         } catch (err) {

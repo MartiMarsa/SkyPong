@@ -25,6 +25,7 @@ import {
 } from './player';
 import * as friendService from './friendService';
 import { publicKey } from './keys';
+import { updatePlayerInfoSchema } from './validation/checkInput'; 
 
 const fastify = Fastify({logger: true});
 
@@ -361,7 +362,19 @@ fastify.get('/profile/:id', {preHandler: verifyToken }, async (req, reply) => {
 fastify.patch('/profile/updateme', { preHandler: verifyToken }, async (req, reply) => {
     try {
         const userId = req.user.sub;
-        const data = req.body as any;
+
+		const result = updatePlayerInfoSchema.safeParse(req.body);
+
+		if (!result.success) {
+				return reply.status(400).send({
+						error: {
+							code: "VALIDATION_ERROR",
+							message: result.error.issues[0].message,
+			  			},
+				});
+		}
+
+		const data = result.data;
 
         // 1. Actualizamos
         await updatePlayerInfo(userId, data);

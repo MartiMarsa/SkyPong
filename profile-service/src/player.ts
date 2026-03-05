@@ -376,12 +376,12 @@ export async function updatePlayerInfo(
     fields.push('winPhrase = ?');
     values.push(data.winPhrase);
   }
-
+/*
   if (data.localization !== undefined) {
     fields.push('localization = ?');
     values.push(data.localization);
   }
-
+*/
   if (!fields.length) return;
 
   values.push(userId);

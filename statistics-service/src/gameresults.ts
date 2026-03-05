@@ -3,6 +3,8 @@ import { getDbHelpers } from './helpers';
 import * as StatsTypes from './stats.types';
 import * as StatsEnums from './stats.enums';
 
+export { StatsEnums };
+
 // --- DB ---
 const db = getDbHelpers(getStatisticsDB());
 

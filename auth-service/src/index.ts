@@ -8,10 +8,10 @@ import { signup, login, generateEmail } from './auth';
 import { initDB, getDB } from './db';
 import { initTokenDB, getTokenDB } from './dbTokens';
 import { privateKey, publicKey } from './keys';
-import { generateToken, generate2FAToken, deleteUserSession } from './token';
-import { generate2FA, verify2FA } from './twofa';
+import { generateToken, deleteUserSession } from './token';
 import { createRefreshToken, verifyRefreshToken, revokeRefreshToken, revokeRefreshTokenById, isTokenRevoked } from './refresh';
 import { hashPassword, verifyPassword } from './password';
+import { signUpSchema, loginSchema, changePasswordSchema } from "./validation/checkInput";
 
 
 const fastify = Fastify({ logger: true });
@@ -37,27 +37,13 @@ const refreshOpts = {
     maxAge: 7 * 24 * 3600,
 };
 
-interface TwoFAVerifyBody {
-    twofa_token: string;
-    code: string;
-}
-
-interface TwoFABody {
-    id: string;
-	code: string;
-}
 
 interface AuthBody {
 	email: string;
 	password: string;
 }
 
-interface LoginBody {
-    email: string;
-      	password: string;
-    }
-
-    interface ChangePassword {
+interface ChangePassword {
 	old_password: string;
 	new_password: string;
 }
@@ -77,8 +63,6 @@ const CSRF_EXCLUDED_PATHS = new Set([
     '/auth/signup',
     '/auth/login',
     '/auth/refresh',      
-    '/auth/google',
-    '/auth/google/callback',
     '/auth/set-password',
     '/auth/logout'
 ]);
@@ -138,16 +122,6 @@ async function authentificate(req: any): Promise<any | null> {
     }
 }
 
-async function requireAuthAllowNeedsPassword(req: any, reply: any) {
-    
-    const user = await authentificate(req);      
-	if (!user) {
-        return reply.status(401).send(); // { error: 'Unauthorized' }
-	};
-    
-    req.user = user;
-}
-    
 async function requireAuth(req: any, reply: any) {
         
         const user = await authentificate(req);
@@ -166,8 +140,6 @@ async function requireAuth(req: any, reply: any) {
         const user = await authentificate(req);
         
         if (!user) return;
-        
-        //      	const next = req.cookies?.last_page || '/me';
         
 		return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
     }
@@ -239,7 +211,6 @@ fastify.get<{ Params: { id: string } }>('/internal/auth/session_state/:id', { pr
       return reply.status(404).send({ error: 'Session not found' });
     }
 
-    // возвращаем просто строку с датой истечения
     return reply.send({ exp: row.expires_at });
 
   } catch (err) {
@@ -249,17 +220,21 @@ fastify.get<{ Params: { id: string } }>('/internal/auth/session_state/:id', { pr
 });
 
 // --- SIGNUP ---
-    fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, reply) => {
-        
-        const { email, password } = req.body as AuthBody;
-        //    const next = req.query.next || req.cookies?.last_page || '/me';
-        
-        if (!email || !password) {
-            return reply.status(400).send({
-                error: { code: 'VALIDATION_ERROR', message: 'Invalid input: username, email and password required' },
-            });
-        }
-        
+fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, reply) => {
+			 
+			 const result = signUpSchema.safeParse(req.body);
+
+			 if (!result.success) {
+		   		 return reply.status(400).send({
+						error: {
+							code: "VALIDATION_ERROR",
+				  			message: result.error.issues[0].message,
+							},
+					  		});
+			 	 }
+
+			const { email, password }: AuthBody = result.data;
+	 
         try {
             const user = await signup(email, password);
             
@@ -284,22 +259,27 @@ fastify.get<{ Params: { id: string } }>('/internal/auth/session_state/:id', { pr
 	});
 } catch (err: any) {
     reply.status(409).send({ error: { code: 'EMAIL_OR_USERNAME_TAKEN', message: 'Already exists' } });
-    //	  reply.status(500).send({ error: { code: err.code, message: err.message }});
     }
 });
 
 // --- LOGIN ---
 fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply) => {
-    const { email, password } = req.body as LoginBody;
-    if (!email || !password) return reply.status(400).send('Email and password required');
-    
+
+			 const result = signUpSchema.safeParse(req.body);
+
+			 if (!result.success) {
+			 	return reply.status(400).send({
+						error: {
+							code: "VALIDATION_ERROR",
+							message: result.error.issues[0].message,
+					  		},
+							});
+			  	}
+
+			const { email, password }: AuthBody = result.data;
+
     try {
         const user = await login(email, password);
-        
-        if (user.twofa_enabled) {
-            const twofaToken = generate2FAToken(user.id);
-            return reply.send({ twofa_required: true, twofa_token: twofaToken });
-        }
         
         const token = await generateToken({ 
             id: user.id, 
@@ -327,25 +307,21 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
 
 // --- CHANGE USER PASSWORD ---
 fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, reply) => {
-    const { old_password, new_password } = req.body as ChangePassword;
-    
-    console.log("Changing password...");
-    // 1. Validaciones básicas
-    if (!old_password || !new_password) {
-        return reply.status(400).send({
-            error: { code: 'VALIDATION_ERROR', message: 'Missing fields' },
-        });
-    }
 
-    if (new_password.length < 8) {
-        return reply.status(400).send({
-            error: { code: 'WEAK_PASSWORD', message: 'Password too short' },
-        });
-    } else if (new_password === old_password) {
-        return reply.status(400).send({
-            error: { code: 'SAME_PASSWORD', message: 'New password must be different' },
-        });
-    }
+			 const result = changePasswordSchema.safeParse(req.body);
+
+		   	 if (!result.success) {
+		 		 return reply.status(400).send({
+							error: {
+								code: "VALIDATION_ERROR",
+								message: result.error.issues[0].message,
+						  		},
+								});
+			   	 }
+
+			const { old_password, new_password }: ChangePassword = result.data;
+
+    console.log("Changing password...");
 
     const userId = req.user.id;
     const db = getDB();
@@ -432,37 +408,6 @@ fastify.post('/auth/logout', { preHandler: requireAuth }, async (req: any, reply
         .status(200) // Siempre devolvemos 200 para que el navegador procese el borrado
         .send({ status: 'logged_out' });
 });
-
-// // --- LOGOUT ---
-// fastify.post('/auth/logout', {preHandler: requireAuth }, async (req: any, reply) => {
-// 	const refreshToken = req.cookies?.refresh_token;
-
-//     	if (refreshToken) {
-//             const payload = await verifyRefreshToken(refreshToken);
-//             if (payload) {
-//                     await revokeRefreshToken(payload.tokenId);
-//             }
-//     	}
-
-// 	const db = getDB();
-
-// 	await new Promise<void>((resolve, reject) => {
-// 		db.run(`
-// 		       UPDATE users
-// 		       SET token_version = token_version + 1
-// 		       WHERE id = ?
-// 		       `,
-// 		       [req.user.id],
-// 		       err => err ? reject(err) : resolve()
-// 		      );
-// 	});
-	
-// 	reply
-//         .clearCookie('access_token', { path: '/' })
-//         .clearCookie('refresh_token', { path: '/auth/refresh' })
-//         .clearCookie('csrf_token', { path: '/' })
-//         .send({ status: 'logged_out' });
-// });
 
 fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, reply) => {
       	const userId = req.user.id;
@@ -573,138 +518,6 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
     		path: '/',
 	})
 	.send({ ok: true });
-});
-
-// --- 2FA ---
-fastify.post('/auth/2fa/setup', { preHandler: requireAuth }, async (req, reply) => {
-	const id = (req as any).user.id;
-	const db = getDB();
-
-	const check = await new Promise<any>((res, rej) => {
-		db.get(`SELECT twofa_enabled FROM users WHERE id = ?`, [id], (err, row) =>
-			err ? rej(err) : res(row)
-		);
-	});
-
-	if (check) {
-		return reply.status(409).send(); // { error: '2FA already enabled' }
-	}
-
-	const result = await generate2FA(id);
-	reply.send(result);
-});
-
-fastify.post('/auth/2fa/enable', { preHandler: requireAuth }, async (req, reply) => {
-			 const { code } = req.body as { code: string };
-			 const id = (req as any).user.id;
-    	
-		 	 const db = getDB();
-    	
-		 	 const row = await new Promise<any>((res, rej) => {
-												db.get(`SELECT twofa_secret FROM users WHERE id = ?`, 
-													   [id], 
-													   (err, row) => (err ? rej(err) : res(row)));
-												});
-
-	 		 if (!row || !verify2FA(row.twofa_secret, code)) return reply.status(401).send(); //{ error: 'Invalid 2FA code' }
-
-			 await new Promise((res, rej) => {
-							   db.run(
-								  	  `UPDATE users SET twofa_enabled = 1 WHERE id = ?`,
-								  	  [id],
-								  	  err => err ? rej(err) : res(true)
-								   	 );
-							   });
-
-			 const result = await new Promise<any>((res, rej) => {
-												   db.get(`SELECT email, twofa_enabled FROM users WHERE id = ?`,
-														  [id],
-														  (err, row) => (err ? rej(err) : res(row)));
-												   });
-
-			 if (!result) return reply.status(401).send();
-
-	 		 reply.send({ id: id, email: result.email, twofa_enabled: result.twofa_enabled });
-});
-
-fastify.post('/auth/2fa/disable', { preHandler: requireAuth }, async (req, reply) => {
-			 const { code } = req.body as { code: string };
-             const id = (req as any).user.id;
-	
-		 	 const db = getDB();
-
-		 	 const user = await new Promise<any>((res, rej) => {
-										 		 db.get(`SELECT twofa_secret FROM users WHERE id = ?`,
-										  				[id],
-										  				(err, row) => (err ? rej(err) : res(row)));
-											 	 });
-
-		 	 if (!user || !verify2FA(user.twofa_secret, code)) {
-	 		 return reply.status(401).send(); // { error: 'Invalid 2FA code' })
-    	}
-
-		 	 await new Promise((res, rej) => {
-					   		   db.run(`UPDATE users SET twofa_enabled = 0, twofa_secret = NULL WHERE id = ?`,
-							  		  [id],
-						  			  (err) => (err ? rej(err) : res(true))
-					   				 );
-					   		   });
-
-			 const result = await new Promise<any>((res, rej) => {
-                                                   db.get(`SELECT email, twofa_enabled FROM users WHERE id = ?`,
-                                                          [id],
-                                                          (err, row) => (err ? rej(err) : res(row)));
-                                                   });
-				if (!result) return reply.status(401).send();
-
-			 reply.send({ id: id, email: result.email, twofa_enabled: result.twofa_enabled });
-});
-
-fastify.post('/auth/2fa/verify', async (req, reply) => {
-	const { twofa_token, code } = req.body as TwoFAVerifyBody;
-
-    	let payload: any;
-	try {
-		payload = jwt.verify(twofa_token, publicKey, {
-	    		algorithms: ['RS256'],
-	    		issuer: 'auth-service',
-		});
-    	} catch {
-		return reply.status(401).send({ error: 'Invalid 2FA token' });
-    	}
-
-    	const db = getDB();
-    	const user = await new Promise<any>((res, rej) => {
-		db.get(
-	    		`SELECT id, username, password_version, token_version, twofa_secret FROM users WHERE id = ?`,
-	    		[payload.sub],
-	    		(err, row) => (err ? rej(err) : res(row))
-		);
-    	});
-
-    	if (!user || !verify2FA(user.twofa_secret, code)) {
-		return reply.status(401).send({ error: 'Invalid 2FA code' });
-    	}
-
-    	const accessToken = await generateToken({
-		id: user.id,
-		password_version: user.password_version,
-		token_version: user.token_version,
-    	});
-
-    	const refreshToken = await createRefreshToken(user.id);
-    	const csrfToken = randomUUID();
-
-    	reply
-	.setCookie('access_token', accessToken, { ...cookieOpts, maxAge: 3600 })
-	.setCookie('refresh_token', refreshToken, refreshOpts)
-	.setCookie('csrf_token', csrfToken, {
-    		httpOnly: false,
-    		secure: true,
-    		sameSite: 'strict',
-    		path: '/',
-	})
-	.send({ status: 'ok' });
 });
 
 // --- HEALTH ---
