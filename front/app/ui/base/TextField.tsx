@@ -1,4 +1,4 @@
-import { typography } from './global-styles';
+import { typography, inputColors } from './global-styles';
 
 interface TextFieldProps {
   label?: string;
@@ -30,10 +30,8 @@ export function TextField({
     transition-colors
     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
     disabled:opacity-50 disabled:cursor-not-allowed
-    ${error 
-      ? 'border-red-500 focus:ring-red-500' 
-      : 'border-gray-300 hover:border-gray-400'
-    }
+    ${error ? inputColors.error : inputColors.default}
+    ${inputColors.focus}
     ${className}
   `.trim().replace(/\s+/g, ' ');
 
