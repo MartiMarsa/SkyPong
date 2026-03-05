@@ -26,7 +26,7 @@ import api from "../../api/api";
 import Toast from "../messaging/toast";
 import Loader from "../loader/loader-ui";
 // ─── Config ───────────────────────────────────────────────────────────────────
-const ACTIVE_MINS = 1 * 60 * 1000;
+const ACTIVE_MINS = 1;
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const C = {
   bg: "#07090c",
@@ -51,19 +51,28 @@ const C = {
 
 const mono = "'Courier New', monospace";
 
-function isExpired(sessionexpiredat)
+function isConnected(sessionexpiredat, isLogged)
 {
-  const date = (Date.now() - new Date(sessionexpiredat).getTime());
-  return (!(date > 0));
+    if (!sessionexpiredat || !isLogged) return false;
+    const expired = Date.now() < new Date(sessionexpiredat.replace(' ', 'T') + 'Z').getTime();
+    console.log({
+  sessionexpiredat,
+  isLogged,
+  now: new Date().toISOString(),
+  expiresAt: new Date(sessionexpiredat.replace(' ', 'T') + 'Z').toISOString(),
+  connected: expired
+});
+    return (expired);
 }
 
 function isAbsent(lastLogin) {
-  if (!lastLogin) return false;
-  const date = (Date.now() - new Date(lastLogin).getTime());
-  const mins = date; //milliseconds 1s * 1000 = 1000 ms | 1min * 60 * 1000 = 60000 ms
-  const isAbsent = mins >= ACTIVE_MINS;
-  console.info("Last logged: ", date, "\nElapsed Mins: ", mins, " last_acces >= elapsed time ", isAbsent);
-  return (isAbsent);
+    if (!lastLogin) return false;
+    const now = Date.now()
+    const date = (now - new Date(lastLogin.replace(' ', 'T') + 'Z').getTime());
+    const mins = date / 60000; //milliseconds 1s * 1000 = 1000 ms | 1min * 60 * 1000 = 60000 ms
+    const isAbsent = mins >= ACTIVE_MINS;
+    console.info("Now", now, "Last logged: ", lastLogin, "\nElapsed Mins: ", mins, " Active_mins", ACTIVE_MINS," last_access >= elapsed time ", isAbsent);
+    return (isAbsent);
 }
 
 function isBlocked(status) {
@@ -155,10 +164,10 @@ function Pill({ onClick, disabled, color, bgColor, borderColor, children }) {
 // ─── Friend row ───────────────────────────────────────────────────────────────
 function FriendRow({ friend, onRemove, onBlock, onProfile, onUnblock, busy, blocked }) {
     const absent = isAbsent(friend.last_access_at);
-    const expired = isExpired(friend?.session_expired_at);
+    console.info("Friend access epried at: ", friend.access_expires_at);
+    const connected = isConnected(friend?.access_expires_at, friend.logged);
     const { t } = useTranslation();
-  console.info("Friend is absent: ", absent, " | last_acces=", friend.last_access_at, " isLogged:", friend.logged);
-  console.info("Friend ", friend.nickname, " session expired=", expired);
+  console.info("Friend is absent: ", absent, " | last_acces=", friend.last_access_at, " isLogged:", connected);
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: "12px",
@@ -174,14 +183,19 @@ function FriendRow({ friend, onRemove, onBlock, onProfile, onUnblock, busy, bloc
         <div style={{ fontFamily: mono, fontSize: "13px", color: C.text, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {friend.nickname}
         </div>
-        { absent && friend.logged && !expired ? (
+        {  !connected ? (
+            <div style={{ fontFamily: mono, fontSize: "10px", color: C.textDim, marginTop: "2px" }}>
+                ○ {t?.player?.inactive}
+            </div>
+        ) : absent ? (
             <div style={{ fontFamily: mono, fontSize: "10px", color: C.absent, marginTop: "2px" }}>
-                ● {t?.player.absent}
+                ● {t?.player?.absent}
             </div>
         ) : (
-        <div style={{ fontFamily: mono, fontSize: "10px", color: friend.logged ? C.green : C.textDim, marginTop: "2px" }}>
-          {friend.logged && !expired ? "● " + t?.player?.active : "○ " + t?.player?.inactive }
-        </div>)}
+            <div style={{ fontFamily: mono, fontSize: "10px", color: C.active, marginTop: "2px" }}>
+                ● {t?.player?.active}
+            </div>
+        )}
       </div>
       <div style={{ display: "flex", gap: "4px" }}>
         {console.info("Friend id: ", friend.user_id)}
