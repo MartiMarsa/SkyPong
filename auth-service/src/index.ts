@@ -14,7 +14,7 @@ import { hashPassword, verifyPassword } from './password';
 import { signUpSchema, loginSchema, changePasswordSchema } from "./validation/checkInput";
 
 
-const fastify = Fastify({ logger: true, trustProxy: true });
+const fastify = Fastify({ logger: true });
 
 fastify.register(cookie, { secret: 'cookie-secret' });
 
