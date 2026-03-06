@@ -1,16 +1,38 @@
 import Link from 'next/link';
-import { 
-  buttonStyles,
-  type ColorVariant,
-  type Size,
-  type FontFamily,
-  fontWeights,
-} from './global-styles';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 
-interface ButtonProps {
-  variant?: ColorVariant;
-  size?: Size;
-  font?: FontFamily;
+const buttonVariants = cva(
+  // Base styles - using Tailwind v4 auto-generated utilities from CSS variables
+  'inline-flex items-center justify-center font-bold rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+  {
+    variants: {
+      variant: {
+        primary: 'bg-primary hover:bg-primary-hover text-white',
+        secondary: 'bg-secondary hover:bg-secondary-hover text-white',
+        danger: 'bg-danger hover:bg-danger-hover text-white',
+        ghost: 'bg-ghost hover:bg-ghost-hover text-gray-700',
+      },
+      size: {
+        sm: 'px-4 py-1.5',
+        md: 'px-6 py-4',
+        lg: 'px-10 py-6',
+      },
+      font: {
+        display: 'font-display',
+        body: 'font-sans',
+        mono: 'font-mono',
+      },
+    },
+    defaultVariants: {
+      variant: 'primary',
+      size: 'md',
+      font: 'display',
+    },
+  }
+);
+
+interface ButtonProps extends VariantProps<typeof buttonVariants> {
   href?: string;
   className?: string;
   children: React.ReactNode;
@@ -20,35 +42,21 @@ interface ButtonProps {
 }
 
 export function Button({
-  variant = 'primary',
-  size = 'md',
-  font = 'display',
+  variant,
+  size,
+  font,
   href,
-  className = '',
+  className,
   children,
   type = 'button',
   disabled = false,
   onClick,
 }: ButtonProps) {
-  const baseStyles = `
-    ${buttonStyles.base}
-    ${buttonStyles.variants[variant]}
-    ${buttonStyles.sizes[size]}
-    ${className}
-  `.trim().replace(/\s+/g, ' ');
-  
-  const fontStyle = {
-    fontFamily: font === 'display' 
-      ? 'var(--font-space-mono), monospace' 
-      : font === 'mono' 
-        ? 'monospace' 
-        : 'var(--font-lora), serif',
-    fontWeight: buttonStyles.fontWeight,
-  };
+  const buttonClass = cn(buttonVariants({ variant, size, font, className }));
 
   if (href) {
     return (
-      <Link href={href} className={baseStyles} style={fontStyle}>
+      <Link href={href} className={buttonClass}>
         {children}
       </Link>
     );
@@ -57,8 +65,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={baseStyles}
-      style={fontStyle}
+      className={buttonClass}
       disabled={disabled}
       onClick={onClick}
     >

@@ -1,4 +1,20 @@
-import { inputStyles } from './global-styles';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
+
+const inputVariants = cva(
+  'w-full px-4 py-2 text-base md:text-lg text-gray-900 border rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+  {
+    variants: {
+      error: {
+        true: 'border-border-error focus:ring-red-500',
+        false: 'border-border hover:border-border-hover',
+      },
+    },
+    defaultVariants: {
+      error: false,
+    },
+  }
+);
 
 interface TextFieldProps {
   label?: string;
@@ -18,20 +34,13 @@ export function TextField({
   value,
   onChange,
   type = 'text',
-  className = '',
+  className,
   disabled = false,
 }: TextFieldProps) {
-  const inputClasses = `
-    ${inputStyles.base}
-    ${error ? inputStyles.states.error : inputStyles.states.default}
-    ${inputStyles.states.focus}
-    ${className}
-  `.trim().replace(/\s+/g, ' ');
-
   return (
-    <div className={inputStyles.wrapper}>
+    <div className="w-full">
       {label && (
-        <label className={inputStyles.label}>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           {label}
         </label>
       )}
@@ -40,11 +49,11 @@ export function TextField({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
-        className={inputClasses}
+        className={cn(inputVariants({ error: !!error }), className)}
         disabled={disabled}
       />
       {error && (
-        <p className={inputStyles.errorText}>{error}</p>
+        <p className="mt-1 text-sm text-red-600">{error}</p>
       )}
     </div>
   );
