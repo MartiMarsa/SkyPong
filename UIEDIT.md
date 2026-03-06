@@ -474,19 +474,26 @@ const lora = Lora({
 
 ### Font Classes Available
 
-Defined in `globals.css`:
+Defined in `globals.css` (outside the `@theme` block):
 
 ```css
-@theme {
-  --font-family-display: var(--font-space-mono), monospace;
-  --font-family-sans: var(--font-lora), serif;
+/* Custom font utility classes - these look up CSS vars from the cascade */
+.font-display {
+  font-family: var(--font-space-mono, ui-monospace, monospace);
+}
+
+/* Override Tailwind's default .font-sans to use our Lora font */
+.font-sans {
+  font-family: var(--font-lora, ui-serif, serif);
 }
 ```
 
 **Usage in Tailwind**:
-- `font-display` - Space Mono (monospace)
-- `font-sans` - Lora (serif)
+- `font-display` - Space Mono (monospace) - for buttons and display elements
+- `font-sans` - Lora (serif) - for body text
 - `font-mono` - System monospace
+
+**Important**: Font utility classes must reference Next.js font CSS variables directly (not through intermediate `:root` variables) to ensure proper CSS cascade inheritance from the `<body>` element where Next.js sets the font variables.
 
 ### Change Fonts
 
@@ -501,19 +508,54 @@ const inter = Inter({
 });
 ```
 
-2. **Update CSS variable** in `globals.css`:
+2. **Update font utility class** in `globals.css`:
 
 ```css
-@theme {
-  --font-family-sans: var(--font-inter), sans-serif;
+/* Define custom utility class that references the Next.js font CSS variable */
+.font-sans {
+  font-family: var(--font-inter, ui-sans-serif, sans-serif);
 }
 ```
+
+**Important**: Do NOT use intermediate CSS variables at `:root` level. Font utility classes must directly reference the Next.js font variables (e.g., `var(--font-inter)`) to properly inherit from the `<body>` element.
 
 3. **Apply to body** in `layout.js`:
 
 ```javascript
 <body className={`${inter.variable} font-sans`}>
 ```
+
+### Troubleshooting Fonts
+
+**Problem**: Fonts not displaying on buttons or other elements.
+
+**Common Causes**:
+1. **CSS Variable Scope Issue**: Trying to reference Next.js font CSS variables from `:root` won't work because Next.js sets them on `<body>`.
+   
+   ```css
+   /* ❌ WRONG - This won't work */
+   :root {
+     --font-display: var(--font-space-mono, monospace);
+   }
+   .font-display {
+     font-family: var(--font-display);
+   }
+   
+   /* ✅ CORRECT - Directly reference Next.js font variable */
+   .font-display {
+     font-family: var(--font-space-mono, ui-monospace, monospace);
+   }
+   ```
+
+2. **Using `@theme` block**: Font families cannot use CSS variables inside Tailwind v4's `@theme` directive because it's evaluated at build time.
+
+3. **Cache Issues**: Clear Next.js cache and restart dev server:
+   ```bash
+   rm -rf .next
+   npm run dev
+   ```
+
+**Solution**: Define font utility classes outside the `@theme` block and have them directly reference Next.js font CSS variables with proper fallbacks.
 
 ### Typography Utilities
 
@@ -524,6 +566,26 @@ Use Tailwind's built-in typography classes:
 <p className="text-base md:text-lg">Responsive body text</p>
 <small className="text-sm text-gray-600">Small text</small>
 ```
+
+**Font Control in Components**:
+
+For the Button component specifically:
+
+```tsx
+// Default - uses Space Mono (monospace)
+<Button variant="primary">Click Me</Button>
+
+// Override to use Lora (serif)
+<Button variant="primary" font="body">Click Me</Button>
+
+// Use system monospace
+<Button variant="primary" font="mono">Click Me</Button>
+```
+
+The Button component in `front/app/ui/base/Button.tsx` has a `font` prop with these options:
+- `font="display"` - Space Mono (default)
+- `font="body"` - Lora
+- `font="mono"` - System monospace
 
 ---
 
