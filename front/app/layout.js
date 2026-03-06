@@ -1,18 +1,18 @@
 import "./globals.css";
 import { config } from "@fortawesome/fontawesome-svg-core";
 import "@fortawesome/fontawesome-svg-core/styles.css";
-import { Space_Mono, Lora } from "next/font/google";
+import { Space_Grotesk, Funnel_Sans } from "next/font/google";
 config.autoAddCss = false;
 import { LanguageProvider } from "./context/language-context";
 import { AuthProvider } from "./context/auth-context";
 import { getCurrentLocale } from "./lib/i18n/locale-manager";
 import GlobalChatUI from "./ui/global-chat-ui";
 
-const spaceMono = Space_Mono({ weight: ["400", "700"], subsets: ["latin"], variable: "--font-space-mono" });
-const lora = Lora({
-  weight: ["400", "500", "600", "700"],
+const spaceGrotesk = Space_Grotesk({ weight: ["400", "700"], subsets: ["latin"], variable: "--font-space-grotesk" });
+const funnelSans = Funnel_Sans({
+  weight: ["300", "400", "500", "600", "700", "800"],
   subsets: ["latin"],
-  variable: "--font-lora",
+  variable: "--font-body",
 });
 
 export const metadata = {
@@ -33,7 +33,7 @@ export default function RootLayout({ children }) {
     <AuthProvider>
       <LanguageProvider>
         <html lang={getCurrentLocale()}>
-          <body className={`${lora.variable} ${spaceMono.variable} font-sans`}>
+          <body className={`${funnelSans.variable} ${spaceGrotesk.variable} font-sans`}>
             {children}
             <GlobalChatUI />
           </body>

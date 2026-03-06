@@ -2,24 +2,66 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const inputVariants = cva(
-  'w-full px-4 py-2 text-base md:text-lg text-gray-900 border rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+  'w-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
   {
     variants: {
+      variant: {
+        filled: 'bg-input-filled hover:bg-input-filled-hover focus:bg-input-filled-focus border border-transparent focus:border-primary rounded-md',
+        outlined: 'bg-transparent border border-border hover:border-border-hover focus:border-primary rounded-md',
+        underlined: 'bg-transparent border-0 border-b border-border hover:border-border-hover focus:border-primary rounded-none',
+      },
+      size: {
+        sm: 'px-3 py-1.5 text-sm',
+        md: 'px-4 py-2 text-base md:text-lg',
+        lg: 'px-5 py-3 text-lg md:text-xl',
+      },
+      font: {
+        display: 'font-display',
+        body: 'font-sans',
+        mono: 'font-mono',
+      },
       error: {
-        true: 'border-border-error focus:ring-red-500',
-        false: 'border-border hover:border-border-hover',
+        true: 'border-border-error focus:border-border-error focus:ring-red-500',
+        false: '',
       },
     },
+    compoundVariants: [
+      {
+        variant: 'filled',
+        error: true,
+        class: 'bg-red-50',
+      },
+    ],
     defaultVariants: {
+      variant: 'filled',
+      size: 'md',
+      font: 'body',
       error: false,
     },
   }
 );
 
-interface TextFieldProps {
+const labelVariants = cva(
+  'block font-medium text-gray-700 mb-1',
+  {
+    variants: {
+      size: {
+        sm: 'text-xs',
+        md: 'text-sm',
+        lg: 'text-base',
+      },
+    },
+    defaultVariants: {
+      size: 'md',
+    },
+  }
+);
+
+interface TextFieldProps extends VariantProps<typeof inputVariants> {
   label?: string;
   placeholder?: string;
   error?: string;
+  helperText?: string;
   value?: string;
   onChange?: (value: string) => void;
   type?: 'text' | 'email' | 'password' | 'number';
@@ -28,19 +70,25 @@ interface TextFieldProps {
 }
 
 export function TextField({
+  variant,
+  size,
+  font,
   label,
   placeholder,
   error,
+  helperText,
   value,
   onChange,
   type = 'text',
   className,
   disabled = false,
 }: TextFieldProps) {
+  const hasError = !!error;
+  
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className={labelVariants({ size })}>
           {label}
         </label>
       )}
@@ -49,11 +97,24 @@ export function TextField({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
-        className={cn(inputVariants({ error: !!error }), className)}
+        className={cn(
+          inputVariants({ 
+            variant,
+            size, 
+            font,
+            error: hasError,
+            className,
+          })
+        )}
         disabled={disabled}
       />
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+      {(error || helperText) && (
+        <p className={cn(
+          'mt-1 text-sm',
+          error ? 'text-red-600' : 'text-gray-500'
+        )}>
+          {error || helperText}
+        </p>
       )}
     </div>
   );

@@ -31,10 +31,15 @@
   --color-chip-error-text: #991b1b;   /* red-800 - text color */
   
   /* Focus and Border Colors */
-  --color-focus: #a855f7;             /* purple-500 */
-  --color-border: #d1d5db;            /* gray-300 - default border */
-  --color-border-hover: #9ca3af;      /* gray-400 */
-  --color-border-error: #ef4444;      /* red-500 */
+  --color-focus: #a855f7;                 /* purple-500 */
+  --color-border: #d1d5db;                /* gray-300 - default border */
+  --color-border-hover: #9ca3af;          /* gray-400 */
+  --color-border-error: #ef4444;          /* red-500 */
+
+  /* Input/TextField backgrounds */
+  --color-input-filled: #D4C2FC;          /* gray-100 */
+  --color-input-filled-hover: #e5e7eb;    /* gray-200 */
+  --color-input-filled-focus: #ffffff;    /* white */
   
   /* ============================================================================
      ANIMATIONS
@@ -75,12 +80,12 @@
 
 /* Custom font utility classes - these look up CSS vars from the cascade */
 .font-display {
-  font-family: var(--font-space-mono, ui-monospace, monospace);
+  font-family: var(--font-space-grotesk, ui-monospace, monospace);
 }
 
-/* Override Tailwind's default .font-sans to use our Lora font */
+/* Override Tailwind's default .font-sans to use our Funnel Sans font */
 .font-sans {
-  font-family: var(--font-lora, ui-serif, serif);
+  font-family: var(--font-body, ui-serif, serif);
 }
 
 /* Ahora sí puedes usarlas con @apply */

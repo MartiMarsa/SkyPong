@@ -4,7 +4,7 @@ export const SERVER_CONNECTION = {
     : (process.env.NEXT_PUBLIC_GAME_SERVER_HOST || 'localhost'),
   PORT: parseInt(process.env.NEXT_PUBLIC_GAME_SERVER_PORT || '2567', 10),
   PROTOCOL: typeof window !== 'undefined' 
-    ? (window.location.protocol === 'https:' ? 'wss' : 'ws')
+    ? (window.location.protocol === 'https:' ? 'wss' :
     : 'ws',
   PATH: '/',
 

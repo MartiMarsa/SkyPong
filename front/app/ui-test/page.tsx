@@ -22,6 +22,7 @@ export default function UITestPage() {
         <section className="mb-12">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Buttons</h2>
           
+          <p className="text-sm text-gray-600 mb-2">Button variants (color styles)</p>
           <div className="flex flex-wrap gap-4 mb-6">
             <Button variant="primary" font="display">Primary</Button>
             <Button variant="secondary" font="display">Secondary</Button>
@@ -29,12 +30,14 @@ export default function UITestPage() {
             <Button variant="ghost" font="display">Ghost</Button>
           </div>
 
+          <p className="text-sm text-gray-600 mb-2">Button sizes</p>
           <div className="flex flex-wrap gap-4 mb-6">
             <Button variant="primary" size="sm" font="display">Small</Button>
             <Button variant="primary" size="md" font="display">Medium</Button>
             <Button variant="primary" size="lg" font="display">Large</Button>
           </div>
 
+          <p className="text-sm text-gray-600 mb-2">Special states: disabled and link</p>
           <div className="flex flex-wrap gap-4 mb-6">
             <Button variant="primary" disabled font="display">Disabled</Button>
             <Button variant="primary" href="/" font="display">Link Button</Button>
@@ -42,6 +45,7 @@ export default function UITestPage() {
 
           <div className="p-4 bg-blue-50 rounded-lg mb-6">
             <p className="text-sm md:text-base text-gray-600 text-blue-800 mb-2">With translations (from t):</p>
+            <p className="text-xs text-gray-500 mb-2">Shows how buttons work with i18n</p>
             <div className="flex flex-wrap gap-4">
               <Button variant="primary" font="display">{t.game.playButton}</Button>
               <Button variant="secondary" font="display">{t.navigation.home}</Button>
