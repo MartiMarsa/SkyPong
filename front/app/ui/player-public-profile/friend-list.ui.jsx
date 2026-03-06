@@ -20,11 +20,17 @@ import ErrorBox from "../error/error-ui"
 
 const mono = "'Courier New', monospace";
 
-
+function isConnected(sessionexpiredat, isLogged)
+{
+    if (!sessionexpiredat || !isLogged) return false;
+    const expired = Date.now() < new Date(sessionexpiredat.replace(' ', 'T') + 'Z').getTime();
+    return (expired);
+}
 
 function FriendCard({ friend, currentUserId, csrfToken, onVisit }) {
     console.info("Show friend info: ", friend);
 
+  const connected = isConnected(friend.access_expires_at, friend.logged);
   return (
     <div style={{
       display: "flex",
@@ -51,7 +57,7 @@ function FriendCard({ friend, currentUserId, csrfToken, onVisit }) {
             border: "1.5px solid rgba(255,255,255,0.1)",
           }}
         />
-        {friend.logged && (
+        { connected && (
           <span style={{
             position: "absolute", bottom: 1, right: 1,
             width: "9px", height: "9px",

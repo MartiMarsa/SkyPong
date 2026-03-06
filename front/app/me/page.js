@@ -9,6 +9,7 @@ import PlayerInfo from '../ui/player-public-profile/player-info-ui';
 import PlayerAchievementsUI from '../ui/player-public-profile/player-achievements-ui';
 import AchievementsSection from '../ui/player-public-profile/AchievementsSection';
 import FriendsSection from '../ui/player-public-profile/FriendsSection';
+import GameHistory from '../ui/player-public-profile/GameHistory'
 
 export default function ProfilePagePublic()
 {
@@ -41,7 +42,8 @@ export default function ProfilePagePublic()
         <main>
             <NavigationAppUI  />
             <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
-            {profile && <PlayerInfo profile={profile} />}
+            { profile && <PlayerInfo profile={profile} />}
+            { profile && <GameHistory userId={profile.id} />}
             { profile && <FriendsSection
                 currentUserId={profile.id}
                 csrfToken={getCookie()}
