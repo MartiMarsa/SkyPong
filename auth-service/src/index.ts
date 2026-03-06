@@ -1,5 +1,4 @@
 import Fastify from 'fastify';
-import rateLimit from "@fastify/rate-limit";
 import cookie from '@fastify/cookie';
 import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
