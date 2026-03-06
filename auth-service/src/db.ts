@@ -131,13 +131,15 @@ export function initDB(): Promise<void> {
 		  db.run(`
 			CREATE TABLE IF NOT EXISTS user_sessions (
 				id TEXT PRIMARY KEY,
-				user_id TEXT NOT NULL,
+				user_id TEXT UNIQUE NOT NULL,
 			  	issued_at TEXT NOT NULL,
 			  	expires_at TEXT NOT NULL,
 			  	token_version INTEGER NOT NULL,
 			  	created_at TEXT DEFAULT (datetime('now','localtime'))
 				);
 			`);
+
+		  db.run (`CREATE INDEX IF NOT EXISTS idx_sessions_exp ON user_sessions(expires_at);`);
 
           resolve();
         } catch (err) {

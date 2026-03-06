@@ -42,6 +42,12 @@ export async function generateToken(user: {
             `
             INSERT INTO user_sessions (id, user_id, issued_at, expires_at, token_version)
             VALUES (?, ?, ?, ?, ?)
+			ON CONFLICT(user_id)
+			DO UPDATE SET
+			id = excluded.id,
+			issued_at = ?,
+			expires_at = ?,
+			token_version = excluded.token_version
             `,
             [
                 crypto.randomUUID(),
@@ -49,6 +55,8 @@ export async function generateToken(user: {
                 toSqlLocalDatetime(issuedAt),
                 toSqlLocalDatetime(expiresAt),
                 user.token_version,
+				toSqlLocalDatetime(issuedAt),
+                toSqlLocalDatetime(expiresAt),
             ],
             (err) => (err ? reject(err) : resolve())
         );
@@ -56,6 +64,9 @@ export async function generateToken(user: {
 
     return token;
 }
+
+
+
 export async function deleteUserSession(userId: string): Promise<void> {
   const db = getDB();
 
@@ -63,4 +74,17 @@ export async function deleteUserSession(userId: string): Promise<void> {
     `DELETE FROM user_sessions WHERE user_id = ?`,
     [userId]
   );
+}
+
+export function startSessionCleanup() {
+    const db = getDB();
+
+    setInterval(() => {
+        db.run(`
+            DELETE FROM user_sessions
+            WHERE expires_at < datetime('now','localtime')
+        `);
+    }, 15 * 60 * 1000);
+
+	console.log(`[auth] Session cleanup done at ${new Date().toLocaleString()}`);
 }
