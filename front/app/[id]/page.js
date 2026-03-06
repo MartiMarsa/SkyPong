@@ -8,10 +8,9 @@ import { useRouter } from 'next/navigation';
 import PlayerInfo from '../ui/player-public-profile/player-info-ui';
 import PlayerAchievementsUI from '../ui/player-public-profile/player-achievements-ui';
 import AchievementsSection from '../ui/player-public-profile/AchievementsSection';
-import FriendsSection from '../ui/player-public-profile/FriendsSection';
-import AddFriendButton from '../ui/player-public-profile/AddFriendButton';
 import { useParams } from 'next/navigation'
 import FriendsList from '../ui/player-public-profile/friend-list.ui';
+import GameHistory from '../ui/player-public-profile/GameHistory';
 
 export default function ProfilePagePublic()
 {
@@ -64,13 +63,8 @@ export default function ProfilePagePublic()
             <NavigationAppUI  />
             <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
             {profile && <PlayerInfo profile={profile} />}
+            { profile && <GameHistory userId={profile.id} />}
             {profile && <FriendsList currentUserId={user?.id} targetId={profile?.id} csrfToken={csrfToken}/>}
-            {/* { profile && <FriendsSection
-                currentUserId={profile.id}
-                csrfToken={getCookie()}
-                onNavigateProfile={(id) => router.push(`/${id}`)}
-                />} */}
-
             { profile && <AchievementsSection t={t.t} stats={profile?.stats} /> }
         </main>
     );
