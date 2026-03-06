@@ -20,6 +20,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 RUN apk add --no-cache sqlite
 
+RUN apk add --no-cache sqlite tzdata
+ENV TZ=Europe/Madrid
+
 RUN addgroup -S app && adduser -S app -G app
 
 COPY --from=deps /app/node_modules ./node_modules

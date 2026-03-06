@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import AddFriendButton from '../ui/player-public-profile/AddFriendButton'
+import { useAuth } from '../context/auth-context';
 
 interface PlayerStat {
   user_id: string;
@@ -10,6 +12,12 @@ interface PlayerStat {
   winrate: number;
   rate: number;
   updated_at: string;
+
+  nickname?: string;
+  avatarUrl?: string;
+  last_access_at?: string;
+  logged?: number;
+  access_expires_at?: string;
 }
 
 interface LeaderboardResponse {
@@ -104,15 +112,15 @@ function LeaderboardRow({
   player,
   rank,
 }: {
-  player: PlayerStat;
-  rank: number;
+    player: PlayerStat;
+    rank: number;
 }) {
   return (
     <div className="lb-row">
       <span className="lb-rank">{rank}.</span>
       <div className="lb-info">
         <div className="lb-name-row">
-          <span className="lb-name">{player.user_id}</span>
+          <span className="lb-name">{player.nickname ?? player.user_id}</span>
           <span
             className="lb-dot"
             style={{ background: statusDot(player.rate) }}
@@ -131,7 +139,6 @@ function LeaderboardRow({
 
 export default function Leaderboard() {
   const { players, loading, error } = useLeaderboard();
-
   return (
     <>
       <style>{`
