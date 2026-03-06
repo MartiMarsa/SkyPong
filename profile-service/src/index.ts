@@ -11,7 +11,8 @@ import { access, unlink, constants } from 'fs/promises';
 import chalk from 'chalk';
 import { initProfileDB, getProfileDB } from './dbPlayers';
 import { 
-  getPlayerById, 
+  getPlayerById,
+  getBatchProfiles,
   createPlayer, 
   updatePlayerInfo, 
   ensureAvatarIsAlive,
@@ -464,6 +465,28 @@ fastify.get('/internal/profile/leaderboard/updates', { preHandler: requireServic
 		req.log.error(err);
 		reply.status(500).send({ error: 'LEADERBOARD_UPDATE_FAILED'});
 	}
+});
+
+// --- GET BATCH OF USERS FOR LEADERBOARD ---
+fastify.post<{ Body: { userIds: string[] } }>('/internal/profile/batch', { preHandler: requireServiceAuth }, async (req, reply) => {
+	 try {
+
+      const { userIds } = req.body;
+
+      const profiles = await getBatchProfiles(userIds);
+
+	  console.log("---> ALL PROFILES FOR LEADERBOARD: ", profiles);
+
+      reply.send({ profiles });
+
+    } catch (err) {
+
+      req.log.error(err);
+      reply.status(500).send({
+        error: 'BATCH_PROFILE_REQUEST_FAILED'
+      });
+
+    }
 });
 
 fastify.get('/profile/leaderboard', { preHandler: verifyToken }, async (req: any, reply) => {
