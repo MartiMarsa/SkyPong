@@ -12,6 +12,12 @@ interface PlayerStat {
   winrate: number;
   rate: number;
   updated_at: string;
+
+  nickname?: string;
+  avatarUrl?: string;
+  last_access_at?: string;
+  logged?: number;
+  access_expires_at?: string;
 }
 
 interface LeaderboardResponse {
@@ -109,36 +115,26 @@ function LeaderboardRow({
     player: PlayerStat;
     rank: number;
 }) {
-    const { user } = useAuth();
-    const getCookie = (name) => {
-        return document.cookie
-            .split('; ')
-            .find(row => row.startsWith(name + '='))
-            ?.split('=')[1];
-    }; 
-    return (
-        <>
-            <div className="lb-row">
-            <span className="lb-rank">{rank}.</span>
-            <div className="lb-info">
-                <div className="lb-name-row">
-                <span className="lb-name">{player.user_id}</span>
-                <span
-                    className="lb-dot"
-                    style={{ background: statusDot(player.rate) }}
-                    />
-                </div>
-                <span className="lb-sub">Total games: {player.played}</span>
-                <span className="lb-sub">
-                Win rate:{' '}
-                {player.winrate != null ? `${Math.round(player.winrate)}%` : '—'}
-                </span>
-            </div>
-            <WinLossBar wins={player.wins} losses={player.losses} />
-            </div>
-            <AddFriendButton currentUserId={user?.id} targetId={player.user_id} csrfToken={getCookie('x-xsrf-token')}/>
-        </>
-    );
+  return (
+    <div className="lb-row">
+      <span className="lb-rank">{rank}.</span>
+      <div className="lb-info">
+        <div className="lb-name-row">
+          <span className="lb-name">{player.nickname ?? player.user_id}</span>
+          <span
+            className="lb-dot"
+            style={{ background: statusDot(player.rate) }}
+          />
+        </div>
+        <span className="lb-sub">Total games: {player.played}</span>
+        <span className="lb-sub">
+          Win rate:{' '}
+          {player.winrate != null ? `${Math.round(player.winrate)}%` : '—'}
+        </span>
+      </div>
+      <WinLossBar wins={player.wins} losses={player.losses} />
+    </div>
+  );
 }
 
 export default function Leaderboard() {

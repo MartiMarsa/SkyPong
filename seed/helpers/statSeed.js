@@ -25,7 +25,7 @@ export async function seedGames(db, users) {
         end_at,
         processed,
         game_mode
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 0, 'remote-pvp')`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'), datetime('now','localtime'), 0, 'remote-pvp')`,
       [
         uuid(),
         a,
@@ -59,7 +59,7 @@ export async function seedGames(db, users) {
       end_at,
       processed,
       game_mode
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), 0, 'ai')`,
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now','localtime'), datetime('now','localtime'), 0, 'ai')`,
     [
       uuid(),
       aiUserId,

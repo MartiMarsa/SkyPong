@@ -167,7 +167,7 @@ async function apply(
           played = played + 1,
           winrate = ((wins + ?) * 1.0 / (played + 1)),
           rate = ?,
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = (datetime('now','localtime'))
         WHERE user_id = ?
         `,
         [
@@ -195,7 +195,7 @@ async function applyAi(
           played = played + 1,
           winrate = ((wins + ?) * 1.0 / (played + 1)),
           rate = ?,
-          updated_at = CURRENT_TIMESTAMP
+          updated_at = (datetime('now','localtime'))
         WHERE user_id = ?
         `,
         [
@@ -305,7 +305,7 @@ export async function createPlayer(userId: string) {
 
       await db.run(
         `INSERT INTO players (user_id, nickname, last_access_at, logged, access_expires_at)
-         VALUES (?, ?, CURRENT_TIMESTAMP, 1, ?)`,
+         VALUES (?, ?, (datetime('now','localtime')), 1, ?)`,
         [userId, nickname, exp]
       );
 
@@ -313,7 +313,7 @@ export async function createPlayer(userId: string) {
 		   INSERT OR IGNORE INTO player_stats
 		   (user_id, played, wins, losses, winrate, rate, updated_at)
 		   VALUES
-		   (?, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
+		   (?, 0, 0, 0, 0, 0, (datetime('now','localtime')))
 		   `, 
 		   [userId]
 		  );
@@ -322,7 +322,7 @@ export async function createPlayer(userId: string) {
            INSERT OR IGNORE INTO player_ai_stats
            (user_id, played, wins, losses, winrate, rate, updated_at)
            VALUES
-           (?, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
+           (?, 0, 0, 0, 0, 0, (datetime('now','localtime')))
            `,
            [userId]
           );
@@ -449,14 +449,14 @@ export async function updatePlayerOnlineStatus(userId: string, logged: boolean) 
             if (exp) {
                 await db.run(
                     `UPDATE players 
-                     SET last_access_at = CURRENT_TIMESTAMP, logged = 1, access_expires_at = ? 
+                     SET last_access_at = (datetime('now','localtime')), logged = 1, access_expires_at = ? 
                      WHERE user_id = ?`,
                     [exp, userId]
                 );
             } else {
                 await db.run(
                     `UPDATE players 
-                     SET last_access_at = CURRENT_TIMESTAMP, logged = 0, access_expires_at = ? 
+                     SET last_access_at = (datetime('now','localtime')), logged = 0, access_expires_at = ? 
                      WHERE user_id = ?`,
                     [repoDate, userId]
                 );
@@ -467,7 +467,7 @@ export async function updatePlayerOnlineStatus(userId: string, logged: boolean) 
 		} else {
             await db.run(
                 `UPDATE players 
-                 SET last_access_at = CURRENT_TIMESTAMP, logged = 0, access_expires_at = ? 
+                 SET last_access_at = (datetime('now','localtime')), logged = 0, access_expires_at = ? 
                  WHERE user_id = ?`,
                 [repoDate, userId]
             );
@@ -498,7 +498,7 @@ export async function softdeletePlayer(userId: string) {
 			 	   nickname = ?,
 			 	   avatarUrl = ?,
 			 	   deleted = 1,
-			 	   deleted_at = CURRENT_TIMESTAMP,
+			 	   deleted_at = (datetime('now','localtime')),
 				   access_expires_at = '2025-12-01'
 			   	   WHERE user_id = ?
 			   	   `,
@@ -538,7 +538,7 @@ export async function updatePlayerStats(
     const reserve = await db.run(
       `
       INSERT OR IGNORE INTO processed_games(game_id, processed_at)
-      VALUES (?, CURRENT_TIMESTAMP)
+      VALUES (?, (datetime('now','localtime')))
       `,
       [gameId]
     );
@@ -667,6 +667,51 @@ export async function getLeaderboard(lastSync: string) {
     last: rows.at(-1)?.updated_at || lastSync,
     players: rows
   };
+}
+
+// --------------------------------------------------
+// GET BATCH OF PROFILES
+// --------------------------------------------------
+
+export async function getBatchProfiles(userIds: string[]) {
+   
+	if (!Array.isArray(userIds)) {
+		throw new Error('INVALID_IDS');
+	}
+
+	if (userIds.length > 100) {
+		throw new Error('TOO_MANY_IDS');
+  	}
+
+  	return getProfilesByIds(userIds);
+}
+
+async function getProfilesByIds(userIds: string[]) {
+
+  	if (!userIds.length) return [];
+
+  	const db = getProfileDB();
+
+  	const placeholders = userIds.map(() => '?').join(',');
+
+  	const sql = `
+				SELECT
+		  		user_id,
+				nickname,
+				avatarUrl,
+		  		last_access_at,
+				logged,
+		  		access_expires_at
+				FROM players
+				WHERE user_id IN (${placeholders})
+			  	`;
+
+  	return new Promise<any[]>((resolve, reject) => {
+						  	  db.all(sql, userIds, (err, rows) => {
+							   		 if (err) return reject(err);
+							   		 resolve(rows);
+								 	 });
+							  });
 }
 
 // --------------------------------------------------

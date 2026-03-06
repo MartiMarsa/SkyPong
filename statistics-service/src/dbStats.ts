@@ -49,8 +49,8 @@ export async function initStatisticsDB(): Promise<void> {
 			      		processed INTEGER DEFAULT 0,
 			      		processing INTEGER DEFAULT 0,
 			      		processed_at TEXT,
-			      		created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-			      		CHECK (user1_id < user2_id)
+			      		created_at TEXT DEFAULT (datetime('now','localtime')),
+			      		CHECK (user1_id < user2_id),
 			      		CHECK (user1_id != user2_id)
 				)`);
 

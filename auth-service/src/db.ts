@@ -123,7 +123,7 @@ export function initDB(): Promise<void> {
               password_version INTEGER DEFAULT 1,
               twofa_enabled INTEGER DEFAULT 0,
               token_version INTEGER DEFAULT 0,
-              created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+              created_at TEXT DEFAULT (datetime('now','localtime')),
               deleted_at TEXT
             )
           `);
@@ -135,7 +135,7 @@ export function initDB(): Promise<void> {
 			  	issued_at TEXT NOT NULL,
 			  	expires_at TEXT NOT NULL,
 			  	token_version INTEGER NOT NULL,
-			  	created_at TEXT DEFAULT CURRENT_TIMESTAMP
+			  	created_at TEXT DEFAULT (datetime('now','localtime'))
 				);
 			`);
 
