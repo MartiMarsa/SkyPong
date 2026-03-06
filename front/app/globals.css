@@ -1,6 +1,45 @@
 @import "tailwindcss";
 
 @theme {
+  /* ============================================================================
+     DESIGN SYSTEM - Tailwind v4 Theme Variables
+     ============================================================================
+     
+     Colors defined with --color-* namespace auto-generate utilities:
+     - --color-primary → bg-primary, text-primary, border-primary, etc.
+     - Hover variants use naming pattern: primary-hover, secondary-hover, etc.
+     ============================================================================ */
+  
+  /* Color System - Primary, Secondary, Danger, Ghost */
+  --color-primary: #9333ea;           /* purple-600 - generates bg-primary, text-primary, etc. */
+  --color-primary-hover: #7e22ce;     /* purple-700 - generates bg-primary-hover, etc. */
+  --color-secondary: #4b5563;         /* gray-600 */
+  --color-secondary-hover: #374151;   /* gray-700 */
+  --color-danger: #dc2626;            /* red-600 */
+  --color-danger-hover: #b91c1c;      /* red-700 */
+  --color-ghost: transparent;
+  --color-ghost-hover: #f3f4f6;       /* gray-100 */
+  
+  /* Chip Colors - Default, Success, Warning, Error */
+  --color-chip-default: #f3f4f6;      /* gray-100 - bg color */
+  --color-chip-default-text: #1f2937; /* gray-800 - text color */
+  --color-chip-success: #d1fae5;      /* green-100 - bg color */
+  --color-chip-success-text: #065f46; /* green-800 - text color */
+  --color-chip-warning: #fef3c7;      /* yellow-100 - bg color */
+  --color-chip-warning-text: #92400e; /* yellow-800 - text color */
+  --color-chip-error: #fee2e2;        /* red-100 - bg color */
+  --color-chip-error-text: #991b1b;   /* red-800 - text color */
+  
+  /* Focus and Border Colors */
+  --color-focus: #a855f7;             /* purple-500 */
+  --color-border: #d1d5db;            /* gray-300 - default border */
+  --color-border-hover: #9ca3af;      /* gray-400 */
+  --color-border-error: #ef4444;      /* red-500 */
+  
+  /* ============================================================================
+     ANIMATIONS
+     ============================================================================ */
+  
   /* Definimos los keyframes */
   @keyframes fade-in {
     from { opacity: 0; }
@@ -23,6 +62,25 @@
   --animate-scale-to-right-0: scale-to-right 0.3s ease-in forwards;
   --animate-scale-from-right-0: scale-from-right 0.3s ease-out forwards;
   --animate-disapear: disapear 0.5s ease-in forwards;
+}
+
+/* ============================================================================
+   TYPOGRAPHY - Font Family Definitions
+   ============================================================================
+   These custom utility classes reference Next.js font CSS variables directly.
+   The fonts are loaded in layout.js with next/font/google and CSS variables
+   are set on the body element. We reference them directly here so they inherit
+   properly from the body instead of trying to define them at :root level.
+   ============================================================================ */
+
+/* Custom font utility classes - these look up CSS vars from the cascade */
+.font-display {
+  font-family: var(--font-space-mono, ui-monospace, monospace);
+}
+
+/* Override Tailwind's default .font-sans to use our Lora font */
+.font-sans {
+  font-family: var(--font-lora, ui-serif, serif);
 }
 
 /* Ahora sí puedes usarlas con @apply */

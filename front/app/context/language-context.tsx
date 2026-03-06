@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getCurrentLocale, setCurrentLocale } from '../lib/i18n/locale-manager';
 import es from '../lib/i18n/locales/es';
 import en from '../lib/i18n/locales/en';
@@ -11,17 +11,27 @@ const dictionaries: Record<string, any> = { es, en, it };
 const LanguageContext = createContext<any>(null);
 
 export const LanguageProvider = ({ children }: { children: React.ReactNode }) => {
-  const [locale, setLocale] = useState('es'); // Estado inicial
+  const [locale, setLocale] = useState('en');
 
-  useEffect(() => {
-    // Solo se ejecuta una vez al cargar la app
-    setLocale(getCurrentLocale());
+  const checkLocale = useCallback(() => {
+    const currentLocale = getCurrentLocale();
+    setLocale((prevLocale) => {
+      if (prevLocale !== currentLocale) {
+        return currentLocale;
+      }
+      return prevLocale;
+    });
   }, []);
 
+  useEffect(() => {
+    checkLocale();
+    const interval = setInterval(checkLocale, 500);
+    return () => clearInterval(interval);
+  }, [checkLocale]);
+
   const changeLanguage = (newLocale: string) => {
-    setLocale(newLocale);       // Actualiza la UI al instante
-    setCurrentLocale(newLocale); // Guarda en la cookie para la próxima visita
-    window.location.reload();  // Recarga la página para aplicar el cambio
+    setLocale(newLocale);
+    setCurrentLocale(newLocale);
   };
 
   const t = dictionaries[locale] || dictionaries['es'];
