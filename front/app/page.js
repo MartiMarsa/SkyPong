@@ -29,9 +29,6 @@ export default function HomePage() {
             <div className="w-full max-w-4xl p-6 sm:p-8 md:p-10">
               <HeroUI />
             </div>
-            <Button href="/signup" variant="secondary" size="md" font="body">
-              {t.hero.howToPlay}
-            </Button>
             <div>
               <NavigationLanguageUI />
             </div>
