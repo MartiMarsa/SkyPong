@@ -254,6 +254,7 @@ const en = {
         goBack: "Go back",
         login: "Login",
         signUp: "SignUp",
+        play: "Play",
     },
     player: {
         wins: "Wins",
