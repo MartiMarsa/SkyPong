@@ -9,7 +9,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { access, unlink, constants } from 'fs/promises';
 import chalk from 'chalk';
-import { initProfileDB, getProfileDB } from './dbPlayers';
+import { initProfileDB, getProfileDB } from './database/dbPlayers';
 import { 
   getPlayerById,
   getBatchProfiles,
@@ -27,17 +27,12 @@ import {
 import * as friendService from './friendService';
 import { publicKey } from './keys';
 import { updatePlayerInfoSchema } from './validation/checkInput'; 
+import * as ProfileTypes from './types/profile.types';
+import * as ProfileInterfaces from './types/profile.interfaces';
 
 const fastify = Fastify({logger: true});
 
-type ChatClient = {
-  socket: any;
-  userId: string;
-  sender: string;
-  buffer: Buffer;
-};
-
-const chatClients = new Set<ChatClient>();
+const chatClients = new Set<ProfileTypes.ChatClient>();
 
 function encodeWebSocketTextFrame(text: string): Buffer {
   const payload = Buffer.from(text, 'utf8');
@@ -191,11 +186,6 @@ const ALLOWED_MIME = [
 ]
 
 // --- TYPES ---
-interface Player {
-		id: string;
-		nickname: string;
-		avatar?: string;
-}
 
 declare module 'fastify' {
   interface FastifyRequest {
@@ -268,10 +258,10 @@ fastify.get<{ Params: { id: string } }>('/internal/profile/by-user-id/:id',  { p
 	try {
 			const userId = req.params.id;
 
-			let player: Player | null = await getPlayerById(userId) as Player | null;
+			let player: ProfileInterfaces.Player | null = await getPlayerById(userId) as ProfileInterfaces.Player | null;
 
 			if (!player) {
-				player = await createPlayer(userId) as Player;
+				player = await createPlayer(userId) as ProfileInterfaces.Player;
 				} else { 
 				const logged = true;
 				await updatePlayerOnlineStatus(userId, logged); }
@@ -418,13 +408,7 @@ fastify.get('/profile/game-history/:id', async (req, reply) => {
 // --- UPDATE USER STATS ---
 fastify.post('/internal/profile/gameresult/update', { preHandler: requireServiceAuth }, async (req: any, reply) => {
 
-	const res = req.body as {
-	    	game_id: string;
-	    	players: {
-		  	user_id: string;
-		  	result: 'win' | 'loss';
-	    	}[];
-      	};
+	const res: ProfileTypes.GameResult = req.body;
 
       	if (!res.game_id || !res.players || res.players.length !== 2) {    return reply.status(400).send({ error: 'Invalid payload' });
       	}
@@ -512,7 +496,7 @@ fastify.get('/profile/leaderboard', { preHandler: verifyToken }, async (req: any
 fastify.post('/internal/profile/delete', { preHandler: requireServiceAuth }, async (req: any, reply) => {
 
 		console.info("-----> REQUEST", req);
-    	const { userId  } = req.body as { userId: string };
+    	const { userId } = req.body as { userId: string };
 
 		console.info("----> USER ID: ", userId);
 
@@ -847,7 +831,7 @@ fastify.server.on('upgrade', (req, socket, _head) => {
       `Sec-WebSocket-Accept: ${acceptKey}\r\n\r\n`
     );
 
-    const client: ChatClient = {
+    const client: ProfileTypes.ChatClient = {
       socket,
       userId: user.userId,
       sender: user.sender,

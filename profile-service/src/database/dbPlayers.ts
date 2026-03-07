@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import sqlite3 from 'sqlite3';
-import { hasColumn, addColumnIfMissing } from './helpers';
+import { hasColumn, addColumnIfMissing } from '../utils/helpers';
 
 const profileDataDir =  process.env.PROFILE_DATA_DIR?.trim() || path.resolve(process.cwd(), 'data');
 
