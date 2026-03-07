@@ -120,12 +120,16 @@ export default function NavigationAppUI({
         ) : (
           // Logged in users: Avatar with dropdown menu
           <div className="relative" ref={dropdownRef}>
-            <Avatar
-              src={user?.avatarUrl}
-              fallbackText={user?.nickname || "User"}
-              size="md"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            />
+            <div className="text-sm flex items-stretch justify-center p-2">
+
+                <span className="text-right mr-2 flex items-center" dangerouslySetInnerHTML={{ __html: t.user.hi({ name: user.nickname, className: "rainbowtext ml-2" }) }}></span>
+                <Avatar
+                src={user?.avatarUrl}
+                fallbackText={user?.nickname || "User"}
+                size="md"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                />
+            </div>
 
             {/* Dropdown menu */}
             {isDropdownOpen && (
