@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+GRAFANA_ADMIN_USER_VALUE=${GRAFANA_ADMIN_USER:-grafana_admin}
+GRAFANA_ADMIN_PASSWORD_VALUE=${GRAFANA_ADMIN_PASSWORD:-change_me_please}
+
 cat > .env <<EOF
 UID=$(id -u)
 GID=$(id -g)
+GRAFANA_ADMIN_USER=${GRAFANA_ADMIN_USER_VALUE}
+GRAFANA_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD_VALUE}
 EOF
 DOCKCOMPS="docker-compose.yml"
 

@@ -127,12 +127,50 @@ export async function leaderboardLoop(abortSignal: AbortSignal, onError: (err: u
 }
 
 // --- GET LEADERBOARD ---
-export async function getLeaderboardByIndex(index: StatsConst.LeaderboardIndex, limit = 50, offset = 0): Promise<StatsTypes.LeaderboardRow[]> {
+export async function getLeaderboardByIndex(
+    index: StatsConst.LeaderboardIndex,
+    limit = 50,
+    offset = 0
+): Promise<StatsTypes.LeaderboardRow[]> {
 
-	const cfg = StatsConst.LEADERBOARD_INDEXES[index];
+    const cfg = StatsConst.LEADERBOARD_INDEXES[index];
 
-	const sql = `SELECT * FROM leaderboard_cache ORDER BY ${cfg.column} ${cfg.order} LIMIT ? OFFSET ?`;
+    const sql = `
+        SELECT * 
+        FROM leaderboard_cache 
+        ORDER BY ${cfg.column} ${cfg.order} 
+        LIMIT ? OFFSET ?
+    `;
 
-	return db.all<StatsTypes.LeaderboardRow>(sql, [limit, offset]);
+    const leaderboard = await db.all<StatsTypes.LeaderboardRow>(sql, [limit, offset]);
+
+	const userIds = [...new Set(leaderboard.map(p => p.user_id))];
+
+    const profiles = await getProfiles(userIds);
+
+    const profileMap = new Map(
+        profiles.map((p: any) => [p.user_id, p])
+    );
+
+    return leaderboard.map(row => ({
+        ...row,
+        ...(profileMap.get(row.user_id) || {})
+    }));
+}
+
+// --- GET USER DATA FOR LEADERBOARD ---
+async function getProfiles(userIds: string[]) {
+
+  const res = await axios.post(
+    `${PROFILE_API}/internal/profile/batch`,
+    { userIds },
+    {
+      headers: {
+        Authorization: `Bearer ${TOKEN}`
+      }
+    }
+  );
+
+  return res.data.profiles;
 }
 
