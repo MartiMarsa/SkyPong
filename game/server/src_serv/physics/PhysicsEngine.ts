@@ -146,12 +146,7 @@ export class PhysicsEngine {
         // Reverse X velocity (bounce off the wall)
         ball.velocity.x *= -1;
 
-        // Add slight speed increase for more dynamic gameplay (capped to prevent runaway speed)
-        ball.velocity.x *= PHYSICS.RESPONSE.WALL_SPEED_BOOST;
-        ball.velocity.z *= PHYSICS.RESPONSE.WALL_SPEED_BOOST;
-
-        // Enforce maximum speed limit to prevent erratic behavior
-        this.enforceSpeedLimit(ball);
+        // No speed boost on wall hits - speed only increases from paddle hits
     }
 
     /**
@@ -239,10 +234,15 @@ export class PhysicsEngine {
     }
 
     /**
-     * Resolve collision between ball and paddle
-     * Bounce angle changes based on distance from paddle center (classic Pong mechanic)
-     * - Center hit: straight bounce back
+     * Resolve ball-paddle collision with angle-based bounce and constant speed boost
+     * 
+     * Bounce angle behavior:
+     * - Center hit: straight back (0 degrees)
      * - Edge hit: sharp angle (up to PHYSICS.RESPONSE.MAX_BOUNCE_ANGLE_DEG degrees)
+     * 
+     * Speed behavior:
+     * - All paddle hits apply constant PADDLE_SPEED_BOOST regardless of impact position
+     * - Edge proximity only affects angle, not speed
      */
     public resolveBallPaddleCollision(
         ball: BallBody,
@@ -266,10 +266,8 @@ export class PhysicsEngine {
             ball.velocity.z * ball.velocity.z
         );
 
-        // Apply speed boost based on how far from center (edge hits are faster)
-        // Cap speed multiplier to prevent runaway acceleration
-        const speedMultiplier = 1 + Math.abs(offsetFromCenter) * PHYSICS.RESPONSE.EDGE_SPEED_MULTIPLIER;
-        let newSpeed = currentSpeed * speedMultiplier * PHYSICS.BALL.BOUNCE_RESTITUTION;
+        // Apply constant speed boost on all paddle hits (not affected by edge proximity)
+        let newSpeed = currentSpeed * PHYSICS.RESPONSE.PADDLE_SPEED_BOOST * PHYSICS.BALL.BOUNCE_RESTITUTION;
 
         // Clamp to max speed to prevent erratic behavior
         newSpeed = Math.min(newSpeed, PHYSICS.BALL.MAX_SPEED);
@@ -279,7 +277,7 @@ export class PhysicsEngine {
         // Far paddle (positive Z): bounce toward negative Z
         const zDirection = paddle.mesh.position.z > 0 ? -1 : 1;
 
-        // Calculate new velocity vector
+        // Calculate new velocity vector (angle from edge, speed constant)
         ball.velocity.x = Math.sin(bounceAngle) * newSpeed;
         ball.velocity.z = zDirection * Math.cos(bounceAngle) * newSpeed;
     }

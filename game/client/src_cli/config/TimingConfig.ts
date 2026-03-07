@@ -10,6 +10,8 @@ export const CLIENT_TIMING = {
     },
     
     COLLISION: {
-        WINDOW_MS: 200,
+        // How long to use enhanced lerp speed after collision event
+        // Approach A uses this for smooth but responsive collision handling
+        WINDOW_MS: 150,
     },
 } as const;

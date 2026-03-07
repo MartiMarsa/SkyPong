@@ -5,6 +5,12 @@ export class BallState extends Schema {
     @type("number") x: number = 0;
     @type("number") y: number = 0;
     @type("number") z: number = 0;
+    
+    // Ball velocity (for client-side extrapolation and accurate rotation)
+    @type("number") vx: number = 0;
+    @type("number") vy: number = 0;
+    @type("number") vz: number = 0;
+    
     @type("number") timestamp: number = 0;
     @type("boolean") enabled: boolean = true;
 

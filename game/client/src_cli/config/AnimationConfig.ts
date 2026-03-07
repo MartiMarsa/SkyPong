@@ -5,7 +5,10 @@
 
 export const ANIMATION = {
     BALL: {
+        // Threshold for detecting respawn/teleport (snap to position instead of lerp)
         LARGE_JUMP_THRESHOLD: 2.0,
+        
+        // Legacy constants (unused in Approach A, kept for compatibility)
         BOUNCE_EXIT_THRESHOLD: 0.01,
         MIN_ROTATION_DISTANCE: 0.0001,
         LERP_FACTOR_MULTIPLIER: 2,
