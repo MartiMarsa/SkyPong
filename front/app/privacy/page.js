@@ -23,9 +23,10 @@ export default function PrivacyPage()
                 <div className="page-content-container">
                     <div className="content-container-lg">
                         <h1 className="text-3xl font-bold mb-4">{t.legal.privacyPage.title}</h1>
-                        <div className="scrollable-content bg-content-light">
-                            {t.legal.privacyPage.content}
-                        </div>
+                        <div
+                            className="scrollable-content bg-content-light legal-content"
+                            dangerouslySetInnerHTML={{ __html: t.legal.privacyPage.content }}
+                        />
                         <div className="mt-4">
                             <Link href={backlink || '/'} className="link-primary">{ t.navigation.goBack }</Link>
                         </div>
