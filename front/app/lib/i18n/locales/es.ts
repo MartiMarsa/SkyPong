@@ -12,7 +12,7 @@ const es = {
         howToPlay: "¿Cómo jugar?",
     },
     user: {
-        hi: "hola!",
+        hi: (name) =>(`¡Hola, ${name}!`),
         nickname: "Nickname",
         winphrase: "Frase de Victoria",
         userData: "Datos de Usuario",
