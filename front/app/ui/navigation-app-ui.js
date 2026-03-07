@@ -122,7 +122,7 @@ export default function NavigationAppUI({
           <div className="relative" ref={dropdownRef}>
             <div className="text-sm flex items-stretch justify-center p-2">
 
-                <span className="text-right mr-2 flex items-center" dangerouslySetInnerHTML={{ __html: t.user.hi({ name: user.nickname, className: "rainbowtext ml-2", url: "/me" }) }}></span>
+                <span className="text-right mr-2 flex items-center" dangerouslySetInnerHTML={{ __html: t.user.hi({ name: user?.nickname || 'User', className: "rainbowtext ml-2", url: "/me" }) }}></span>
                 <Avatar
                 src={user?.avatarUrl}
                 fallbackText={user?.nickname || "User"}

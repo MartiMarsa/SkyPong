@@ -48,7 +48,7 @@ const { t } = useTranslation();
         try {
             
              const csrfToken = getCsrfToken();
-            console.log("Solicitando perfil para ID:", user.id);
+            console.log("Solicitando perfil para ID:", user?.id);
             
             const response = await fetch(`/api/profile/me`, {
                 method: 'GET',

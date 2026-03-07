@@ -119,7 +119,7 @@ export default function PlayPage() {
 
   useEffect(() => {
     if (user?.nickname) {
-      setConfig((prev) => ({ ...prev, playerName: user.nickname }));
+      setConfig((prev) => ({ ...prev, playerName: user?.nickname }));
     }
   }, [user]);
 
@@ -349,7 +349,7 @@ export default function PlayPage() {
                 {user?.nickname ? (
                   <div className="flex flex-col gap-3">
                     <label className="text-sm font-semibold uppercase tracking-wide text-muted">{t.play.name}</label>
-                    <p className="text-lg font-display font-semibold text-primary">{user.nickname}</p>
+                    <p className="text-lg font-display font-semibold text-primary">{user?.nickname}</p>
                   </div>
                 ) : (
                   <TextField
