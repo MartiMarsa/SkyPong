@@ -86,5 +86,5 @@ export function startSessionCleanup() {
         `);
     }, 15 * 60 * 1000);
 
-	console.log(`[auth] Session cleanup done at ${new Date().toLocaleString()}`);
+	console.log(`[auth] Session cleanup done at ${new Date().toISOString() }`);
 }

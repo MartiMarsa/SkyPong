@@ -18,7 +18,7 @@ export default function GameScreen({ config, onExit }: Props) {
   const launchUrl = useMemo(() => {
     const engineConfig = toEngineLaunchConfig(config);
     const encoded = encodeEngineLaunchConfig(engineConfig);
-    return `/game-engine/canvas?config=${encodeURIComponent(encoded)}`;
+    return `/canvas?config=${encodeURIComponent(encoded)}`;
   }, [config]);
 
   return (

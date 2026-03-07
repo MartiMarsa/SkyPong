@@ -13,9 +13,9 @@ let clientInstance: Client | null = null;
 
 function getClient(): Client {
   if (!clientInstance) {
-    console.log('[RoomService] Creating new Colyseus client');
+    // console.log('[RoomService] Creating new Colyseus client');
     clientInstance = new Client(SERVER_CONNECTION.WS_URL);
-    console.log('[RoomService] Client created with URL:', SERVER_CONNECTION.WS_URL);
+    // console.log('[RoomService] Client created with URL:', SERVER_CONNECTION.WS_URL);
   }
   return clientInstance;
 }
@@ -23,12 +23,14 @@ function getClient(): Client {
 export async function getAvailableRooms(): Promise<RoomInfo[]> {
   try {
     const client = getClient();
-    console.log('[RoomService] Connecting to:', SERVER_CONNECTION.WS_URL);
-    console.log('[RoomService] Room type:', SERVER_CONNECTION.ROOMS.PVP_ROOM);
+    // console.info("Game client: ", client);
+    // console.log('[RoomService] Connecting to:', SERVER_CONNECTION.WS_URL);
+    // console.log('[RoomService] Room type:', SERVER_CONNECTION.ROOMS.PVP_ROOM);
     
     const rooms = await client.getAvailableRooms(SERVER_CONNECTION.ROOMS.PVP_ROOM);
-    
-    console.log('[RoomService] Received rooms:', rooms);
+   
+    // console.info("Rooms: ", rooms);
+    // console.log('[RoomService] Received rooms:', rooms);
     
     return rooms.map((room) => ({
       id: room.roomId,
@@ -55,8 +57,8 @@ export async function createRoom(options: {
 }): Promise<{ roomId: string }> {
   const client = getClient();
   
-  console.log('[RoomService] Creating room with options:', options);
-  console.log('[RoomService] Server URL:', SERVER_CONNECTION.WS_URL);
+//   console.log('[RoomService] Creating room with options:', options);
+//   console.log('[RoomService] Server URL:', SERVER_CONNECTION.WS_URL);
   
   try {
     const room = await client.create(SERVER_CONNECTION.ROOMS.PVP_ROOM, {
@@ -67,7 +69,7 @@ export async function createRoom(options: {
       roomName: options.roomName,
     });
 
-    console.log('[RoomService] Room created:', room.roomId);
+    // console.log('[RoomService] Room created:', room.roomId);
     return { roomId: room.roomId };
   } catch (error) {
     console.error('[RoomService] Failed to create room:', error);

@@ -1,15 +1,12 @@
 export const SERVER_CONNECTION = {
-  HOST:
-    typeof window !== "undefined"
-      ? process.env.NEXT_PUBLIC_GAME_SERVER_HOST || window.location.hostname
-      : process.env.NEXT_PUBLIC_GAME_SERVER_HOST || "localhost",
-  PORT: parseInt(process.env.NEXT_PUBLIC_GAME_SERVER_PORT || "2567", 10),
-  PROTOCOL:
-    typeof window !== "undefined"
-      ? window.location.protocol === "https:"
-        ? "wss"
-        : "ws"
-      : "ws",
+  HOST: typeof window !== 'undefined' 
+    ? (process.env.NEXT_PUBLIC_GAME_SERVER_HOST || window.location.hostname)
+    : (process.env.NEXT_PUBLIC_GAME_SERVER_HOST || 'localhost'),
+  PORT: parseInt(process.env.NEXT_PUBLIC_GAME_SERVER_PORT || '2567', 10),
+  PROTOCOL: typeof window !== 'undefined' 
+    ? (window.location.protocol === 'https:' ? 'ws' : 'ws')
+    : 'ws',
+  PATH: '/',
 
   get WS_URL() {
     // Check if we should use nginx proxy via environment variable
@@ -22,8 +19,9 @@ export const SERVER_CONNECTION = {
 
     if (useNginxProxy && typeof window !== "undefined") {
       // Production/Docker: use nginx /ws/ proxy
-      const url = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws/`;
-      console.log("[ServerConfig] Using nginx proxy (production):", url);
+    //   const url = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/`;
+      const url = `${window.location.protocol === 'https:' ? 'ws:' : 'ws:'}//${window.location.host}/ws/`;
+    //   console.log('[ServerConfig] Using nginx proxy (production):', url);
       return url;
     }
 
@@ -37,7 +35,7 @@ export const SERVER_CONNECTION = {
     } else {
       url = `${protocol}://${host}:${port}/`;
     }
-    console.log("[ServerConfig] Using direct connection (local dev):", url);
+    // console.log('[ServerConfig] Using direct connection (local dev):', url);
     return url;
   },
 

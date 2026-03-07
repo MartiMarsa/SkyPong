@@ -123,6 +123,9 @@ const en = {
         error: "Error:",
         failedLoadRooms: "Failed to load rooms. Please try again.",
         room: "'s room",
+        noRoomAvailable: "No rooms available",
+        joinRoomBtn: 'Join Room',
+        roomListTitle: 'Room List',
     },
     legal: {
         terms: "Terms of Service",
@@ -226,6 +229,7 @@ const en = {
         submitButton: "Sign In",
         passwordForgottenLinkText: "Forgot your password?",
         loading: "Loading...",
+        refresh: "Refrescar",
     },
     signUpPage: {
         title: "Sign Up",
@@ -361,16 +365,16 @@ const en = {
             login30Days: "Veteran",
             login30DaysDesc: "Log in for 30 consecutive days.",
         },
-        wonGamesAchievements: {
+        playGamesAchievements: {
             title: "Games Won Achievements",
-            firsgame: "Rookie",
-            firsgameDesc: "Win your first game.",
-            win5Games: "Beginner",
-            win5GamesDesc: "Win 5 games.",
-            win50Games: "Intermediate",
-            win50GamesDesc: "Win 50 games.",
-            win500Games: "Expert",
-            win500GamesDesc: "Win 500 games.",
+            firstgame: "Rookie",
+            firstgameDesc: "Win your first game.",
+            play5Games: "Beginner",
+            play5GamesDesc: "Play 5 games.",
+            play50Games: "Intermediate",
+            play50GamesDesc: "Play 50 games.",
+            play500Games: "Expert",
+            play500GamesDesc: "Play 500 games.",
         },
     },
     profile: {

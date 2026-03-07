@@ -362,16 +362,16 @@ const it = {
             login30Days: "Veterano",
             login30DaysDesc: "Accedi per 30 giorni consecutivi.",
         },
-        wonGamesAchievements: {
+        playGamesAchievements: {
             title: "Obiettivi di Partite Vinte",
             firsgame: "Novizio",
             firsgameDesc: "Vinci la tua prima partita.",
-            win5Games: "Principiante",
-            win5GamesDesc: "Vinci 5 partite.",
-            win50Games: "Intermedio",
-            win50GamesDesc: "Vinci 50 partite.",
-            win500Games: "Esperto",
-            win500GamesDesc: "Vinci 500 partite.",
+            play5Games: "Principiante",
+            play5GamesDesc: "Gioca 5 partite.",
+            play50Games: "Intermedio",
+            play50GamesDesc: "Gioca 50 partite.",
+            play500Games: "Esperto",
+            play500GamesDesc: "Gioga 500 partite.",
         },
     },
     profile: {
