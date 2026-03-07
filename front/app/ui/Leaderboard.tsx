@@ -1,9 +1,13 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import { Badge } from './base';
 import { useTranslation } from '../context/language-context';
 import { useRouter } from 'next/navigation';
+import { checkPlayerStatus, PLAYER_STATUS } from '@/lib/players/check-player-status';
+import { whoisURL, isMe } from '../lib/players/whois';
+import { useAuth } from '../context/auth-context';
 
 interface PlayerStat {
   user_id: string;
@@ -83,25 +87,42 @@ function WinLossBar({ wins, losses }: { wins: number; losses: number }) {
   );
 }
 
+const STATUS_COLORS: Record<string, string> = {
+  online: '#22c55e',
+  absent: '#ed9511',
+  idle: '#a3a3a3',
+};
+
+const ME_STYLES = {
+    backgroundColor: "#5a1919",
+    border: "4px solid red",
+}
+
+
 function LeaderboardRow({
   player,
+  profileURL,
   rank,
+  isMe,
 }: {
   player: PlayerStat;
   rank: number;
+  profileURL: string,
+  isMe: boolean,
 }) {
   const { t } = useTranslation();
   const router = useRouter();
   
-  const isOnline = player.rate > 0;
+  const playerStatus = checkPlayerStatus(player);
 
   const handleRowClick = () => {
-    router.push(`/${player.user_id}`);
+    router.push(profileURL);
   };
 
   return (
     <div 
       className="leaderboard-row cursor-pointer" 
+      style={isMe ? ME_STYLES : undefined}
       onClick={handleRowClick}
       role="button"
       tabIndex={0}
@@ -115,13 +136,15 @@ function LeaderboardRow({
       <span className="leaderboard-rank">{rank}.</span>
       <div className="leaderboard-info">
         <div className="leaderboard-name">
-          <span className="font-semibold text-sm md:text-base">{player.user_id}</span>
+          <span className="font-semibold text-sm md:text-base">{player.nickname}</span>
           <Badge 
             size="sm" 
-            variant={isOnline ? "success" : "neutral"}
+            variant={playerStatus === PLAYER_STATUS.active ? "success" : "neutral"}
             shape="pill"
           >
-            {isOnline ? t.profile.leaderboard.online : t.profile.leaderboard.idle}
+            {playerStatus === PLAYER_STATUS.absent ? (t.player.absent || 'Absent') : ""}
+            {playerStatus === PLAYER_STATUS.inactive ? (t.player.inactive || 'Inactive') : ""}
+            {playerStatus === PLAYER_STATUS.active ? (t.player.active || 'Active') : ""}
           </Badge>
         </div>
         <span className="text-xs text-muted">
@@ -137,10 +160,10 @@ function LeaderboardRow({
   );
 }
 
-export default function Leaderboard() {
+export default function Leaderboard({userId}) {
   const { t } = useTranslation();
   const { players, loading, error } = useLeaderboard();
-
+  const { user } = useAuth();
   return (
     <div className="space-y-3">
       {loading && (
@@ -159,7 +182,7 @@ export default function Leaderboard() {
         </p>
       )}
       {players.map((p, i) => (
-        <LeaderboardRow key={p.user_id} player={p} rank={i + 1} />
+        <LeaderboardRow key={p.user_id} player={p} rank={i + 1} profileURL={whoisURL(p.user_id, user.id)} isMe={isMe(p.user_id, user.id)} />
       ))}
     </div>
   );

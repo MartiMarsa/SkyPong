@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { Card, Avatar, Chip, Badge } from '../base';
 import { useTranslation } from '../../context/language-context';
 import Loader from '../loader/loader-ui';
+import Link from "next/link";
+import { isMe } from '../../lib/players/whois';
+import { useAuth } from '../../context/auth-context';
 
 interface PlayerGamesHistoryData {
   id: string;
@@ -53,10 +56,18 @@ function useGameHistory(userId: string) {
   return { games, loading, error };
 }
 
-function GameRow({ game, userId }: { game: GameHistoryItem; userId: string }) {
+function getPlayerLink(profileId : string, playerId : string, nickname : string)
+{
+    if (playerId === profileId || isMe(playerId))
+        return nickname;
+    else
+        return (<Link href={`/${playerId}`}>{nickname}</Link>);
+}
+
+function GameRow({ game, profileId }: { game: GameHistoryItem; profileId: string }) {
   const { t } = useTranslation();
   
-  const isPlayer1 = game.player1.id === userId;
+  const isPlayer1 = game.player1.id === profileId;
   const me = isPlayer1 ? game.player1 : game.player2;
   const opponent = isPlayer1 ? game.player2 : game.player1;
   const myNumber = isPlayer1 ? 0 : 1;
@@ -80,11 +91,11 @@ function GameRow({ game, userId }: { game: GameHistoryItem; userId: string }) {
       {/* Players */}
       <div className="game-players">
         <Avatar size="sm" src={me.avatar || '/avatar/default-avatar.webp'} fallbackText={me.nickname} />
-        <span className="font-semibold text-sm md:text-base">{me.nickname}</span>
+        <span className="font-semibold text-sm md:text-base">{getPlayerLink(profileId, me.id, me.nickname)}</span>
         <span className="text-muted text-sm">{me.points}</span>
         <span className="text-muted text-sm">vs</span>
         <Avatar size="sm" src={opponent.avatar || '/avatar/default-avatar.webp'} fallbackText={opponent.nickname} />
-        <span className="font-semibold text-sm md:text-base">{opponent.nickname}</span>
+        <span className="font-semibold text-sm md:text-base">{getPlayerLink(profileId, opponent.id, opponent.nickname)}</span>
         <span className="text-muted text-sm">{opponent.points}</span>
       </div>
 
