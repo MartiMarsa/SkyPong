@@ -9,7 +9,7 @@ const es = {
     lable: "Ir a la Home",
     },
     user: {
-        hi: ({name, className}) =>(`¡Hola, <span class=\"${className}\"> ${name}</span>!`),
+        hi: (name) =>(`¡Hola, ${name}!`),
         nickname: "Nickname",
         winphrase: "Frase de Victoria",
         userData: "Datos de Usuario",
