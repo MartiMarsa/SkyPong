@@ -215,9 +215,6 @@ make up
 ### Common URLs
 
 - Main app: `https://localhost:8443`
-- Game frontend: `https://localhost:8443/game-engine/`
-- Game WebSocket: `wss://localhost:8443/ws`
-- Prometheus: `http://localhost:9090`
 - Grafana: `https://localhost:3001`
 
 ### Stop / inspect
@@ -316,17 +313,6 @@ Prometheus/Grafana/Alertmanager are part of the default stack, enabling performa
 - Multiple services improve modularity but increase orchestration complexity.
 - Gateway-centered routing is operationally clean but adds a single critical edge component.
 
----
-
-## 11) Future Improvements
-
-- Move from SQLite to managed relational databases for production scaling.
-- Add asynchronous messaging (e.g., NATS/Kafka/RabbitMQ) for event-driven workflows.
-- Introduce distributed tracing (OpenTelemetry) across services.
-- Expand CI with contract tests and load/performance benchmarks.
-- Add finer-grained RBAC and secret-management hardening.
-- Improve API documentation coverage and keep OpenAPI specs fully synchronized.
-- Add Kubernetes manifests/Helm for production orchestration.
 
 ---
 
