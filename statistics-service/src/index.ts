@@ -8,9 +8,13 @@ import { initLeaderboardDB, getLeaderboardDB, closeLeaderboardDB } from './dbLea
 import * as StatsTypes from './stats.types';
 
 // --- ENV ---
-/* TODO CHANGE SERVICE_TOKEN to env in prod*/
-const SERVICE_TOKEN = process.env.SERVICE_TOKEN || 'secret';
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN!;
 
+if (!process.env.SERVICE_TOKEN) {
+    throw new Error("SERVICE_TOKEN env variable is required");
+}
+
+console.log("[stats] Auth service token:", SERVICE_TOKEN);
 const fastify = Fastify({logger: true});
 
 let server: typeof fastify;
@@ -30,10 +34,7 @@ async function requireServiceAuth(req: any, reply: any) {
 
       	const token = auth.replace('Bearer ', '');
 
-	/* TODO uncomment process.env.SERVICE_OKEN in prod */
-
 	if (token !== SERVICE_TOKEN) {
-//      	if (token !== process.env.SERVICE_TOKEN) {
 	    	return reply.status(403).send({ error: 'Forbidden' });
       	}
 }

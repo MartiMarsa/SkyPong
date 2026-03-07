@@ -167,8 +167,13 @@ fastify.register(require('fastify-metrics'), {
   routeMetrics: { enabled: true }    // Métricas de tus rutas (peticiones/segundo, latencia)
 });
 
-/* TODO CHANGE SERVICE_TOKEN to env in prod*/
-const SERVICE_TOKEN = process.env.SERVICE_TOKEN || 'secret';
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN!;
+
+if (!process.env.SERVICE_TOKEN) {
+    throw new Error("SERVICE_TOKEN env variable is required");
+}
+
+console.log("[auth] Auth service token:", SERVICE_TOKEN)
 
 // --- DDOS PROTECTION VIA FILE SIZE <= 2 MB ---
 fastify.register(multipart, {

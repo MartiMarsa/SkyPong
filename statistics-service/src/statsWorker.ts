@@ -2,13 +2,24 @@ import axios from 'axios';
 import { getStatisticsDB } from './dbStats';
 import { sleep, getDbHelpers } from './helpers';
 import * as StatsTypes from './stats.types';
-import { GameRow } from './stats.types';
 
 // --- CONFIG ---
-//const PROFILE_API = 'http://profile-service:8082/internal/profile/gameresult/update';
-const PROFILE_API = process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:5000/internal/profile/gameresult/update';
-//const TOKEN = process.env.SERVICE_TOKEN;
-const TOKEN = process.env.SERVICE_TOKEN || 'secret';
+const PROFILE_API = process.env.PROFILE_SERVICE_URL!;
+
+if (!process.env.PROFILE_SERVICE_URL) {
+    throw new Error("PROFILE_SERVICE_URL env variable is required");
+}
+
+console.log("[stats: statsWorker] Profile service URL:", PROFILE_API);
+
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN!;
+
+if (!process.env.SERVICE_TOKEN) {
+    throw new Error("SERVICE_TOKEN env variable is required");
+}
+
+console.log("[stats: statsWorker] Auth service token:", SERVICE_TOKEN);
+
 
 const MAX_FAILURES = 5;
 const BATCH_SIZE = 10;
@@ -19,7 +30,7 @@ const db = getDbHelpers(getStatisticsDB());
 
 // --- Main logic ---
 
-async function lockGames(): Promise<GameRow[]> {
+async function lockGames(): Promise<StatsTypes.GameRow[]> {
 
 	const { exec, run, all } = db;
 
@@ -69,10 +80,10 @@ async function processGame(game: StatsTypes.GameRow) {
 
 	const payload = buildPayload(game);
 
-	await axios.post(PROFILE_API, payload, {
+	await axios.post(`${PROFILE_API}/internal/profile/gameresult/update`, payload, {
 	    	timeout: 5000,
 	    	headers: {
-		  	Authorization: `Bearer ${TOKEN}`,
+		  	Authorization: `Bearer ${SERVICE_TOKEN}`,
 	    	},
       	});
 

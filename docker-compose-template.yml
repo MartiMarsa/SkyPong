@@ -148,6 +148,10 @@ services:
       - GID=${GID}
       - NODE_ENV=production
       - SERVICE_NAME=auth-service
+      - SERVICE_TOKEN=${SERVICE_TOKEN}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL}
+      - STATS_SERVICE_URL=${STATS_SERVICE_URL}
       # Optional: point to mounted JWT keys
       # - JWT_PRIVATE_KEY_PATH=/run/secrets/jwt-private.pem
       # - JWT_PUBLIC_KEY_PATH=/run/secrets/jwt-public.pem
@@ -173,6 +177,10 @@ services:
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=game-service
+      - SERVICE_TOKEN=${SERVICE_TOKEN}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL}
+      - STATS_SERVICE_URL=${STATS_SERVICE_URL}
       - PORT=2567
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:2567/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
@@ -209,6 +217,10 @@ services:
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=profile-service
+      - SERVICE_TOKEN=${SERVICE_TOKEN}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL}
+      - STATS_SERVICE_URL=${STATS_SERVICE_URL}
       - PROFILE_DATA_DIR=/app/data
       - JWT_PUBLIC_KEY_PATH=/app/keys/jwt-public.pem
     volumes:
@@ -235,6 +247,10 @@ services:
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=statistics-service
+      - SERVICE_TOKEN=${SERVICE_TOKEN}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL}
+      - STATS_SERVICE_URL=${STATS_SERVICE_URL}
       - STATS_DATA_DIR=/app/data
     volumes:
       - PLACEHOLDER_STATISTICS:/app/data
