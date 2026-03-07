@@ -3,7 +3,7 @@
 import { useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { decodeGameConfig, encodeGameConfig } from '../../lib/game/launch-config';
-
+import Loader from '../loader/loader-ui'
 /**
  * Verifies query config and redirects users to /canvas with trusted payload.
  */
@@ -24,8 +24,10 @@ export default function GameLauncher() {
   }, [encodedConfig, router]);
 
   return (
+    <>
     <section aria-live="polite">
-      <p>Loading</p>
+      <Loader classes="" message="Loading..." />
     </section>
+    </>
   );
 }

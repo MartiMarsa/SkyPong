@@ -13,9 +13,9 @@ let clientInstance: Client | null = null;
 
 function getClient(): Client {
   if (!clientInstance) {
-    console.log('[RoomService] Creating new Colyseus client');
+    // console.log('[RoomService] Creating new Colyseus client');
     clientInstance = new Client(SERVER_CONNECTION.WS_URL);
-    console.log('[RoomService] Client created with URL:', SERVER_CONNECTION.WS_URL);
+    // console.log('[RoomService] Client created with URL:', SERVER_CONNECTION.WS_URL);
   }
   return clientInstance;
 }
@@ -94,7 +94,7 @@ export async function createRoom(options: {
       roomName: options.roomName,
     });
 
-    console.log('[RoomService] Room created:', room.roomId);
+    // console.log('[RoomService] Room created:', room.roomId);
     return { roomId: room.roomId };
   } catch (error: unknown) {
     console.error('[RoomService] Failed to create room:', describeError(error));
