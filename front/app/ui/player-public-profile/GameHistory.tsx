@@ -58,7 +58,10 @@ function useGameHistory(userId: string) {
 
 function getPlayerLink(profileId : string, playerId : string, nickname : string)
 {
-    if (playerId === profileId || isMe(playerId))
+    const {user} = useAuth();
+
+
+    if (playerId === profileId || isMe(playerId, user.id))
         return nickname;
     else
         return (<Link href={`/${playerId}`}>{nickname}</Link>);
@@ -77,7 +80,7 @@ function GameRow({ game, profileId }: { game: GameHistoryItem; profileId: string
   const result = draw ? 'draw' : won ? 'win' : 'loss';
   const resultVariant = { win: 'success', loss: 'error', draw: 'default' }[result] as 'success' | 'error' | 'default';
 
-  const date = new Date(game.gameDate.replace(' ', 'T') + 'Z');
+  const date = new Date(game.gameDate.replace(' ', 'T'));
   const dateStr = date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
   const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
