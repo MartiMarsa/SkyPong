@@ -202,14 +202,42 @@ export class GameLoop {
     
     const extrapolatedPosition = this._targetPosition.clone();
     
-    // Always extrapolate if we have velocity data and time has passed
+    // Arena bounds for wall reflection (ball center must stay within these)
+    const minX = GMCN.BORDERS.LEFT_EDGE + GMCN.BALL.RADIUS;
+    const maxX = GMCN.BORDERS.RIGHT_EDGE - GMCN.BALL.RADIUS;
+    
+    // Extrapolate with wall reflection: simulate bounces off side walls
+    // instead of naively projecting past them (which caused "bounce away from edge" artifacts)
     if (extrapolationTime > 0) {
       const extrapolationAmount = extrapolationTime / 1000; // Convert to seconds
       // Convert velocity from units/frame to units/second by multiplying by FPS
-      extrapolatedPosition.x += this._targetVelocity.x * SERVER_FPS * extrapolationAmount;
-      extrapolatedPosition.y += this._targetVelocity.y * SERVER_FPS * extrapolationAmount;
-      extrapolatedPosition.z += this._targetVelocity.z * SERVER_FPS * extrapolationAmount;
+      const vxPerSec = this._targetVelocity.x * SERVER_FPS;
+      const vyPerSec = this._targetVelocity.y * SERVER_FPS;
+      const vzPerSec = this._targetVelocity.z * SERVER_FPS;
+      
+      // Y and Z: no walls to reflect off, extrapolate linearly
+      extrapolatedPosition.y += vyPerSec * extrapolationAmount;
+      extrapolatedPosition.z += vzPerSec * extrapolationAmount;
+      
+      // X axis: simulate wall reflections (mirrors server physics)
+      let newX = extrapolatedPosition.x + vxPerSec * extrapolationAmount;
+      
+      // Reflect off walls up to 3 times (handles very high speeds)
+      for (let i = 0; i < 3; i++) {
+        if (newX < minX) {
+          newX = minX + (minX - newX);
+        } else if (newX > maxX) {
+          newX = maxX - (newX - maxX);
+        } else {
+          break; // Within bounds, done
+        }
+      }
+      
+      extrapolatedPosition.x = newX;
     }
+    
+    // Safety clamp: ensure extrapolated position never exceeds arena bounds
+    extrapolatedPosition.x = Math.max(minX, Math.min(maxX, extrapolatedPosition.x));
 
     if (++this._speedUpdateCounter >= NETWORK.SYNC.SPEED_UPDATE_INTERVAL_FRAMES) {
       const elapsed = (now - this._lastSpeedSampleAt) / 1000;
@@ -227,7 +255,15 @@ export class GameLoop {
       : INTERPOLATION.DEFAULT_SPEED;
     const paddleSmoothingSpeed = VISUAL.SMOOTHING.PADDLE_LERP_SPEED;
 
-    const ballLerpFactor = 1 - Math.exp(-ballSmoothingSpeed * (deltaTime / 1000));
+    // Near-wall boost: tighter visual tracking when ball is close to wall boundaries
+    // Reduces the visual gap between render position and actual position at bounce time
+    const distToWall = Math.min(
+      Math.abs(extrapolatedPosition.x - minX),
+      Math.abs(extrapolatedPosition.x - maxX)
+    );
+    const nearWallBoost = distToWall < 0.3 ? 1.5 : 1.0;
+
+    const ballLerpFactor = 1 - Math.exp(-ballSmoothingSpeed * nearWallBoost * (deltaTime / 1000));
     const paddleLerpFactor = 1 - Math.exp(-paddleSmoothingSpeed * (deltaTime / 1000));
 
     // Pass extrapolated position and velocity to ball

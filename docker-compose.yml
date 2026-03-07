@@ -120,6 +120,7 @@ services:
     environment:
     - NODE_ENV=development
     - WATCHPACK_POLLING=true
+    - NEXT_PUBLIC_USE_NGINX_WS_PROXY=true
   # ────────────────────────────────────────────
   # MICROSERVICIOS
   # ────────────────────────────────────────────
