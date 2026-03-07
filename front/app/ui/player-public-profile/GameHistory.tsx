@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Card, Avatar, Chip, Badge } from '../base';
+import { useTranslation } from '../../context/language-context';
 import Loader from '../loader/loader-ui';
 
 interface PlayerGamesHistoryData {
@@ -29,7 +31,7 @@ interface GameHistoryItem {
   gameDate: string;
   player1: PlayerGamesHistoryData | AIGamesHistoryData;
   player2: PlayerGamesHistoryData | AIGamesHistoryData;
-  winner: number; // 1 = player1, 2 = player2
+  winner: number; // 0 = player1, 1 = player2
 }
 
 function useGameHistory(userId: string) {
@@ -52,6 +54,8 @@ function useGameHistory(userId: string) {
 }
 
 function GameRow({ game, userId }: { game: GameHistoryItem; userId: string }) {
+  const { t } = useTranslation();
+  
   const isPlayer1 = game.player1.id === userId;
   const me = isPlayer1 ? game.player1 : game.player2;
   const opponent = isPlayer1 ? game.player2 : game.player1;
@@ -60,43 +64,40 @@ function GameRow({ game, userId }: { game: GameHistoryItem; userId: string }) {
   const draw = game.player1.points === game.player2.points;
 
   const result = draw ? 'draw' : won ? 'win' : 'loss';
-  const resultColor = { win: '#22c55e', loss: '#ef4444', draw: '#a3a3a3' }[result];
+  const resultVariant = { win: 'success', loss: 'error', draw: 'default' }[result] as 'success' | 'error' | 'default';
 
   const date = new Date(game.gameDate.replace(' ', 'T') + 'Z');
   const dateStr = date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
   const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 14px', border: '1.5px solid #e5e5e5', borderRadius: '10px' }}>
-        {/* Result */}
-        <span style={{ fontSize: '11px', fontWeight: 700, color: resultColor, minWidth: '32px', textTransform: 'uppercase' }}>
-            {result}
-        </span>
+    <div className="game-row">
+      {/* Result chip */}
+      <Chip variant={resultVariant} className="min-w-[4rem] text-center">
+        {t.profile.gameHistory[result]}
+      </Chip>
 
-        {/* Players */}
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-            <img style={{ borderRadius: '50%', border: '1px solid #e1e1e1', maxWith: '32px', maxHeight: '32px', aspectRatio: '1 / 1' }} src={me.avatar} />
-            <span style={{ fontWeight: 600 }}>{me.nickname}</span>
-            <span style={{ color: '#a3a3a3' }}>{me.points}</span>
-            <span style={{ color: '#a3a3a3' }}>vs</span>
-            { console.info("Opponent Avatar: ", opponent.avatar)}
-            <img style={{ borderRadius: '50%', border: '1px solid #e1e1e1', maxWith: '32px', maxHeight: '32px', aspectRatio: '1 / 1' }} src={opponent.avatar || '/avatar/default-avatar.webp'} />
-            <span style={{ fontWeight: 600 }}>{opponent.nickname}</span>
-            <span style={{ color: '#a3a3a3' }}>{opponent.points}</span>
-        </div>
+      {/* Players */}
+      <div className="game-players">
+        <Avatar size="sm" src={me.avatar || '/avatar/default-avatar.webp'} fallbackText={me.nickname} />
+        <span className="font-semibold text-sm md:text-base">{me.nickname}</span>
+        <span className="text-muted text-sm">{me.points}</span>
+        <span className="text-muted text-sm">vs</span>
+        <Avatar size="sm" src={opponent.avatar || '/avatar/default-avatar.webp'} fallbackText={opponent.nickname} />
+        <span className="font-semibold text-sm md:text-base">{opponent.nickname}</span>
+        <span className="text-muted text-sm">{opponent.points}</span>
+      </div>
 
-        {/* Mode */}
-        <span style={{ fontSize: '11px', color: '#a3a3a3', minWidth: '60px', textAlign: 'center' }}>
-            {game.gameMode === 'ai' ? 'vs AI' : 'PvP'}
-        </span>
+      {/* Mode badge */}
+      <Badge size="sm" variant="neutral" className="min-w-[3.5rem] text-center">
+        {game.gameMode === 'ai' ? t.profile.gameHistory.vsAI : t.profile.gameHistory.pvp}
+      </Badge>
 
-        {/* Date */}
-        <span style={{ fontSize: '11px', color: '#a3a3a3', textAlign: 'right' }}>
-            {dateStr}<br />{timeStr}
-        </span>
-        </div>
-    </>
+      {/* Date & time */}
+      <span className="text-xs text-muted text-right whitespace-nowrap">
+        {dateStr}<br />{timeStr}
+      </span>
+    </div>
   );
 }
 
@@ -105,14 +106,21 @@ interface GameHistoryProps {
 }
 
 export default function GameHistory({ userId }: GameHistoryProps) {
+  const { t } = useTranslation();
   const { games, loading, error } = useGameHistory(userId);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      {loading && <Loader classes="" message="Loading..." />}
-      {error && <p style={{ color: '#ef4444', fontSize: '13px' }}>Error: {error}</p>}
+    <div className="space-y-3">
+      {loading && <Loader classes="" message={t.profile.gameHistory.loading} />}
+      {error && (
+        <p className="text-danger text-sm">
+          {t.profile.gameHistory.error} {error}
+        </p>
+      )}
       {!loading && !error && games.length === 0 && (
-        <p style={{ color: '#a3a3a3', fontSize: '13px' }}>No games yet.</p>
+        <p className="text-muted text-sm text-center py-8">
+          {t.profile.gameHistory.noGames}
+        </p>
       )}
       {games.map(game => (
         <GameRow key={game.gameId} game={game} userId={userId} />

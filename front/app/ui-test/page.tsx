@@ -4,14 +4,39 @@ import {
   Button, 
   TextField, 
   Chip,
+  Avatar,
+  Card,
+  Badge,
+  StatCard,
+  ProgressBar,
+  Tabs,
 } from '../ui/base';
 import { useTranslation } from '../context/language-context';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 export default function UITestPage() {
   const { t } = useTranslation();
   const [textValue, setTextValue] = useState('');
   const [textError, setTextError] = useState('');
+  const [activeTab, setActiveTab] = useState('history');
+
+  // React Hook Form example schema
+  const formSchema = z.object({
+    username: z.string().min(3, 'Username must be at least 3 characters'),
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+  });
+
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(formSchema),
+  });
+
+  const onSubmit = (data: any) => {
+    alert('Form submitted: ' + JSON.stringify(data, null, 2));
+  };
 
   return (
     <div className="min-h-dvh bg-gray-50 p-8">
@@ -22,6 +47,7 @@ export default function UITestPage() {
         <section className="mb-12">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Buttons</h2>
           
+          <p className="text-sm text-gray-600 mb-2">Button variants (color styles)</p>
           <div className="flex flex-wrap gap-4 mb-6">
             <Button variant="primary" font="display">Primary</Button>
             <Button variant="secondary" font="display">Secondary</Button>
@@ -29,12 +55,14 @@ export default function UITestPage() {
             <Button variant="ghost" font="display">Ghost</Button>
           </div>
 
+          <p className="text-sm text-gray-600 mb-2">Button sizes</p>
           <div className="flex flex-wrap gap-4 mb-6">
             <Button variant="primary" size="sm" font="display">Small</Button>
             <Button variant="primary" size="md" font="display">Medium</Button>
             <Button variant="primary" size="lg" font="display">Large</Button>
           </div>
 
+          <p className="text-sm text-gray-600 mb-2">Special states: disabled and link</p>
           <div className="flex flex-wrap gap-4 mb-6">
             <Button variant="primary" disabled font="display">Disabled</Button>
             <Button variant="primary" href="/" font="display">Link Button</Button>
@@ -42,6 +70,7 @@ export default function UITestPage() {
 
           <div className="p-4 bg-blue-50 rounded-lg mb-6">
             <p className="text-sm md:text-base text-gray-600 text-blue-800 mb-2">With translations (from t):</p>
+            <p className="text-xs text-gray-500 mb-2">Shows how buttons work with i18n</p>
             <div className="flex flex-wrap gap-4">
               <Button variant="primary" font="display">{t.game.playButton}</Button>
               <Button variant="secondary" font="display">{t.navigation.home}</Button>
@@ -87,6 +116,48 @@ export default function UITestPage() {
           </div>
         </section>
 
+        {/* TextField with React Hook Form Section */}
+        <section className="mb-12">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">TextField with React Hook Form</h2>
+          
+          <div className="p-4 bg-blue-50 rounded-lg mb-4">
+            <p className="text-sm text-blue-800 mb-2">This example shows TextField integrated with React Hook Form + Zod validation</p>
+            <p className="text-xs text-gray-600">Try submitting with invalid values to see validation errors</p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="max-w-md space-y-6">
+            <TextField 
+              name="username"
+              label="Username (RHF)" 
+              placeholder="At least 3 characters"
+              register={register}
+              error={errors.username?.message as string}
+            />
+
+            <TextField 
+              name="email"
+              type="email"
+              label="Email (RHF)" 
+              placeholder="Enter valid email"
+              register={register}
+              error={errors.email?.message as string}
+            />
+
+            <TextField 
+              name="password"
+              type="password"
+              label="Password (RHF)" 
+              placeholder="At least 6 characters"
+              register={register}
+              error={errors.password?.message as string}
+            />
+
+            <Button type="submit" variant="primary">
+              Submit Form
+            </Button>
+          </form>
+        </section>
+
         {/* Chip Section */}
         <section className="mb-12">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Chip</h2>
@@ -105,6 +176,495 @@ export default function UITestPage() {
               <Chip variant="warning">In Game</Chip>
               <Chip variant="error">Offline</Chip>
             </div>
+          </div>
+        </section>
+
+        {/* Avatar Section */}
+        <section className="mb-12">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Avatar</h2>
+          
+          <p className="text-sm text-gray-600 mb-2">Avatar sizes</p>
+          <div className="flex flex-wrap gap-4 items-center mb-6">
+            <Avatar size="sm" fallbackText="John Doe" />
+            <Avatar size="md" fallbackText="John Doe" />
+            <Avatar size="lg" fallbackText="John Doe" />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Avatar with image</p>
+          <div className="flex flex-wrap gap-4 items-center mb-6">
+            <Avatar 
+              size="sm" 
+              src="/avatar/default-avatar.webp" 
+              alt="User avatar"
+            />
+            <Avatar 
+              size="md" 
+              src="/avatar/default-avatar.webp" 
+              alt="User avatar"
+            />
+            <Avatar 
+              size="lg" 
+              src="/avatar/default-avatar.webp" 
+              alt="User avatar"
+            />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Avatar with fallback initials (different names)</p>
+          <div className="flex flex-wrap gap-4 items-center mb-6">
+            <Avatar size="md" fallbackText="Alice" />
+            <Avatar size="md" fallbackText="Bob" />
+            <Avatar size="md" fallbackText="Charlie" />
+            <Avatar size="md" fallbackText="Diana" />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Clickable avatar (hover to see effect)</p>
+          <div className="flex flex-wrap gap-4 items-center mb-6">
+            <Avatar 
+              size="md" 
+              fallbackText="John Doe"
+              onClick={() => alert('Avatar clicked!')}
+            />
+            <Avatar 
+              size="md" 
+              src="/avatar/default-avatar.webp"
+              onClick={() => alert('Avatar with image clicked!')}
+            />
+          </div>
+
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm md:text-base text-gray-600 text-blue-800 mb-2">Example usage in navigation:</p>
+            <p className="text-xs text-gray-600 mb-2">Shows user's uploaded image, or first letter of nickname as fallback</p>
+            <div className="flex gap-4 items-center">
+              <Avatar 
+                size="md" 
+                src="/avatar/default-avatar.webp"
+                fallbackText="SkyPong User"
+                onClick={() => alert('Open user menu')}
+              />
+              <span className="text-sm text-gray-600">← Click to open user menu</span>
+            </div>
+          </div>
+        </section>
+
+        {/* Card Section */}
+        <section className="mb-12">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Card</h2>
+          
+          <p className="text-sm text-gray-600 mb-2">Card variants</p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Card variant="default" padding="md">
+              <p className="text-sm text-gray-700">Default card with shadow</p>
+            </Card>
+            <Card variant="elevated" padding="md">
+              <p className="text-sm text-gray-700">Elevated card with larger shadow</p>
+            </Card>
+            <Card variant="bordered" padding="md">
+              <p className="text-sm text-gray-700">Bordered card (no shadow)</p>
+            </Card>
+            <Card variant="ghost" padding="md">
+              <p className="text-sm text-gray-700">Ghost card (no background)</p>
+            </Card>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Card with title and subtitle</p>
+          <div className="grid md:grid-cols-2 gap-4 mb-6">
+            <Card 
+              variant="default" 
+              padding="md"
+              title="Player Stats"
+              subtitle="Last 30 days"
+            >
+              <p className="text-sm text-gray-700">Card content goes here</p>
+            </Card>
+            <Card 
+              variant="elevated" 
+              padding="md"
+              title="Achievements"
+              subtitle="15/20 unlocked"
+              icon="🏆"
+            >
+              <p className="text-sm text-gray-700">Card with icon, title, and subtitle</p>
+            </Card>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Card padding variants</p>
+          <div className="grid md:grid-cols-4 gap-4 mb-6">
+            <Card variant="default" padding="none">
+              <div className="p-2 bg-purple-100 text-xs">No padding (add your own)</div>
+            </Card>
+            <Card variant="default" padding="sm">
+              <p className="text-xs text-gray-700">Small padding</p>
+            </Card>
+            <Card variant="default" padding="md">
+              <p className="text-xs text-gray-700">Medium padding</p>
+            </Card>
+            <Card variant="default" padding="lg">
+              <p className="text-xs text-gray-700">Large padding</p>
+            </Card>
+          </div>
+
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800 mb-2">Example: Player profile card</p>
+            <Card 
+              variant="elevated" 
+              padding="lg"
+              title="SkyPong Master"
+              subtitle="Level 42 • Rank #12"
+            >
+              <div className="space-y-2">
+                <p className="text-sm text-gray-700">Win Rate: 68%</p>
+                <p className="text-sm text-gray-700">Games Played: 156</p>
+              </div>
+            </Card>
+          </div>
+        </section>
+
+        {/* Badge Section */}
+        <section className="mb-12">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Badge</h2>
+          
+          <p className="text-sm text-gray-600 mb-2">Badge variants</p>
+          <div className="flex flex-wrap gap-3 mb-6">
+            <Badge variant="primary">Primary</Badge>
+            <Badge variant="secondary">Secondary</Badge>
+            <Badge variant="success">Success</Badge>
+            <Badge variant="warning">Warning</Badge>
+            <Badge variant="danger">Danger</Badge>
+            <Badge variant="info">Info</Badge>
+            <Badge variant="neutral">Neutral</Badge>
+            <Badge variant="outline">Outline</Badge>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Badge sizes</p>
+          <div className="flex flex-wrap gap-3 items-center mb-6">
+            <Badge variant="primary" size="sm">Small</Badge>
+            <Badge variant="primary" size="md">Medium</Badge>
+            <Badge variant="primary" size="lg">Large</Badge>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Badge shapes</p>
+          <div className="flex flex-wrap gap-3 mb-6">
+            <Badge variant="success" shape="rounded">Rounded</Badge>
+            <Badge variant="warning" shape="pill">Pill</Badge>
+            <Badge variant="danger" shape="square">Square</Badge>
+          </div>
+
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800 mb-2">Example usage with player info:</p>
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-gray-900 font-medium">PlayerName</span>
+              <Badge variant="success" size="sm">Online</Badge>
+              <Badge variant="info" size="sm">Pro</Badge>
+              <Badge variant="warning" size="sm">In Game</Badge>
+            </div>
+          </div>
+        </section>
+
+        {/* StatCard Section */}
+        <section className="mb-12">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">StatCard</h2>
+          
+          <p className="text-sm text-gray-600 mb-2">StatCard variants</p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <StatCard 
+              label="Total Games"
+              value="156"
+              variant="default"
+            />
+            <StatCard 
+              label="Win Rate"
+              value="68%"
+              variant="primary"
+            />
+            <StatCard 
+              label="Victories"
+              value="106"
+              variant="success"
+            />
+            <StatCard 
+              label="Defeats"
+              value="50"
+              variant="danger"
+            />
+            <StatCard 
+              label="Current Streak"
+              value="7"
+              variant="warning"
+            />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">StatCard with icons</p>
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <StatCard 
+              label="Games Played"
+              value="156"
+              icon="🎮"
+              variant="primary"
+            />
+            <StatCard 
+              label="Trophies"
+              value="23"
+              icon="🏆"
+              variant="success"
+            />
+            <StatCard 
+              label="Level"
+              value="42"
+              icon="⭐"
+              variant="warning"
+            />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">StatCard with trends</p>
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <StatCard 
+              label="Win Rate"
+              value="68%"
+              variant="success"
+              trend="up"
+              trendValue="+5%"
+            />
+            <StatCard 
+              label="Average Score"
+              value="1,234"
+              variant="primary"
+              trend="up"
+              trendValue="+123"
+            />
+            <StatCard 
+              label="Rank"
+              value="#12"
+              variant="warning"
+              trend="down"
+              trendValue="-3"
+            />
+          </div>
+
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800 mb-2">Example: Player stats grid</p>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard 
+                label="Total Games"
+                value="156"
+                icon="🎮"
+                variant="default"
+              />
+              <StatCard 
+                label="Win Rate"
+                value="68%"
+                icon="📊"
+                variant="success"
+                trend="up"
+                trendValue="+5%"
+              />
+              <StatCard 
+                label="Best Streak"
+                value="12"
+                icon="🔥"
+                variant="warning"
+              />
+              <StatCard 
+                label="Rank"
+                value="#12"
+                icon="🏅"
+                variant="primary"
+                trend="up"
+                trendValue="+2"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* ProgressBar Section */}
+        <section className="mb-12">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">ProgressBar</h2>
+          
+          <p className="text-sm text-gray-600 mb-2">ProgressBar color variants</p>
+          <div className="space-y-4 mb-6">
+            <ProgressBar value={75} max={100} color="primary" />
+            <ProgressBar value={60} max={100} color="success" />
+            <ProgressBar value={45} max={100} color="danger" />
+            <ProgressBar value={30} max={100} color="warning" />
+            <ProgressBar value={90} max={100} color="info" />
+            <ProgressBar value={50} max={100} color="neutral" />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">ProgressBar sizes</p>
+          <div className="space-y-4 mb-6">
+            <ProgressBar value={75} max={100} size="sm" color="primary" />
+            <ProgressBar value={75} max={100} size="md" color="primary" />
+            <ProgressBar value={75} max={100} size="lg" color="primary" />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">ProgressBar with label and percentage</p>
+          <div className="space-y-4 mb-6">
+            <ProgressBar 
+              value={85} 
+              max={100}
+              color="success" 
+              label="Win Rate"
+              showLabel
+              showPercentage 
+            />
+            <ProgressBar 
+              value={60} 
+              max={100}
+              color="primary" 
+              label="Achievement Progress"
+              showLabel
+              showPercentage 
+            />
+            <ProgressBar 
+              value={25} 
+              max={100}
+              color="warning" 
+              label="Level Progress"
+              showLabel
+              showPercentage 
+            />
+          </div>
+
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800 mb-2">Example: Achievement card with progress</p>
+            <Card variant="default" padding="md" title="Master Striker">
+              <p className="text-sm text-gray-600 mb-3">Win 100 games</p>
+              <ProgressBar 
+                value={68} 
+                max={100}
+                color="success" 
+                label="Progress"
+                showLabel
+                showPercentage 
+              />
+              <p className="text-xs text-gray-500 mt-2">68/100 games won</p>
+            </Card>
+          </div>
+        </section>
+
+        {/* Tabs Section */}
+        <section className="mb-12">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Tabs</h2>
+          
+          <p className="text-sm text-gray-600 mb-2">Tabs variants - Underline (default)</p>
+          <div className="mb-6">
+            <Tabs
+              variant="underline"
+              tabs={[
+                { key: 'tab1', label: 'Overview' },
+                { key: 'tab2', label: 'Statistics' },
+                { key: 'tab3', label: 'Settings' },
+              ]}
+              activeTab="tab1"
+              onChange={(key) => console.log('Tab changed:', key)}
+            />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Tabs variants - Pills</p>
+          <div className="mb-6">
+            <Tabs
+              variant="pills"
+              tabs={[
+                { key: 'tab1', label: 'All' },
+                { key: 'tab2', label: 'Active' },
+                { key: 'tab3', label: 'Completed' },
+              ]}
+              activeTab="tab2"
+              onChange={(key) => console.log('Tab changed:', key)}
+            />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Tabs variants - Boxed</p>
+          <div className="mb-6">
+            <Tabs
+              variant="boxed"
+              tabs={[
+                { key: 'tab1', label: 'Daily' },
+                { key: 'tab2', label: 'Weekly' },
+                { key: 'tab3', label: 'Monthly' },
+              ]}
+              activeTab="tab3"
+              onChange={(key) => console.log('Tab changed:', key)}
+            />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Tabs with icons</p>
+          <div className="mb-6">
+            <Tabs
+              variant="underline"
+              tabs={[
+                { key: 'tab1', label: 'History', icon: '📜' },
+                { key: 'tab2', label: 'Friends', icon: '👥' },
+                { key: 'tab3', label: 'Achievements', icon: '🏆' },
+              ]}
+              activeTab="tab1"
+              onChange={(key) => console.log('Tab changed:', key)}
+            />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Tabs with badges</p>
+          <div className="mb-6">
+            <Tabs
+              variant="pills"
+              tabs={[
+                { key: 'tab1', label: 'Inbox', badge: '5' },
+                { key: 'tab2', label: 'Sent' },
+                { key: 'tab3', label: 'Archived', badge: '12' },
+              ]}
+              activeTab="tab1"
+              onChange={(key) => console.log('Tab changed:', key)}
+            />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Tabs with disabled state</p>
+          <div className="mb-6">
+            <Tabs
+              variant="underline"
+              tabs={[
+                { key: 'tab1', label: 'Available' },
+                { key: 'tab2', label: 'Coming Soon', disabled: true },
+                { key: 'tab3', label: 'Locked', disabled: true },
+              ]}
+              activeTab="tab1"
+              onChange={(key) => console.log('Tab changed:', key)}
+            />
+          </div>
+
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800 mb-3">Example: Player profile with tabs</p>
+            <Card variant="default" padding="none">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex items-center gap-4">
+                  <Avatar size="lg" fallbackText="John Doe" />
+                  <div>
+                    <h3 className="font-bold text-lg">John Doe</h3>
+                    <p className="text-sm text-gray-600">Level 42 • Rank #12</p>
+                  </div>
+                </div>
+              </div>
+              <div className="border-b border-gray-200">
+                <Tabs
+                  variant="underline"
+                  tabs={[
+                    { key: 'history', label: 'History', icon: '📜' },
+                    { key: 'friends', label: 'Friends', icon: '👥', badge: '15' },
+                    { key: 'achievements', label: 'Achievements', icon: '🏆', badge: '8' },
+                  ]}
+                  activeTab={activeTab}
+                  onChange={setActiveTab}
+                />
+              </div>
+              <div className="p-6">
+                {activeTab === 'history' && (
+                  <p className="text-sm text-gray-600">Game history content...</p>
+                )}
+                {activeTab === 'friends' && (
+                  <p className="text-sm text-gray-600">Friends list content...</p>
+                )}
+                {activeTab === 'achievements' && (
+                  <p className="text-sm text-gray-600">Achievements content...</p>
+                )}
+              </div>
+            </Card>
           </div>
         </section>
 

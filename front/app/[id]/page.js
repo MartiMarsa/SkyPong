@@ -1,72 +1,159 @@
 'use client';
 
-import  { useState, useEffect } from 'react';
-import { useTranslation } from '../hooks/use-translation';
+import { useState, useEffect } from 'react';
+import { useTranslation } from '../context/language-context';
 import NavigationAppUI from '../ui/navigation-app-ui';
 import { useAuth } from '../context/auth-context';
 import { useRouter } from 'next/navigation';
 import PlayerInfo from '../ui/player-public-profile/player-info-ui';
-import PlayerAchievementsUI from '../ui/player-public-profile/player-achievements-ui';
 import AchievementsSection from '../ui/player-public-profile/AchievementsSection';
-import { useParams } from 'next/navigation'
-import FriendsList from '../ui/player-public-profile/friend-list.ui';
+import FriendsSection from '../ui/player-public-profile/FriendsSection';
 import GameHistory from '../ui/player-public-profile/GameHistory';
+import Leaderboard from '../ui/Leaderboard';
+import FooterTermsPolicy from '../ui/footer-terms-policy';
+import { Tabs } from '../ui/base';
+import { useParams } from 'next/navigation';
 
-export default function ProfilePagePublic()
-{
-    const { id } = useParams();  
-    const t = useTranslation();
+export default function ProfilePagePublic() {
+    const { id } = useParams();
+    const { t } = useTranslation();
     const router = useRouter();
     const [profile, setProfile] = useState(null);
-    const { user, authloading} = useAuth();
-    const [isLoading, setIsLoading] = useState(true);
-    const [serverError, setServerError] = useState('');
+    const { user, authloading } = useAuth();
+    const [activeTab, setActiveTab] = useState('history');
     const [csrfToken, setCsrfToken] = useState('');
+
     const getCookie = (name) => {
         return document.cookie
             .split('; ')
             .find(row => row.startsWith(name + '='))
             ?.split('=')[1];
     };
-    
-    console.info("Friend id:", id);
+
     useEffect(() => {
-        console.info("User session: ", user);
         if (authloading) return;
-        
-        // 2. Si ya terminó de cargar y NO hay usuario, mandamos a home.
+
         if (!user) {
             router.push('/');
             return;
         }
 
-        const csrfToken = getCookie();
-    
+        const csrf = getCookie('csrftoken');
+        setCsrfToken(csrf || '');
+
         fetch(`/api/profile/${id}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
-                'x-csrf-token': csrfToken || '',
+                'x-csrf-token': csrf || '',
             },
             credentials: 'include',
         })
-        .then(res => res.json())
-        .then(data => setProfile(data.user))
-        .catch((err) => {
-            console.error("Error:", err)
-            setServerError(err);
-        }).finally(setCsrfToken(csrfToken));
-    }, [id, authloading]);
+            .then(res => res.json())
+            .then(data => setProfile(data.user))
+            .catch((err) => {
+                console.error("Error:", err);
+            });
+    }, [id, authloading, user, router]);
+
+    // Count achievements (locked vs unlocked)
+    const achievementCount = profile?.stats ? (() => {
+        const stats = profile.stats;
+        let count = 0;
+        if (stats.total_games >= 1) count++;
+        if (stats.total_games >= 10) count++;
+        if (stats.total_games >= 50) count++;
+        if (stats.total_games >= 100) count++;
+        if (stats.wins >= 1) count++;
+        if (stats.wins >= 10) count++;
+        if (stats.wins >= 50) count++;
+        if (stats.total_games > 0 && (stats.wins / stats.total_games) >= 0.7) count++;
+        return count;
+    })() : 0;
+
+    // Count friends
+    const [friendsCount, setFriendsCount] = useState(0);
+    useEffect(() => {
+        if (!profile?.id || !csrfToken) return;
+        fetch('/api/profile/friends', {
+            headers: { 'x-csrf-token': csrfToken },
+            credentials: 'include',
+        })
+            .then(res => res.json())
+            .then(data => setFriendsCount(Array.isArray(data) ? data.length : 0))
+            .catch(() => setFriendsCount(0));
+    }, [profile?.id, csrfToken]);
+
+    const tabs = [
+        {
+            key: 'history',
+            label: t.profile.tabs.history,
+            icon: '📜',
+            badge: profile?.stats?.total_games || undefined,
+        },
+        {
+            key: 'friends',
+            label: t.profile.tabs.friends,
+            icon: '👥',
+            badge: friendsCount > 0 ? friendsCount : undefined,
+        },
+        {
+            key: 'achievements',
+            label: t.profile.tabs.achievements,
+            icon: '🏆',
+            badge: achievementCount > 0 ? achievementCount : undefined,
+        },
+        {
+            key: 'leaderboard',
+            label: t.profile.tabs.leaderboard,
+            icon: '📊',
+        },
+    ];
+
     return (
-        <main>
-            { console.info("Public profile data:", profile) }
-            <NavigationAppUI  />
-            <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
-            {profile && <PlayerInfo profile={profile} />}
-            { profile && <GameHistory userId={profile.id} />}
-            {profile && <FriendsList currentUserId={user?.id} targetId={profile?.id} csrfToken={csrfToken}/>}
-            { profile && <AchievementsSection t={t.t} stats={profile?.stats} /> }
+        <main className="min-h-dvh bg-page-bg flex flex-col">
+            <NavigationAppUI />
+            <div className="flex flex-1 items-start justify-center page-wrapper-with-nav">
+                <div className="page-content-container-scrollable">
+                    <div className="content-container-xl">
+                        {/* Player Info - Always visible */}
+                        {profile && <PlayerInfo profile={profile} />}
+
+                        {/* Tabs */}
+                        {profile && (
+                            <div className="profile-tabs-container">
+                                <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+
+                                {/* Tab Content */}
+                                <div className="profile-tab-content">
+                                    {activeTab === 'history' && (
+                                        <GameHistory userId={profile.id} />
+                                    )}
+
+                                    {activeTab === 'friends' && (
+                                        <FriendsSection
+                                            currentUserId={user?.id || ''}
+                                            csrfToken={csrfToken}
+                                            onNavigateProfile={(friendId) => router.push(`/${friendId}`)}
+                                        />
+                                    )}
+
+                                    {activeTab === 'achievements' && (
+                                        <AchievementsSection stats={profile?.stats} />
+                                    )}
+
+                                    {activeTab === 'leaderboard' && (
+                                        <Leaderboard />
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+            <div className="pb-4">
+                <FooterTermsPolicy />
+            </div>
         </main>
     );
 }
-

@@ -4,41 +4,17 @@ import { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "../lib/form-validation/auth";
-import { useStyles } from '../hooks/use-styles';
 import { useTranslation } from '../hooks/use-translation';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../context/auth-context'
-
-const mobileStyles = {
-    main: "flex flex-col justify-center items-center min-h-screen",
-    goBackWrapper: "absolute top-4 left-4",
-    spanTitle: "text-center text-sm mb-2",
-    h1: "text-lg text-center",
-    article: 'flex flex-col justify-center items-center max-w-2xs',
-    textInput: 'w-full h-10 px-3 border border-gray-300 rounded',
-    textInputError: 'w-full h-10 px-3 border border-red-500 rounded',
-    submitButton: 'p-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 w-full rounded',
-    form: 'flex flex-col p-4 gap-4 w-full',
-    errorMessage: 'text-red-500 text-sm mt-1',
-    inputWrapper: 'w-full',
-    singUpButtonWrapper: 'mt-4 text-center',
-};
-
-const desktopStyles = {
-    ...mobileStyles,
-    spanTitle: "text-center text-lg mb-2",
-    h1: "text-xl",
-    article: 'flex flex-col justify-center items-center max-w-md w-full',
-};
+import { useAuth } from '../context/auth-context';
+import { TextField, Button } from '../ui/base';
+import FooterTermsPolicy from '../ui/footer-terms-policy';
 
 export default function SignInPage() {
     const router = useRouter();
     const { user, checkAuth, hasCredentials } = useAuth();
     const { t } = useTranslation();
-    const { styles } = useStyles(mobileStyles, desktopStyles);
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -124,59 +100,80 @@ export default function SignInPage() {
         <>
         { isLoading ? (<div className=''>Loading...</div>) : 
         (
-        <main className={styles.main}>
-            <div className={styles.goBackWrapper}>
-                <Link href="/">
-                    <FontAwesomeIcon icon={faArrowLeft} /> {t.form.goBackHome}
+        <main className="h-dvh bg-page-bg flex flex-col">
+            <div className="back-button-position">
+                <Link href="/" className="skypong-logo">
+                    SKYPONG
                 </Link>
             </div>
             
-            <article className={styles.article}> 
-                <span className={styles.spanTitle}>{t.signInPage.title}</span>  
-                <h1 className={styles.h1}>{t.homePage.title}</h1>
-                
-                <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
-                    
-                    {/* Email Field */}
-                    <div className={styles.inputWrapper}>
-                        <input 
-                            className={errors.email ? styles.textInputError : styles.textInput}
-                            type="email" 
-                            placeholder={t.form.emailPlaceholder} 
-                            autoComplete="email"
-                            {...register('email')} 
-                        />
-                        {errors.email && <p>{errors.email.message}</p>}
-                    </div>
+            <div className="flex flex-1 items-center justify-center">
+                <div className="page-content-container">
+                    <div className="content-container-sm">
+                        <div className="form-wrapper">
+                            <div className="text-center">
+                                <span className="text-sm md:text-lg mb-2 block">{t.signInPage.title}</span>  
+                                <h1 className="text-lg md:text-xl mb-6">{t.homePage.title}</h1>
+                            </div>
+                        
+                        <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit(onSubmit)}>
+                            
+                            {/* Email Field */}
+                            <div className="w-full">
+                                <TextField
+                                    name="email"
+                                    type="email"
+                                    label={t.form.labels.email}
+                                    placeholder={t.form.placeholders.email}
+                                    autoComplete="email"
+                                    register={register}
+                                    error={errors.email?.message}
+                                />
+                            </div>
 
-                    {/* Password Field */}
-                    <div className={styles.inputWrapper}>
-                        <input 
-                            className={errors.password ? styles.textInputError : styles.textInput}
-                            type="password" 
-                            placeholder={t.form.passwordLabel} 
-                            autoComplete="current-password"
-                            {...register('password')}
-                        />
-                        {errors.password && <p>{errors.password.message}</p>}
+                            {/* Password Field */}
+                            <div className="w-full">
+                                <TextField
+                                    name="password"
+                                    type="password"
+                                    label={t.form.labels.password}
+                                    placeholder={t.form.placeholders.password}
+                                    autoComplete="current-password"
+                                    register={register}
+                                    error={errors.password?.message}
+                                />
+                            </div>
+                            
+                            {/* Server Error - Reserved space to prevent layout shift */}
+                            <div className="error-message-space">
+                                { serverError && (
+                                    <p className="error-message">
+                                        {serverError}
+                                    </p>
+                                )}
+                            </div>
+                            
+                            <Button 
+                                type="submit"
+                                variant="primary"
+                                size="lg"
+                                disabled={isSubmitting}
+                                className="w-full"
+                            >
+                                {isSubmitting ? t.signInPage.loading : t.signInPage.submitButton}
+                            </Button>
+                        </form>
+                        <div className="mt-4 text-center">
+                            <Link href="/signup" className="link-primary">{t.signUpPage.createAccount}</Link>
+                        </div>
+                        </div>
                     </div>
-                    { serverError && (
-                        <p className={styles.errorMessage}>
-                            {serverError}
-                        </p>
-                    )}
-                    <button 
-                        className={styles.submitButton} 
-                        type="submit"
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? t.signInPage.loading : t.signInPage.submitButton}
-                    </button>
-                </form>
-                <div className={styles.singUpButtonWrapper}>
-                    <Link href="/signup">{t.signUpPage.createAccount}</Link>
                 </div>
-            </article>
+            </div>
+
+            <div className="mt-auto pb-4">
+                <FooterTermsPolicy />
+            </div>
         </main>
         )}
         </>

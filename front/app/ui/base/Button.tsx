@@ -14,9 +14,9 @@ const buttonVariants = cva(
         ghost: 'bg-ghost hover:bg-ghost-hover text-gray-700',
       },
       size: {
-        sm: 'px-4 py-1.5',
-        md: 'px-6 py-4',
-        lg: 'px-10 py-6',
+        sm: 'btn-sm',
+        md: 'btn-md',
+        lg: 'btn-lg',
       },
       font: {
         display: 'font-display',

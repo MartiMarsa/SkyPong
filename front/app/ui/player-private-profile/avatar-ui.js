@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
-import { useAuth } from '../../context/auth-context'; // Ajusta la ruta a tu contexto
+import { useState, useRef } from 'react';
+import { useAuth } from '../../context/auth-context';
 import { useTranslation } from '../../hooks/use-translation';
+import { Button } from '../base';
 import Loader from '../loader/loader-ui';
 
 export default function AvatarUpload() {
@@ -10,6 +11,7 @@ export default function AvatarUpload() {
   const [uploading, setUploading] = useState(false);
   const [serverError, setServerError] = useState('');
   const { t } = useTranslation(); 
+  const fileInputRef = useRef(null);
   
   // Imagen por defecto si no hay una previa ni una nueva seleccionada
   const defaultAvatar =  user?.avatarUrl || "/avatar/default-avatar.webp"; 
@@ -81,10 +83,16 @@ const getCookie = (name) => {
     }
   };
 
+  const handleButtonClick = () => {
+    if (fileInputRef.current && !uploading) {
+      fileInputRef.current.click();
+    }
+  };
+
   return (
     <>
     { authLoading ? (<Loader />) : (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4 py-4">
       <div className="relative w-32 h-32 overflow-hidden rounded-full border-2 border-gray-300">
         <img 
           src={displayImage} 
@@ -93,26 +101,33 @@ const getCookie = (name) => {
         />
         {uploading && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xs">
-            Subiendo...
+            {t.common?.uploading || "Uploading..."}
           </div>
         )}
       </div>
 
-      <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
-        {uploading ? 'Cargando...' : 'Cambiar Imagen'}
-        <input 
-          type="file" 
-          className="hidden" 
-          accept="image/png, image/jpeg" 
-          onChange={handleFileChange}
-          disabled={uploading}
-        />
-      </label>
+      <Button
+        variant="secondary"
+        size="md"
+        disabled={uploading}
+        type="button"
+        onClick={handleButtonClick}
+      >
+        {uploading ? (t.common?.loading || 'Loading...') : (t.avatar?.changeImage || 'Change Image')}
+      </Button>
+      <input 
+        ref={fileInputRef}
+        type="file" 
+        className="hidden" 
+        accept="image/png, image/jpeg" 
+        onChange={handleFileChange}
+        disabled={uploading}
+      />
+      <div className="error-message-space">
         {serverError && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                {serverError}
-            </div>
+          <p className="error-message">{serverError}</p>
         )}
+      </div>
     </div>
     )}
   </>

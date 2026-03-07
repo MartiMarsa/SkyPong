@@ -175,7 +175,9 @@ Colors are defined in `front/app/globals.css` inside the `@theme` block:
 }
 ```
 
-### Customize Focus & Border Colors
+### Customize 
+
+& Border Colors
 
 **File**: `front/app/globals.css` (lines 29-33)
 

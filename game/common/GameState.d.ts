@@ -32,6 +32,7 @@ export declare class MyGameState extends Schema {
     winner: string;
     gameOver: boolean;
     gameStarted: boolean;
+    isPaused: boolean;
     player1Ready: boolean;
     player2Ready: boolean;
     player2Joined: boolean;
