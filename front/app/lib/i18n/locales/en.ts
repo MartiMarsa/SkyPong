@@ -6,7 +6,7 @@ const en = {
         lable: "Go to Home",
     },
     user: {
-        hi: (name) =>(`Hi, ${name}!`),
+        hi: ({name, className, url}) =>(`Hi, <a href="${url}" class="${className}"> ${name}</a>!`),
         nickname: "Nickname",
         winphrase: "Win Phrase",
         userData: "User Data",
