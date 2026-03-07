@@ -18,8 +18,22 @@ const fastify = Fastify({ logger: true });
 
 fastify.register(cookie, { secret: 'cookie-secret' });
 
-const PROFILE_SERVICE_URL = process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:5000';
-const SERVICE_TOKEN = process.env.SERVICE_TOKEN ?? 'secret';
+const PROFILE_SERVICE_URL = process.env.PROFILE_SERVICE_URL!;
+
+if (!process.env.PROFILE_SERVICE_URL) {
+    throw new Error("PROFILE_SERVICE_URL env variable is required");
+}
+
+console.log("[auth] Profile service URL:", PROFILE_SERVICE_URL);
+
+
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN!;
+
+if (!process.env.SERVICE_TOKEN) {
+  	throw new Error("SERVICE_TOKEN env variable is required");
+}
+
+console.log("[auth] Auth service token:", SERVICE_TOKEN);
 
 
 const cookieOpts = {

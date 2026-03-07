@@ -42,7 +42,7 @@ help:
 	@echo "  make exec-game-front -> shell dentro de game-frontend"
 	@echo ""
 
-config:
+config: env
 	cp -v $(COMPOSE_TEMPLATE) $(COMPOSE_FILE)
 	chmod 777 $(CONFIG_PATH)
 	./$(CONFIG_PATH)
@@ -108,3 +108,13 @@ exec-game:
 
 exec-game-front:
 	$(DC) $(DCFLAGS) exec game-frontend sh
+
+.PHONY: env
+
+env:
+	@if [ ! -f .env ]; then \
+		echo "📄 Creating .env from .env.example"; \
+		cp .env.example .env; \
+	else \
+		echo "✅ .env already exists"; \
+	fi
