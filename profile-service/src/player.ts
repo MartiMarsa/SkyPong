@@ -15,10 +15,32 @@ const DEFAULT_AVATAR = '/static/default-avatar.webp';
 // --- DB ---
 const db = getDbHelpers(getProfileDB());
 
-const AUTH_API = process.env.AUTH_SERVICE_URL ?? 'http://auth-service:8081';
-const STATS_API = process.env.STATS_SERVICE_URL ?? 'http://statistics-service:6000';
+const AUTH_API = process.env.AUTH_SERVICE_URL!;
 
-const SERVICE_TOKEN = process.env.SERVICE_TOKEN || 'secret';
+if (!process.env.AUTH_SERVICE_URL) {
+    throw new Error("AUTH_SERVICE_URL env variable is required");
+}
+
+console.log("[profile] Auth service URL:", AUTH_API);
+
+const STATS_API = process.env.STATS_SERVICE_URL!;
+
+if (!process.env.STATS_SERVICE_URL) {
+    throw new Error("STATS_SERVICE_URL env variable is required");
+}
+
+console.log("[profile] Statistics service URL:", STATS_API);
+
+
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN!;
+
+if (!process.env.SERVICE_TOKEN) {
+    throw new Error("SERVICE_TOKEN env variable is required");
+}
+
+console.log("[profile] Auth service token:", SERVICE_TOKEN);
+
+
 // --- TYPES ---
 
 interface UpdatePlayerInfo {

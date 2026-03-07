@@ -77,6 +77,8 @@ Defines a minimal container environment with:
 ```
 FROM python:3.12-alpine
 
+RUN apk add --no-cache bash netcat-openbsd ca-certificates
+
 RUN pip install --no-cache-dir sqlite-web==0.7.1 flask==2.3.3
 
 WORKDIR /app
@@ -141,9 +143,11 @@ PORT=9000
 # Directory Structure
 
 ```
-service/
+sqlite-web/
 │
+├── docker-compose-sqlite.yml
 ├── Dockerfile
+├── Makefile
 ├── README.md
 └── start.sh
 ```
@@ -183,9 +187,7 @@ docker build -t sqlite-viewer .
 ## Run the container
 
 ```
-docker run -p 8080:8080 \
-  -v $(pwd)/data:/data \
-  sqlite-viewer
+make all
 ```
 
 ---
@@ -204,7 +206,8 @@ Starting sqlite-web on 8080 for databases:
 The web interface will then be available at:
 
 ```
-http://localhost:8080
+http://localhost:8978
+password required
 ```
 
 ---

@@ -97,8 +97,6 @@ services:
         condition: service_started
       statistics-service:
         condition: service_started
-      sqlite-web:
-        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/nginx_status >/dev/null 2>&1 || exit 1"]
       interval: 10s
@@ -122,6 +120,7 @@ services:
     environment:
     - NODE_ENV=development
     - WATCHPACK_POLLING=true
+    - NEXT_PUBLIC_USE_NGINX_WS_PROXY=true
   # ────────────────────────────────────────────
   # MICROSERVICIOS
   # ────────────────────────────────────────────
@@ -148,6 +147,10 @@ services:
       - GID=${GID}
       - NODE_ENV=production
       - SERVICE_NAME=auth-service
+      - SERVICE_TOKEN=${SERVICE_TOKEN}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL}
+      - STATS_SERVICE_URL=${STATS_SERVICE_URL}
       # Optional: point to mounted JWT keys
       # - JWT_PRIVATE_KEY_PATH=/run/secrets/jwt-private.pem
       # - JWT_PUBLIC_KEY_PATH=/run/secrets/jwt-public.pem
@@ -173,6 +176,10 @@ services:
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=game-service
+      - SERVICE_TOKEN=${SERVICE_TOKEN}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL}
+      - STATS_SERVICE_URL=${STATS_SERVICE_URL}
       - PORT=2567
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:2567/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
@@ -209,6 +216,10 @@ services:
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=profile-service
+      - SERVICE_TOKEN=${SERVICE_TOKEN}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL}
+      - STATS_SERVICE_URL=${STATS_SERVICE_URL}
       - PROFILE_DATA_DIR=/app/data
       - JWT_PUBLIC_KEY_PATH=/app/keys/jwt-public.pem
     volumes:
@@ -235,6 +246,10 @@ services:
     environment:
       - NODE_ENV=production
       - SERVICE_NAME=statistics-service
+      - SERVICE_TOKEN=${SERVICE_TOKEN}
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
+      - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL}
+      - STATS_SERVICE_URL=${STATS_SERVICE_URL}
       - STATS_DATA_DIR=/app/data
     volumes:
       - PLACEHOLDER_STATISTICS:/app/data
@@ -273,31 +288,6 @@ services:
         condition: service_healthy
     command: ["node", "/app/seed.js"]
 #    restart: "no"
-
-  # ────────────────────────────────────────────
-  # DB WEB
-  # ────────────────────────────────────────────
-  sqlite-web:
-    container_name: sqlite-web
-    build: ./sqlite-web
-    restart: unless-stopped
-    ports:
-     - "8978:8080"
-    environment:
-      - PORT=8080
-    volumes:
-      - ./volumes:/data:ro
-    networks:
-      - internal
-    depends_on:
-      auth-service:
-        condition: service_healthy
-      profile-service:
-        condition: service_healthy
-      statistics-service:
-        condition: service_healthy
-      db-seed:
-        condition: service_completed_successfully
 
   # ────────────────────────────────────────────
   # EXPORTERS / MONITORING
@@ -374,11 +364,15 @@ services:
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./nginx-gateway/certs:/etc/grafana/certs:ro
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
       - GF_AUTH_ANONYMOUS_ENABLED=false
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_PROTOCOL=https
+      - GF_SERVER_CERT_FILE=/etc/grafana/certs/cert.pem
+      - GF_SERVER_CERT_KEY=/etc/grafana/certs/key.pem
     ports:
       - "3001:3000"
     depends_on:

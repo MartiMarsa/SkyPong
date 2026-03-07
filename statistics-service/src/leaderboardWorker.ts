@@ -5,9 +5,22 @@ import * as StatsTypes from './stats.types';
 import * as StatsConst from './stats.const';
 
 // --- CONFIG ---
-const PROFILE_API = process.env.PROFILE_SERVICE_URL ?? 'http://profile-service:5000';
+const PROFILE_API = process.env.PROFILE_SERVICE_URL!;
 
-const TOKEN = process.env.SERVICE_TOKEN || 'secret'; // process.env.SERVICE_TOKEN;
+if (!process.env.PROFILE_SERVICE_URL) {
+    throw new Error("PROFILE_SERVICE_URL env variable is required");
+}
+
+console.log("[stats: leaderboardWorker] Profile service URL:", PROFILE_API);
+
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN!;
+
+if (!process.env.SERVICE_TOKEN) {
+    throw new Error("SERVICE_TOKEN env variable is required");
+}
+
+console.log("[stats: leaderboardWorker] Auth service token:", SERVICE_TOKEN);
+
 let interval = 2000;
 const MAX_FAILURES = 5;
 
@@ -29,7 +42,7 @@ async function syncOnce(): Promise<{ players: StatsTypes.PlayerStat[]; last: str
 
       	const res = await axios.get(`${PROFILE_API}/internal/profile/leaderboard/updates`, {
 	    	params: { since: lastSync },
-	    	headers: { Authorization: `Bearer ${TOKEN}` },
+	    	headers: { Authorization: `Bearer ${SERVICE_TOKEN}` },
 	    	timeout: 5000
       	});
 
@@ -166,7 +179,7 @@ async function getProfiles(userIds: string[]) {
     { userIds },
     {
       headers: {
-        Authorization: `Bearer ${TOKEN}`
+        Authorization: `Bearer ${SERVICE_TOKEN}`
       }
     }
   );
