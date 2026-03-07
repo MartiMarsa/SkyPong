@@ -5,9 +5,6 @@ const en = {
         description: "A celestial Pong experience",
         lable: "Go to Home",
     },
-    hero: {
-        howToPlay: "How to play?",
-    },
     user: {
         hi: (name) =>(`Hi, ${name}!`),
         nickname: "Nickname",
@@ -189,7 +186,8 @@ const en = {
 
 <h2>3. Do we share your data?</h2>
 <p>Who would even want it? Neither Google nor Facebook care how many times you’ve lost at Pong against a teammate. We don’t sell your data, mainly because we don’t know how to set up a payment gateway without <code>Docker</code> exploding.</p>
-
+        login: "Login",
+        signUp: "SignUp",
 <h2>4. Information Security</h2>
 <div class="data-box">
     if (data.isSafe()) { <br>
@@ -253,6 +251,8 @@ const en = {
         settings: "Settings",
         logout: "Log out",
         goBack: "Go back",
+        login: "Login",
+        signUp: "SignUp",
     },
     player: {
         wins: "Wins",

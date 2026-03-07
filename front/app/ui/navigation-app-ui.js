@@ -110,10 +110,11 @@ export default function NavigationAppUI({
           // Guest users: Login/Sign Up buttons
           <>
             <Button href="/login" variant="secondary" size="md" font="display">
-              Login
+            {console.info("Navigation: ", t.navigation)}
+              {t?.navigation?.login}
             </Button>
             <Button href="/signup" variant="primary" size="md" font="display">
-              Sign up
+              {t?.navigation?.signUp || 'SignUp'}
             </Button>
           </>
         ) : (
@@ -153,7 +154,7 @@ export default function NavigationAppUI({
                     font="body"
                     onClick={handleLogout}
                   >
-                    {t.navigation.logout}
+                    {t?.navigation?.logout || 'Logout'}
                   </Button>
                 </div>
               </>

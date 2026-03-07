@@ -5,9 +5,6 @@ const it = {
         description: "Un'esperienza celestiale di Pong",
         lable: "Vai alla Home",
     },
-    hero: {
-        howToPlay: "Come giocare?",
-    },
     user: {
         hi: (name) =>(`Ciao, ${name}!`),
         nickname: "Nickname",
@@ -165,7 +162,10 @@ const it = {
         privacyPage: {
             title: "Privacy (O quel che ne resta)",
             content: `<p>In questo progetto prendiamo la tua privacy sul serio quanto prendiamo i <em>memory leak</em> nel progetto <code>cub3d</code>: ci spaventano, ma a volte li ignoriamo finché qualcuno non ci valuta.</p>
+    navigation: {
 
+        logout: "Logout",
+    },
 <hr>
 
 <h2>1. Quali dati raccogliamo?</h2>
@@ -250,6 +250,8 @@ const it = {
         settings: "Impostazioni",
         logout: "Disconnetti",
         goBack: "Indietro",
+        login: "Entrar",
+        signUp: "Registrarse",
     },
     player: {
         wins: "Vittorie",
