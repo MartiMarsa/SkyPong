@@ -14,7 +14,7 @@ export default function LeaderboardPage()
         <>
             <main className="min-h-dvh bg-page-bg flex flex-col">
                 <NavigationAppUI />
-                <div className="flex flex-1 items-start justify-center py-8">
+                <div className="flex flex-1 items-start justify-center page-wrapper-with-nav">
                     <div className="page-content-container-scrollable">
                         <div className="content-container-xl">
                             <h1>{t?.leaderboardPage?.title || 'Leaderboard'}</h1>

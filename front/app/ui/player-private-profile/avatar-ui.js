@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '../../context/auth-context';
 import { useTranslation } from '../../hooks/use-translation';
 import { Button } from '../base';
@@ -11,6 +11,7 @@ export default function AvatarUpload() {
   const [uploading, setUploading] = useState(false);
   const [serverError, setServerError] = useState('');
   const { t } = useTranslation(); 
+  const fileInputRef = useRef(null);
   
   // Imagen por defecto si no hay una previa ni una nueva seleccionada
   const defaultAvatar =  user?.avatarUrl || "/avatar/default-avatar.webp"; 
@@ -82,6 +83,12 @@ const getCookie = (name) => {
     }
   };
 
+  const handleButtonClick = () => {
+    if (fileInputRef.current && !uploading) {
+      fileInputRef.current.click();
+    }
+  };
+
   return (
     <>
     { authLoading ? (<Loader />) : (
@@ -99,23 +106,23 @@ const getCookie = (name) => {
         )}
       </div>
 
-      <label className="cursor-pointer">
-        <Button
-          variant="secondary"
-          size="md"
-          disabled={uploading}
-          type="button"
-        >
-          {uploading ? (t.common?.loading || 'Loading...') : (t.avatar?.changeImage || 'Change Image')}
-        </Button>
-        <input 
-          type="file" 
-          className="hidden" 
-          accept="image/png, image/jpeg" 
-          onChange={handleFileChange}
-          disabled={uploading}
-        />
-      </label>
+      <Button
+        variant="secondary"
+        size="md"
+        disabled={uploading}
+        type="button"
+        onClick={handleButtonClick}
+      >
+        {uploading ? (t.common?.loading || 'Loading...') : (t.avatar?.changeImage || 'Change Image')}
+      </Button>
+      <input 
+        ref={fileInputRef}
+        type="file" 
+        className="hidden" 
+        accept="image/png, image/jpeg" 
+        onChange={handleFileChange}
+        disabled={uploading}
+      />
       <div className="error-message-space">
         {serverError && (
           <p className="error-message">{serverError}</p>

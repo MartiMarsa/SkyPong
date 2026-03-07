@@ -1,25 +1,24 @@
 'use client';
 
-import  { useState, useEffect } from 'react';
-import { useTranslation } from '../hooks/use-translation';
+import { useState, useEffect } from 'react';
+import { useTranslation } from '../context/language-context';
 import NavigationAppUI from '../ui/navigation-app-ui';
 import { useAuth } from '../context/auth-context';
 import { useRouter } from 'next/navigation';
 import PlayerInfo from '../ui/player-public-profile/player-info-ui';
-import PlayerAchievementsUI from '../ui/player-public-profile/player-achievements-ui';
 import AchievementsSection from '../ui/player-public-profile/AchievementsSection';
 import FriendsSection from '../ui/player-public-profile/FriendsSection';
 import GameHistory from '../ui/player-public-profile/GameHistory';
+import Leaderboard from '../ui/Leaderboard';
 import FooterTermsPolicy from '../ui/footer-terms-policy';
+import { Tabs } from '../ui/base';
 
-export default function ProfilePagePublic()
-{
-    const t = useTranslation();
+export default function ProfilePageMe() {
+    const { t } = useTranslation();
     const router = useRouter();
     const [profile, setProfile] = useState(null);
-    const { user, authloading} = useAuth();
-    const [isLoading, setIsLoading] = useState(true);
-    const [serverError, setServerError] = useState('');
+    const { user, authloading } = useAuth();
+    const [activeTab, setActiveTab] = useState('history');
 
     const getCookie = (name) => {
         return document.cookie
@@ -29,31 +28,108 @@ export default function ProfilePagePublic()
     };
 
     useEffect(() => {
-        console.info("User session: ", user);
         if (authloading) return;
         
-        // 2. Si ya terminó de cargar y NO hay usuario, mandamos a home.
         if (!user) {
             router.push('/');
             return;
         }
         setProfile(user);
-    }, [user, authloading, profile, router]);
+    }, [user, authloading, router]);
+
+    // Count achievements (locked vs unlocked)
+    const achievementCount = profile?.stats ? (() => {
+        const stats = profile.stats;
+        let count = 0;
+        if (stats.total_games >= 1) count++;
+        if (stats.total_games >= 10) count++;
+        if (stats.total_games >= 50) count++;
+        if (stats.total_games >= 100) count++;
+        if (stats.wins >= 1) count++;
+        if (stats.wins >= 10) count++;
+        if (stats.wins >= 50) count++;
+        if (stats.total_games > 0 && (stats.wins / stats.total_games) >= 0.7) count++;
+        return count;
+    })() : 0;
+
+    // Count friends
+    const [friendsCount, setFriendsCount] = useState(0);
+    useEffect(() => {
+        if (!profile?.id) return;
+        const csrf = getCookie('csrftoken');
+        fetch('/api/profile/friends', {
+            headers: { 'x-csrf-token': csrf || '' },
+            credentials: 'include',
+        })
+            .then(res => res.json())
+            .then(data => setFriendsCount(Array.isArray(data) ? data.length : 0))
+            .catch(() => setFriendsCount(0));
+    }, [profile?.id]);
+
+    const tabs = [
+        {
+            key: 'history',
+            label: t.profile.tabs.history,
+            icon: '📜',
+            badge: profile?.stats?.total_games || undefined,
+        },
+        {
+            key: 'friends',
+            label: t.profile.tabs.friends,
+            icon: '👥',
+            badge: friendsCount > 0 ? friendsCount : undefined,
+        },
+        {
+            key: 'achievements',
+            label: t.profile.tabs.achievements,
+            icon: '🏆',
+            badge: achievementCount > 0 ? achievementCount : undefined,
+        },
+        {
+            key: 'leaderboard',
+            label: t.profile.tabs.leaderboard,
+            icon: '📊',
+        },
+    ];
+
     return (
         <main className="min-h-dvh bg-page-bg flex flex-col">
-            <NavigationAppUI  />
-            <div className="flex flex-1 items-start justify-center py-8">
+            <NavigationAppUI />
+            <div className="flex flex-1 items-start justify-center page-wrapper-with-nav">
                 <div className="page-content-container-scrollable">
                     <div className="content-container-xl">
-                        <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
-                        { profile && <PlayerInfo profile={profile} />}
-                        { profile && <GameHistory userId={profile.id} />}
-                        { profile && <FriendsSection
-                            currentUserId={profile.id}
-                            csrfToken={getCookie()}
-                            onNavigateProfile={(id) => router.push(`/${id}`)}
-                            />}
-                        { profile && <AchievementsSection t={t.t} stats={profile?.stats} /> }
+                        {/* Player Info - Always visible */}
+                        {profile && <PlayerInfo profile={profile} />}
+
+                        {/* Tabs */}
+                        {profile && (
+                            <div className="profile-tabs-container">
+                                <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+
+                                {/* Tab Content */}
+                                <div className="profile-tab-content">
+                                    {activeTab === 'history' && (
+                                        <GameHistory userId={profile.id} />
+                                    )}
+
+                                    {activeTab === 'friends' && (
+                                        <FriendsSection
+                                            currentUserId={profile.id}
+                                            csrfToken={getCookie('csrftoken') || ''}
+                                            onNavigateProfile={(id) => router.push(`/${id}`)}
+                                        />
+                                    )}
+
+                                    {activeTab === 'achievements' && (
+                                        <AchievementsSection stats={profile?.stats} />
+                                    )}
+
+                                    {activeTab === 'leaderboard' && (
+                                        <Leaderboard />
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -63,4 +139,3 @@ export default function ProfilePagePublic()
         </main>
     );
 }
-

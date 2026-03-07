@@ -27,9 +27,49 @@ export default function NavigationAppUI({
   const { user, logout } = useAuth();
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNavVisible, setIsNavVisible] = useState(true);
   const dropdownRef = useRef(null);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
 
   const showGuestActions = !user;
+
+  // Hide/show navigation on scroll (mobile only)
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          
+          // Only hide on mobile (width < 768px)
+          if (window.innerWidth < 768) {
+            // Show nav when scrolling up or at top
+            if (currentScrollY < lastScrollY.current || currentScrollY < 10) {
+              setIsNavVisible(true);
+            } 
+            // Hide nav when scrolling down (after 50px to avoid jitter)
+            else if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+              setIsNavVisible(false);
+              setIsDropdownOpen(false); // Close dropdown when hiding nav
+            }
+          } else {
+            // Always show on desktop
+            setIsNavVisible(true);
+          }
+          
+          lastScrollY.current = currentScrollY;
+          ticking.current = false;
+        });
+        ticking.current = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -60,7 +100,7 @@ export default function NavigationAppUI({
   };
 
   return (
-    <nav className={styles.nav}>
+    <nav className={`${styles.nav} ${isNavVisible ? 'nav-visible' : 'nav-hidden'}`}>
       {/* Left side: SKYPONG logo (hidden on homepage) */}
       <SkypongLogo />
 
