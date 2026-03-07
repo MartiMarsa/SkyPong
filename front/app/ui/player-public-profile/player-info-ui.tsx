@@ -88,7 +88,7 @@ export default function PlayerInfo({ profile, csrfToken }: PlayerInfoProps) {
           variant="danger"
         />
       </div>
-      { user.id !== profile.id ? (<div className="">
+      {user && user.id !== profile.id ? (<div className="">
         <AddFriendButton currentUserId={user?.id} targetId={profile.id} csrfToken={csrfToken} />
       </div>) : ("") }
     </>
