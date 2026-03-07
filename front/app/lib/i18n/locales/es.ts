@@ -8,9 +8,6 @@ const es = {
     description: "Una experiencia celestial de Pong",
     lable: "Ir a la Home",
     },
-    hero: {
-        howToPlay: "¿Cómo jugar?",
-    },
     user: {
         hi: (name) =>(`¡Hola, ${name}!`),
         nickname: "Nickname",
@@ -264,6 +261,8 @@ const es = {
         settings: "Ajustes",
         logout: "Cerrar sesión",
         goBack: "Volver",
+        login: "Entrar",
+        signUp: "Registrarse",
     },
     player: {
         wins: "Victorias",
