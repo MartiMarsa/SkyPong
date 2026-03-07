@@ -15,6 +15,9 @@ export class ClientBall extends BaseBall {
     private rotationAxis: Vector3 = new Vector3();
     private interpolationEngine: InterpolationEngine;
     private scene: Scene;
+    private lastVelocity: Vector3 = new Vector3();
+    private lastDeltaTime: number = 0;
+    private tempVelocity: Vector3 = new Vector3();
 
     constructor(scene: Scene) {
         super(scene);
@@ -61,6 +64,10 @@ export class ClientBall extends BaseBall {
         const justEnabled = enabled && !this.mesh.isEnabled();
 
         this.mesh.setEnabled(enabled);
+        this.lastDeltaTime = deltaTime;
+        if (targetVelocity) {
+            this.lastVelocity.copyFrom(targetVelocity);
+        }
 
         if (enabled) {
             this.targetPosition.copyFrom(targetPosition);
@@ -91,12 +98,33 @@ export class ClientBall extends BaseBall {
     }
 
     private updateRotation(): void {
-        const angle = this.interpolationEngine.calculateRollingRotation(
-            this.mesh.position,
-            this.previousPosition,
-            GMCN.BALL.RADIUS,
-            this.rotationAxis
-        );
+        const SERVER_FPS = 60;
+        const hasVelocity = this.lastVelocity.lengthSquared() > 0.000001;
+        let angle: number;
+
+        if (hasVelocity) {
+            // Velocity-based rotation: physically accurate, immune to lerp damping
+            // Convert server velocity from units/frame to units/sec
+            this.tempVelocity.set(
+                this.lastVelocity.x * SERVER_FPS,
+                this.lastVelocity.y * SERVER_FPS,
+                this.lastVelocity.z * SERVER_FPS
+            );
+            angle = this.interpolationEngine.calculateRollingRotationFromVelocity(
+                this.tempVelocity,
+                GMCN.BALL.RADIUS,
+                this.lastDeltaTime,
+                this.rotationAxis
+            );
+        } else {
+            // Fallback: position-based rotation when no velocity data available
+            angle = this.interpolationEngine.calculateRollingRotation(
+                this.mesh.position,
+                this.previousPosition,
+                GMCN.BALL.RADIUS,
+                this.rotationAxis
+            );
+        }
 
         if (angle !== 0) {
             this.mesh.rotate(this.rotationAxis, angle, Space.WORLD);
