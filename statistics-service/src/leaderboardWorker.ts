@@ -179,7 +179,7 @@ async function getProfiles(userIds: string[]) {
     { userIds },
     {
       headers: {
-        Authorization: `Bearer ${TOKEN}`
+        Authorization: `Bearer ${SERVICE_TOKEN}`
       }
     }
   );
