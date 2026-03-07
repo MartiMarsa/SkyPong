@@ -1,10 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cat > .env <<EOF
-UID=$(id -u)
-GID=$(id -g)
-EOF
+ENV_FILE=".env"
+EXAMPLE_FILE=".env.example"
+
+# 1. CREATE .env FROM .env.example IF NOT EXISTS
+if [ ! -f "$ENV_FILE" ]; then
+  echo "📄 Creating .env from .env.example"
+  cp "$EXAMPLE_FILE" "$ENV_FILE"
+fi
+
+# 2. ADD VARIABLES WHICH IXIST IN .env.example AND DO NOT EXIST IN .env
+while IFS= read -r line; do
+  [[ -z "$line" || "$line" =~ ^# ]] && continue
+
+  key=$(echo "$line" | cut -d '=' -f1)
+
+  if ! grep -q "^${key}=" "$ENV_FILE"; then
+    echo "$line" >> "$ENV_FILE"
+    echo "➕ Added missing variable $key"
+  fi
+done < "$EXAMPLE_FILE"
+
+# 3. RENOVATE UID/GID
+system=$(uname -s)
+
+if [[ $system == "Linux" ]]; then
+  sed -i "s/^UID=.*/UID=$(id -u)/" "$ENV_FILE" 2>/dev/null || echo "UID=$(id -u)" >> "$ENV_FILE"
+  sed -i "s/^GID=.*/GID=$(id -g)/" "$ENV_FILE" 2>/dev/null || echo "GID=$(id -g)" >> "$ENV_FILE"
+fi
+
+if [[ $system == "Darwin" ]]; then
+  sed -i '' "s/^UID=.*/UID=$(id -u)/" "$ENV_FILE" 2>/dev/null || echo "UID=$(id -u)" >> "$ENV_FILE"
+  sed -i '' "s/^GID=.*/GID=$(id -g)/" "$ENV_FILE" 2>/dev/null || echo "GID=$(id -g)" >> "$ENV_FILE"
+fi
+
 DOCKCOMPS="docker-compose.yml"
 
 # CAMBIAR BASE DEPENDIENDO DEL HOST (42 O TU CASA)
