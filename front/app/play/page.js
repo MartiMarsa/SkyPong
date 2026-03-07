@@ -79,7 +79,7 @@ function GameOverlay({ gameUrl, onExit }) {
   }, [onExit]);
 
   return (
-    <div className="fixed inset-0 z-[1000] bg-black">
+    <div className="fixed inset-0 z-[1000] bg-white">
       <iframe
         ref={iframeRef}
         src={gameUrl}
@@ -124,30 +124,30 @@ export default function PlayPage() {
   }, [user]);
 
   useEffect(() => {
-    if (state !== STATES.LOADING && state !== STATES.PLAYING) {
+    if (state !== STATES.PLAYING) {
       return undefined;
     }
 
-    const finalConfig = {
-      ...config,
-      playerId: user?.id,
-      playerName: config.playerName || user?.nickname || 'Player 1',
-      language: locale,
-    };
-    const encoded = encodeConfig(finalConfig);
-    const url = `/game-engine/canvas?config=${encodeURIComponent(encoded)}`;
-
-    if (state === STATES.LOADING) {
-      const loadTimer = window.setTimeout(() => {
-        setGameUrl(url);
-        setState(STATES.PLAYING);
-      }, 800);
-      return () => window.clearTimeout(loadTimer);
-    }
-
-    setGameUrl(url);
-    return undefined;
-  }, [config, state, user]);
+    // Only generate URL if we're in PLAYING state but don't have a URL yet
+    // This handles the ONLINE_WAITING -> PLAYING transition
+    const initTimer = window.setTimeout(() => {
+      setGameUrl((currentUrl) => {
+        // Don't overwrite if URL is already set
+        if (currentUrl) return currentUrl;
+        
+        const finalConfig = {
+          ...config,
+          playerId: user?.id,
+          playerName: config.playerName || user?.nickname || 'Player 1',
+          language: locale,
+        };
+        const encoded = encodeConfig(finalConfig);
+        return `/game-engine/canvas?config=${encodeURIComponent(encoded)}`;
+      });
+    }, 50);
+    
+    return () => window.clearTimeout(initTimer);
+  }, [config, state, user, locale]);
 
   useEffect(() => {
     if (state !== STATES.ONLINE_WAITING) {
@@ -155,7 +155,7 @@ export default function PlayPage() {
     }
 
     const readyTimer = window.setTimeout(() => {
-      setState(STATES.LOADING);
+      setState(STATES.PLAYING);
     }, 1500);
 
     return () => window.clearTimeout(readyTimer);
@@ -181,29 +181,30 @@ export default function PlayPage() {
   };
 
   const startLoadingWithConfig = (nextConfig) => {
+    // Encode and set game URL directly to avoid race condition
+    const finalConfig = {
+      ...nextConfig,
+      playerId: user?.id,
+      playerName: nextConfig.playerName || user?.nickname || 'Player 1',
+      language: locale,
+    };
+    const encoded = encodeConfig(finalConfig);
+    const url = `/game-engine/canvas?config=${encodeURIComponent(encoded)}`;
+    
     setConfig(nextConfig);
-    setState(STATES.LOADING);
+    setGameUrl(url);
+    setState(STATES.PLAYING);
   };
 
-  if (state === STATES.LOADING) {
-    return (
-      <main className="h-dvh bg-page-bg text-slate-900 flex flex-col">
-        <NavigationAppUI userURL={hasCredentials ? '/user-home' : '/login'} compactGuestActions />
-        <div className="flex flex-1 items-center justify-center">
-          <div className="page-content-container">
-            <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 py-4 md:gap-8 md:py-6 lg:gap-10 lg:py-10">
-              <PlayPanel title="Pong" subtitle={t.play.loadingGame} />
-            </section>
-          </div>
+  if (state === STATES.PLAYING) {
+    if (!gameUrl) {
+      // Show a minimal loading state while gameUrl is being generated
+      return (
+        <div className="fixed inset-0 z-[1000] bg-white flex items-center justify-center">
+          <div className="text-2xl font-semibold text-slate-900">Loading...</div>
         </div>
-        <div className="mt-auto pb-4">
-          <FooterTermsPolicy />
-        </div>
-      </main>
-    );
-  }
-
-  if (state === STATES.PLAYING && gameUrl) {
+      );
+    }
     return <GameOverlay gameUrl={gameUrl} onExit={handleGameExit} />;
   }
 

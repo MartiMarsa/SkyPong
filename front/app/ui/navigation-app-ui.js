@@ -129,13 +129,6 @@ export default function NavigationAppUI({
             {/* Dropdown menu */}
             {isDropdownOpen && (
               <>
-                {/* Overlay backdrop */}
-                <div
-                  className="fixed inset-0 z-40"
-                  style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}
-                  onClick={() => setIsDropdownOpen(false)}
-                />
-
                 {/* Dropdown menu content */}
                 <div className="dropdown-menu-avatar">
                   <Button
