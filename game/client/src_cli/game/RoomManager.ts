@@ -32,7 +32,15 @@ export interface RoomManagerCallbacks {
         p2Color: string;
         isPlayer2: boolean;
     }) => void;
-    onBallUpdate?: (params: { x: number; y: number; z: number; enabled: boolean }) => void;
+    onBallUpdate?: (params: { 
+        x: number; 
+        y: number; 
+        z: number;
+        vx: number;
+        vy: number;
+        vz: number;
+        enabled: boolean 
+    }) => void;
     onBallCollision?: (params: {
         lastImpactX: number;
         lastImpactZ: number;
@@ -181,6 +189,9 @@ export class RoomManager {
                 x: room.state.ball.x,
                 y: room.state.ball.y,
                 z: room.state.ball.z,
+                vx: room.state.ball.vx,
+                vy: room.state.ball.vy,
+                vz: room.state.ball.vz,
                 enabled: room.state.ball.enabled,
             });
         });

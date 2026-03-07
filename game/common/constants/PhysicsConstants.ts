@@ -11,7 +11,7 @@ export const PHYSICS = {
         BOUNCE_RESTITUTION: 1.0,
         FRICTION: 0.0,
         MASS: 1.0,
-        MAX_SPEED: 1.0,
+        MAX_SPEED: 0.6,  // Reduced from 1.0 to prevent physics breakdown at high speeds
     },
     
     PADDLE: {
@@ -34,14 +34,11 @@ export const PHYSICS = {
     
     /** Physics response parameters for collisions and ball behavior */
     RESPONSE: {
-        /** Speed boost multiplier when ball bounces off walls */
-        WALL_SPEED_BOOST: 1.02,
-
         /** Maximum bounce angle in degrees when ball hits paddle edge */
         MAX_BOUNCE_ANGLE_DEG: 70,
 
-        /** Speed multiplier for edge hits on paddle (0.2 = 20% speed increase at edges) */
-        EDGE_SPEED_MULTIPLIER: 0.2,
+        /** Constant speed boost multiplier when ball hits paddle (1.05 = 5% increase per paddle hit) */
+        PADDLE_SPEED_BOOST: 1.05,
     },
 
     /** Ball launch parameters for serving */
@@ -56,36 +53,31 @@ export const PHYSICS = {
 } as const;
 
 export const INTERPOLATION = {
-    DEFAULT_SPEED: 18.0,      // Increased for faster response
-    COLLISION_SPEED: 35.0,    // Much higher speed during collisions for tighter sync
+    DEFAULT_SPEED: 25.0,      // Increased from 20.0 for faster following with extrapolation
+    COLLISION_SPEED: 45.0,    // Increased from 40.0 for tighter sync during bounces
     PADDLE_SPEED: 0.1,
 
+    // Bounce constants removed in Approach A (not used)
     BOUNCE: {
-        MIN_SPEED: 0.012,     // Faster minimum for high-speed responsiveness
-        MAX_SPEED: 0.035,     // Higher max to keep up with fast ball
-        MIN_DISTANCE: 0.03,   // Smaller threshold for quicker phase transitions
+        MIN_SPEED: 0.012,     
+        MAX_SPEED: 0.035,     
+        MIN_DISTANCE: 0.03,   
     },
 } as const;
 
 // Client-server synchronization constants
 export const SYNC = {
     // Maximum allowed deviation between client visual ball and server authoritative position
-    // Tighter value (0.25) prevents visible desync at high speeds
-    MAX_DEVIATION: 0.25,
+    // Increased to 0.3 to allow more natural interpolation curve
+    MAX_DEVIATION: 0.3,
 
-    // Ignore collision data older than this (milliseconds)
-    // Reduced to 100ms for tighter sync at high speeds
+    // Collision event window - how long to use faster lerp speed after collision
+    // Increased to 150ms for smoother transition
+    COLLISION_WINDOW_MS: 150,
+
+    // Legacy constants (kept for compatibility, unused in Approach A)
     COLLISION_EXPIRY_MS: 100,
-
-    // Maximum duration for visual bounce animation (milliseconds)
-    // Reduced to 80ms - at MAX_SPEED=1.0, ball moves 0.08 units in 80ms
     MAX_BOUNCE_DURATION_MS: 80,
-
-    // Skip bounce animation if initial deviation exceeds this threshold
-    // Prevents animating backward when ball has already moved far past impact
     SKIP_BOUNCE_THRESHOLD: 0.4,
-
-    // Ball speed threshold to skip bounce animation entirely
-    // At speeds above this, bounce visual effect is skipped for smoother sync
     HIGH_SPEED_THRESHOLD: 0.7,
 } as const;

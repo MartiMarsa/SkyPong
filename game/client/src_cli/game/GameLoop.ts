@@ -44,6 +44,10 @@ export class GameLoop {
   private _speedUpdateCounter: number = 0;
   private _inputSendCounter: number = 0;
 
+  // Velocity tracking for extrapolation and rotation
+  private _targetVelocity: Vector3 = new Vector3(0, 0, 0);
+  private _lastServerUpdateTime: number = 0;
+
   private _renderObserver: Observer<Scene> | null = null;
   private _renderObservable: any = null;
 
@@ -80,6 +84,14 @@ export class GameLoop {
       return;
     }
     this._targetPosition.set(x, y, z);
+    this._lastServerUpdateTime = performance.now();
+  }
+
+  public updateBallVelocity(vx: number, vy: number, vz: number): void {
+    if (vx === undefined || vy === undefined || vz === undefined || isNaN(vx) || isNaN(vy) || isNaN(vz)) {
+      return;
+    }
+    this._targetVelocity.set(vx, vy, vz);
   }
 
   public updatePaddlePosition(paddleIndex: 1 | 2, x: number, z: number): void {
@@ -117,6 +129,14 @@ export class GameLoop {
 
   public isPaused(): boolean {
     return this._isPaused;
+  }
+
+  /**
+   * Mark collision event for enhanced interpolation speed
+   * Called from Game.ts when server sends collision event
+   */
+  public notifyCollision(): void {
+    this._lastCollisionAt = performance.now();
   }
   
   public setInitialStates(
@@ -169,6 +189,28 @@ export class GameLoop {
       performance.now() - this._lastCollisionAt < CLIENT_TIMING.COLLISION.WINDOW_MS;
     const now = performance.now();
 
+    // Calculate extrapolation: predict where ball will be based on velocity
+    // This compensates for network latency and reduces visual lag
+    // NOTE: Server velocity is in units-per-frame, must convert to units-per-second
+    const SERVER_FPS = 60; // Server physics update rate
+    const timeSinceUpdate = now - this._lastServerUpdateTime;
+    
+    // During collision window, reduce extrapolation to avoid overshooting the correction
+    // Outside collision window, extrapolate more aggressively up to 150ms
+    const maxExtrapolation = collisionDetected ? 50 : 150; // Less aggressive during collision
+    const extrapolationTime = Math.min(timeSinceUpdate, maxExtrapolation);
+    
+    const extrapolatedPosition = this._targetPosition.clone();
+    
+    // Always extrapolate if we have velocity data and time has passed
+    if (extrapolationTime > 0) {
+      const extrapolationAmount = extrapolationTime / 1000; // Convert to seconds
+      // Convert velocity from units/frame to units/second by multiplying by FPS
+      extrapolatedPosition.x += this._targetVelocity.x * SERVER_FPS * extrapolationAmount;
+      extrapolatedPosition.y += this._targetVelocity.y * SERVER_FPS * extrapolationAmount;
+      extrapolatedPosition.z += this._targetVelocity.z * SERVER_FPS * extrapolationAmount;
+    }
+
     if (++this._speedUpdateCounter >= NETWORK.SYNC.SPEED_UPDATE_INTERVAL_FRAMES) {
       const elapsed = (now - this._lastSpeedSampleAt) / 1000;
       this._speed =
@@ -188,7 +230,14 @@ export class GameLoop {
     const ballLerpFactor = 1 - Math.exp(-ballSmoothingSpeed * (deltaTime / 1000));
     const paddleLerpFactor = 1 - Math.exp(-paddleSmoothingSpeed * (deltaTime / 1000));
 
-    this._ball.update(this._targetPosition, ballLerpFactor, this._isBallEnabled, deltaTime);
+    // Pass extrapolated position and velocity to ball
+    this._ball.update(
+      extrapolatedPosition, 
+      ballLerpFactor, 
+      this._isBallEnabled, 
+      deltaTime,
+      this._targetVelocity
+    );
     this._paddle.update(this._targetPaddlePosition, paddleLerpFactor, this._isPaddle1Enabled);
     this._paddle2.update(this._targetPaddle2Position, paddleLerpFactor, this._isPaddle2Enabled);
 
