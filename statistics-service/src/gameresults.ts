@@ -1,7 +1,7 @@
-import { getStatisticsDB } from './dbStats';
-import { getDbHelpers } from './helpers';
-import * as StatsTypes from './stats.types';
-import * as StatsEnums from './stats.enums';
+import { getStatisticsDB } from './database/dbStats';
+import { getDbHelpers } from './utils/helpers';
+import * as StatsTypes from './types/stats.types';
+import * as StatsEnums from './types/stats.enums';
 
 export { StatsEnums };
 

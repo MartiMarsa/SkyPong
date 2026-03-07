@@ -1,11 +1,11 @@
 import Fastify from 'fastify';
 import chalk from 'chalk';
-import { leaderboardLoop, getLeaderboardByIndex } from './leaderboardWorker';
-import { statisticsLoop } from './statsWorker';
+import { leaderboardLoop, getLeaderboardByIndex } from './workers/leaderboardWorker';
+import { statisticsLoop } from './workers/statsWorker';
 import { addGameStats, getGamesHistoryByUserId } from './gameresults';
-import { initStatisticsDB, getStatisticsDB, closeStatisticsDB } from './dbStats';
-import { initLeaderboardDB, getLeaderboardDB, closeLeaderboardDB } from './dbLeaderboard';
-import * as StatsTypes from './stats.types';
+import { initStatisticsDB, getStatisticsDB, closeStatisticsDB } from './database/dbStats';
+import { initLeaderboardDB, getLeaderboardDB, closeLeaderboardDB } from './database/dbLeaderboard';
+import * as StatsTypes from './types/stats.types';
 
 // --- ENV ---
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN!;
