@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
-import jwt from 'jsonwebtoken';
 import cookie from '@fastify/cookie';
+import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
 import chalk from 'chalk';
 import { randomUUID } from 'crypto';
@@ -8,8 +8,8 @@ import { signup, login, generateEmail } from './auth';
 import { initDB, getDB } from './db';
 import { initTokenDB, getTokenDB } from './dbTokens';
 import { privateKey, publicKey } from './keys';
-import { generateToken, deleteUserSession } from './token';
-import { createRefreshToken, verifyRefreshToken, revokeRefreshToken, revokeRefreshTokenById, isTokenRevoked } from './refresh';
+import { generateToken, deleteUserSession, startSessionCleanup } from './token';
+import { createRefreshToken, verifyRefreshToken, revokeRefreshToken, revokeRefreshTokenById, isTokenRevoked, refreshTokenCleanup } from './refresh';
 import { hashPassword, verifyPassword } from './password';
 import { signUpSchema, loginSchema, changePasswordSchema } from "./validation/checkInput";
 
@@ -47,7 +47,7 @@ const refreshOpts = {
     httpOnly: true,
     secure: true,
     sameSite: 'none' as const,
-    path: '/auth/refresh',
+    path: '/',
     maxAge: 7 * 24 * 3600,
 };
 
@@ -76,8 +76,6 @@ const CSRF_IGNORED_METHODS = new Set([
 const CSRF_EXCLUDED_PATHS = new Set([
     '/auth/signup',
     '/auth/login',
-    '/auth/refresh',      
-    '/auth/set-password',
     '/auth/logout'
 ]);
 
@@ -100,45 +98,91 @@ fastify.addHook('preHandler', async (req: any, reply) => {
 
 
 // --- AUTH MIDDLEWARE ---
-async function authentificate(req: any): Promise<any | null> {
-    
-    const token = req.cookies?.access_token;
-    
-	if (!token) return null;
-    
-	try {
-        const payload: any = jwt.verify(token, publicKey, {
-            algorithms: ['RS256'],
-			issuer: 'auth-service',
-			audience: 'transcendence',
-		});
+export async function authentificate(req: any, reply: any): Promise<any | null> {
+    const db = getDB();
 
-		const db = getDB();
-        
+    const accessToken = req.cookies?.access_token;
+    const refreshToken = req.cookies?.refresh_token;
+    const csrfToken = req.cookies?.csrf_token;
+
+    // Do checking of access_token
+    if (accessToken) {
+        try {
+            const payload: any = jwt.verify(accessToken, publicKey, {
+                algorithms: ['RS256'],
+                issuer: 'auth-service',
+                audience: 'transcendence',
+            });
+
+            const user = await new Promise<any>((res, rej) => {
+                db.get(
+                    `SELECT id, email, password_version, twofa_enabled, token_version, deleted_at 
+                     FROM users WHERE id = ?`,
+                    [payload.sub],
+                    (err, row) => (err ? rej(err) : res(row))
+                );
+            });
+
+            if (!user || user.deleted_at) return null;
+            if (payload.pv !== user.password_version) return null;
+            if (payload.tv !== user.token_version) return null;
+
+			console.log("[auth] Access token is valid" );
+
+            return user;
+
+        } catch (err) {
+            console.log('Access token expired or invalid');
+        }
+    }
+
+    // --- Do checking refresh_token if access_token not valid
+    if (!refreshToken) return null;
+
+    try {
+        const refreshPayload: any = await verifyRefreshToken(refreshToken);
+
+        if (await isTokenRevoked(refreshPayload.tokenId)) {
+			console.log("[auth] Refresh token is invalid" );
+		   	return null;
+		}
+
         const user = await new Promise<any>((res, rej) => {
-            db.get(`SELECT id, email, password_version, twofa_enabled, token_version, deleted_at FROM users WHERE id = ?`,
-                [payload.sub],
+            db.get(
+                `SELECT id, email, password_version, twofa_enabled, token_version, deleted_at 
+                 FROM users WHERE id = ?`,
+                [refreshPayload.sub],
                 (err, row) => (err ? rej(err) : res(row))
             );
         });
-        
+
         if (!user || user.deleted_at) return null;
-        
-        if (payload.pv !== user.password_version) return null;
-        
-        if (payload.tv !== user.token_version) return null;
-        
+
+		console.log("[auth] Refresh token is valid. Issue of new access token." );
+
+        const newAccess = await generateToken({
+            id: user.id,
+            password_version: user.password_version,
+            token_version: user.token_version,
+        });
+
+        reply.setCookie('access_token', newAccess, { ...cookieOpts, maxAge: 3600 });
+
+        if (!csrfToken) {
+            const newCsrf = randomUUID();
+            reply.setCookie('csrf_token', newCsrf, { httpOnly: false, secure: true, sameSite: 'none', path: '/' });
+        }
+
         return user;
-        
-	} catch (err) {
-        console.error("Error en jwt.verify:", err);
+    } catch (err) {
+        console.log('Refresh token invalid:');
         return null;
     }
 }
 
 async function requireAuth(req: any, reply: any) {
         
-        const user = await authentificate(req);
+        const user = await authentificate(req, reply);
         if (!user) {
             return reply.status(401).send(); // { error: 'Unauthorized' }
         }
@@ -150,16 +194,16 @@ async function requireAuth(req: any, reply: any) {
         req.user = user;
     }
     
-    async function requireGuest(req: any, reply: any) {
-        const user = await authentificate(req);
+async function requireGuest(req: any, reply: any) {
+        const user = await authentificate(req, reply);
         
         if (!user) return;
         
 		return reply.status(200).send({ id: user.id, email: user.email, username: 'HelloWorldPlayer', twofa_enabled: user.twofa_enabled });
     }
     
-    // --- VERIFICATION IF USER IS ALREADY LOGGED ---
-    fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
+// --- VERIFICATION IF USER IS ALREADY LOGGED ---
+fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply) => {
         
         const controller = new AbortController();
         
@@ -457,7 +501,7 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
                 dbToken.run(`UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?`, [userId]);
 
                 // 2. Borrar directamente (si el usuario no existe, this.changes será 0)
-                db.run(`UPDATE users SET email = ?, password_version = password_version + 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?`, [mockEmail, userId], function (err) {
+                db.run(`UPDATE users SET email = ?, password_version = password_version + 1, deleted_at = (datetime('now','localtime')) WHERE id = ?`, [mockEmail, userId], function (err) {
                     if (err) {
                         db.run('ROLLBACK');
                         return reject(err);
@@ -488,52 +532,6 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
 	}
 });
 
-// --- REFRESH ---
-fastify.post('/auth/refresh', async (req: any, reply) => {
-    	const token = req.cookies?.refresh_token;
-    	if (!token) return reply.status(401).send({ error: 'No refresh token' });
-
-    	const payload = await verifyRefreshToken(token);
-    	if (!payload || await isTokenRevoked(payload.tokenId)) {
-		return reply.status(401).send({ error: 'Invalid refresh token' });
-    	}
-
-    	await revokeRefreshToken(payload.tokenId);
-
-		await deleteUserSession(payload.userId);
-
-    	const db = getDB();
-    	const user = await new Promise<any>((res, rej) => {
-		db.get(
-	    		`SELECT id, username, password_version, token_version FROM users WHERE id = ?`,
-			[payload.userId],
-			(err, row) => (err ? rej(err) : res(row))
-		);
-    	});
-
-    	if (!user) return reply.status(401).send({ error: 'User not found' });
-
-    	const newAccess = await generateToken({
-		id: user.id,
-		password_version: user.password_version,
-		token_version: user.token_version,
-    	});
-
-    	const newRefresh = await createRefreshToken(user.id);
-    	const csrfToken = randomUUID();
-
-    	reply
-	.setCookie('access_token', newAccess, { ...cookieOpts, maxAge: 3600 })
-	.setCookie('refresh_token', newRefresh, refreshOpts)
-	.setCookie('csrf_token', csrfToken, {
-    		httpOnly: false,
-		secure: true,
-    		sameSite: 'none',
-    		path: '/',
-	})
-	.send({ ok: true });
-});
-
 // --- HEALTH ---
 fastify.get('/health', async () => ({ status: 'ok', service: 'auth-service' }));
 
@@ -541,11 +539,15 @@ fastify.get('/health', async () => ({ status: 'ok', service: 'auth-service' }));
 const start = async () => {
     try {
         await initDB();
-        console.log(chalk.green.bold('Database initialized'));
+        console.log(chalk.green.bold('[auth] Database initialized'));
+		startSessionCleanup();
+		console.log(chalk.green.bold('[auth] Session cleaner initialized'));
         await initTokenDB();
-        console.log(chalk.green.bold('Refresh tokens database initialized'));
+        console.log(chalk.green.bold('[auth] Refresh tokens database initialized'));
+		refreshTokenCleanup();
+		console.log(chalk.green.bold('[auth] Refresh tokens cleaner initialized'))
         await fastify.listen({ port: 8081, host: '0.0.0.0' });
-        console.log(chalk.green.bold('Authentification is running on :8081'));
+        console.log(chalk.green.bold('[auth] Authentification is running on :8081'));
     } catch (err) {
         fastify.log.error(err);
         process.exit(1);

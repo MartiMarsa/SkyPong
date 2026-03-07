@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+GRAFANA_ADMIN_USER_VALUE=${GRAFANA_ADMIN_USER:-grafana_admin}
+GRAFANA_ADMIN_PASSWORD_VALUE=${GRAFANA_ADMIN_PASSWORD:-change_me_please}
+
 ENV_FILE=".env"
 EXAMPLE_FILE=".env.example"
 

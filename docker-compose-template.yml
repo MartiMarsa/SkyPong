@@ -342,7 +342,7 @@ services:
       - internal
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus/alert.rules.yml:/etc/prometheus/rules:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
       - prometheus_data:/prometheus
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
@@ -363,10 +363,15 @@ services:
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./nginx-gateway/certs:/etc/grafana/certs:ro
     environment:
-      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-password}
-      # Si no quieres exponer Grafana al host, déjalo sin ports (recomendado)
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:?set GRAFANA_ADMIN_USER in .env}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_PROTOCOL=https
+      - GF_SERVER_CERT_FILE=/etc/grafana/certs/cert.pem
+      - GF_SERVER_CERT_KEY=/etc/grafana/certs/key.pem
     ports:
       - "3001:3000"
     depends_on:

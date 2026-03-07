@@ -1,6 +1,7 @@
 {
     "name": "@skypong/common",
     "version": "1.0.0",
+    "type": "module",
     "main": "GameState.js",
     "types": "GameState.d.ts",
     "exports": {

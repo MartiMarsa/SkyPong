@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useTranslation } from '../hooks/use-translation';
 import { useEffect, useState } from 'react';
+import NavigationAppUI from '../ui/navigation-app-ui';
+import FooterTermsPolicy from '../ui/footer-terms-policy';
 
 
 export default function TermsPage()
@@ -16,16 +18,24 @@ export default function TermsPage()
   }, []);
   return (
     <>
-        <main className='flex p-2 justify-center items-stretch min-h-screen align-stretch bg-gradient-to-b from-blue-100 to-blue-300'>
-            <div className="terms-content flex column justify-center align-center basis-full md:basis-3/4 lg:basis-1/2 flex flex-col">
-                <h1 className="text-3xl font-bold mb-4">{t.legal.termsPage.title}</h1>
-                <div className="terms-text max-h-screen overflow-y-auto p-4 bg-white rounded shadow">
-                    {t.legal.termsPage.content}
+        <main className="h-dvh bg-page-bg flex flex-col">
+            <NavigationAppUI />
+            <div className="flex flex-1 items-center justify-center">
+                <div className="page-content-container">
+                    <div className="content-container-lg">
+                        <h1 className="text-3xl font-bold mb-4">{t.legal.termsPage.title}</h1>
+                        <div className="scrollable-content bg-content-light">
+                            {t.legal.termsPage.content}
+                        </div>
+                        <div className="mt-4">
+                            {console.log(backlink)}
+                            <Link href={backlink || '/'} className="link-primary">{ t.navigation.goBack }</Link>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div className="back-button">
-                {console.log(backlink)}
-                <Link href={backlink}>{ t.navigation.goBack }</Link>
+            <div className="mt-auto pb-4">
+                <FooterTermsPolicy />
             </div>
         </main>
     </>

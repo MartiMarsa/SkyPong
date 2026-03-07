@@ -1,28 +1,35 @@
-import { useStat, useEffect } from 'react'
-const stylesize = {
-    mini: "text-xs p-1 ",
-    small: "text-sm p-2 ",
-    medium: "text-md p-4 ",
-    big: "text-lg p-6 ",
-    extra: "text-xl p-9 ",
-}
+'use client';
 
-const stylebox = {
-    none: "",
-    regular: " p-1 border rounded border-red-500 bg-red-50"
-}
+/**
+ * ErrorBox component using design system error classes
+ * @param {string} size - Size variant: 'mini', 'small', 'medium', 'big', 'extra'
+ * @param {string} box - Box variant: 'none', 'regular' (with border and background)
+ * @param {boolean} display - Whether to display the error (unused, kept for API compatibility)
+ * @param {string} msg - Error message to display
+ */
 
+const sizeClasses = {
+  mini: 'text-xs',
+  small: 'text-sm',
+  medium: 'text-base',
+  big: 'text-lg',
+  extra: 'text-xl',
+};
 
-export default function ErrorBox({size, box, display, msg})
-{
+const boxClasses = {
+  none: '',
+  regular: 'rounded-lg border border-red-500 bg-red-50 p-3',
+};
 
-    return (
-        <>
-            <p className={ (stylesize[size] || stylesize.mini) +
-                ( stylebox[box] || stylebox.none )  + 
-                " italic text-red-400" }>
-                    Error: {msg}
-            </p>
-        </>
-    );
+export default function ErrorBox({ size = 'small', box = 'none', display, msg }) {
+  if (!msg) return null;
+
+  const sizeClass = sizeClasses[size] || sizeClasses.small;
+  const boxClass = boxClasses[box] || boxClasses.none;
+
+  return (
+    <p className={`error-message ${sizeClass} ${boxClass}`}>
+      {msg}
+    </p>
+  );
 }

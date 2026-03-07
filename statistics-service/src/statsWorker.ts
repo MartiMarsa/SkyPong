@@ -87,7 +87,7 @@ async function processGame(game: StatsTypes.GameRow) {
 	    	},
       	});
 
-	await db.run(`UPDATE games_and_results SET processed = 1, processing = 0, processed_at = CURRENT_TIMESTAMP WHERE game_id = ?`, 
+	await db.run(`UPDATE games_and_results SET processed = 1, processing = 0, processed_at = (datetime('now','localtime')) WHERE game_id = ?`, 
 		     [game.game_id]);
 }
 

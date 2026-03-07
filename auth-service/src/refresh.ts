@@ -69,3 +69,16 @@ export async function isTokenRevoked(tokenId: string): Promise<boolean> {
     	});
     	return !row ? true : !!row.revoked;
 }
+
+export function refreshTokenCleanup() {
+    const db = getTokenDB();
+
+    setInterval(() => {
+        db.run(`
+            UPDATE refresh_tokens SET revoked = 1
+            WHERE expires_at < datetime('now','localtime')
+        `);
+    }, 15 * 60 * 1000);
+
+    console.log(`[auth] Refresh tokens cleanup done at ${new Date().toLocaleString()}`);
+}

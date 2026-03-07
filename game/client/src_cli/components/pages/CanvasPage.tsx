@@ -75,7 +75,9 @@ const CanvasPage = () => {
                 message: '',
                 error: { code: 'configuration-invalid', details: 'No game configuration provided' },
             }));
-            setTimeout(() => navigate('/'), 2000);
+            setTimeout(() => {
+                window.parent.postMessage({ type: 'game-exit' }, '*');
+            }, 2000);
             return;
         }
 
@@ -110,13 +112,8 @@ const CanvasPage = () => {
                     }, 200);
                 },
                 () => {
-                    setLoadingState((prev) => ({
-                        ...prev,
-                        phase: 'error',
-                        message: '',
-                        error: { code: 'connection-failed', details: 'Connection failed or room closed.' },
-                    }));
-                    setTimeout(() => navigate('/'), 2000);
+                    // Post message to parent window to trigger game exit
+                    window.parent.postMessage({ type: 'game-exit' }, '*');
                 },
                 (loadingManager) => {
                     loadingManagerRef.current = loadingManager;
