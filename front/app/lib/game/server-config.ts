@@ -10,22 +10,23 @@ export const SERVER_CONNECTION = {
 
   USE_NGINX_PROXY: process.env.NEXT_PUBLIC_USE_NGINX_WS_PROXY !== "false",
 
-
   get WS_URL() {
-    // Check if we should use nginx proxy via environment variable
-    // In production (Docker), set NEXT_PUBLIC_USE_NGINX_WS_PROXY=true
-    // In local development, leave unset or set to 'false'
-    const useNginxProxy = typeof window !== 'undefined' 
-      ? process.env.NEXT_PUBLIC_USE_NGINX_WS_PROXY === 'true'
-      : false;
-    
-    if (useNginxProxy && typeof window !== 'undefined') {
-      // Production/Docker: use nginx /ws/ proxy
+    const explicitServerUrl = process.env.NEXT_PUBLIC_GAME_SERVER_URL;
+    if (explicitServerUrl) {
+      console.log("[ServerConfig] Using explicit server URL:", explicitServerUrl);
+      return explicitServerUrl;
+    }
+
+    const useNginxProxy = typeof window !== "undefined" && this.USE_NGINX_PROXY;
+
+    if (useNginxProxy && typeof window !== "undefined") {
+      // Prefer same-origin WS proxy by default for cross-machine compatibility.
       const url = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws/`;
       console.log("[ServerConfig] Using nginx proxy (same-origin):", url);
       return url;
     }
 
+    // Direct connection fallback (primarily local development).
     const protocol = this.PROTOCOL;
     const host = this.HOST;
     const port = this.PORT;
@@ -35,6 +36,7 @@ export const SERVER_CONNECTION = {
     } else {
       url = `${protocol}://${host}:${port}/`;
     }
+    console.log("[ServerConfig] Using direct connection:", url);
     return url;
   },
 
