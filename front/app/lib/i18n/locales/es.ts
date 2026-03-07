@@ -15,16 +15,24 @@ const es = {
         hi: "hola!",
         nickname: "Nickname",
         winphrase: "Frase de Victoria",
+        userData: "Datos de Usuario",
+        changePassword: "Cambiar Contraseña",
         deleteBtn: "Eliminar Cuenta",
-        deleteAccountWarning: "Esto eliminará tu cuenta permanente mente. Esta acción es irreversible. ¿Estás seugor?",
+        deleteAccountTitle: "¿Estás completamente seguro?",
+        deleteAccountWarning: "Esto eliminará tu cuenta permanentemente. Esta acción es irreversible. ¿Estás seguro?",
+        typeConfirm: "Escribe",
+        toContinue: "para continuar",
+        mustTypeConfirm: "Debes escribir CONFIRM exactamente",
+        confirmDelete: "Eliminar Cuenta",
         errors: {
-            nicknameRequired: "Nickname vacío",
-            nicknameMinLength: (len: number)=>{ return (`La Frase de la vitoria debe contener ${len}`)},
-            winphraseRequired: "Nickname vacío",
-            winphraseMinLength: (len: number)=>{ return (`La Frase de la vitoria debe contener ${len}`)},
+            nicknameRequired: "Nickname requerido",
+            nicknameMinLength: (len: number)=>{ return (`El nickname debe contener al menos ${len} caracteres`)},
+            winphraseRequired: "Frase de victoria requerida",
+            winphraseMinLength: (len: number)=>{ return (`La frase de la victoria debe contener al menos ${len} caracteres`)},
         }
     },
     avatar: {
+        changeImage: "Cambiar Imagen",
         error: {
             uploadError: "Error en la subida del archivo",
             avatarNotFound: "Avatar no encontrado",
@@ -33,6 +41,12 @@ const es = {
             unknownError: "Error desconocido",
             tooLarge: "Tamaño de Imagen muy grande",
         }
+    },
+    common: {
+        loading: "Cargando...",
+        uploading: "Subiendo...",
+        cancel: "Cancelar",
+        backHome: "Volver al Inicio",
     },
     serverError: {
         conectionError: "Server conection error",
@@ -207,6 +221,7 @@ const es = {
     },
     profilePage: {
         title: "Perfil de jugador",
+        viewProfile: "Ver Mi Perfil",
     },
     signInPage: {
         title: "Iniciar sesión",
@@ -234,6 +249,7 @@ const es = {
     navigation: {
         home: "Inicio",
         profile: "Perfil",
+        settings: "Ajustes",
         logout: "Cerrar sesión",
         goBack: "Volver",
     },
@@ -273,6 +289,27 @@ const es = {
         remove: "eliminar",
     },
     form: {
+      labels: {
+        email: 'Correo electrónico',
+        username: 'Nombre de usuario',
+        nickname: 'Apodo',
+        password: 'Contraseña',
+        confirmPassword: 'Confirmar contraseña',
+        currentPassword: 'Contraseña actual',
+        newPassword: 'Nueva contraseña',
+        winPhrase: 'Frase de victoria',
+      },
+      placeholders: {
+        email: 'tu@correo.com',
+        username: 'Ingresa tu usuario',
+        nickname: 'Elige un apodo',
+        password: 'Ingresa tu contraseña',
+        confirmPassword: 'Reingresa tu contraseña',
+        currentPassword: 'Contraseña actual',
+        newPassword: 'Nueva contraseña',
+        winPhrase: 'Ingresa tu frase de victoria',
+        playerName: 'Nombre del jugador',
+      },
       errors: {
         emailRequired: 'El email es obligatorio',
         emailMinLength: 'El email debe tener al menos 8 caracteres',
@@ -297,7 +334,7 @@ const es = {
         passwordLabel: 'Contraseña',
         changePassword: "Cambiar contraseña",
         goBackHome: 'Volver al inicio',
-        submitting: "Submitting...",
+        submitting: "Enviando...",
         cancel: "Cancelar",
         loading: "Cargando...",
     },

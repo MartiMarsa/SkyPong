@@ -9,7 +9,8 @@ import PlayerInfo from '../ui/player-public-profile/player-info-ui';
 import PlayerAchievementsUI from '../ui/player-public-profile/player-achievements-ui';
 import AchievementsSection from '../ui/player-public-profile/AchievementsSection';
 import FriendsSection from '../ui/player-public-profile/FriendsSection';
-import GameHistory from '../ui/player-public-profile/GameHistory'
+import GameHistory from '../ui/player-public-profile/GameHistory';
+import FooterTermsPolicy from '../ui/footer-terms-policy';
 
 export default function ProfilePagePublic()
 {
@@ -39,17 +40,26 @@ export default function ProfilePagePublic()
         setProfile(user);
     }, [user, authloading, profile, router]);
     return (
-        <main>
+        <main className="min-h-dvh bg-page-bg flex flex-col">
             <NavigationAppUI  />
-            <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
-            { profile && <PlayerInfo profile={profile} />}
-            { profile && <GameHistory userId={profile.id} />}
-            { profile && <FriendsSection
-                currentUserId={profile.id}
-                csrfToken={getCookie()}
-                onNavigateProfile={(id) => router.push(`/${id}`)}
-                />}
-            { profile && <AchievementsSection t={t.t} stats={profile?.stats} /> }
+            <div className="flex flex-1 items-start justify-center py-8">
+                <div className="page-content-container-scrollable">
+                    <div className="content-container-xl">
+                        <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
+                        { profile && <PlayerInfo profile={profile} />}
+                        { profile && <GameHistory userId={profile.id} />}
+                        { profile && <FriendsSection
+                            currentUserId={profile.id}
+                            csrfToken={getCookie()}
+                            onNavigateProfile={(id) => router.push(`/${id}`)}
+                            />}
+                        { profile && <AchievementsSection t={t.t} stats={profile?.stats} /> }
+                    </div>
+                </div>
+            </div>
+            <div className="pb-4">
+                <FooterTermsPolicy />
+            </div>
         </main>
     );
 }

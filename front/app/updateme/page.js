@@ -5,23 +5,12 @@ import { useRouter } from 'next/navigation';
 import NavigationAppUI from '../ui/navigation-app-ui';
 import { useTranslation } from '../hooks/use-translation';
 import { useAuth } from '../context/auth-context';
-import { useStyles } from '../hooks/use-styles';
 import Link from 'next/link';
-import AvatarUpload from '../ui/player-private-profile/avatar-ui'
+import AvatarUpload from '../ui/player-private-profile/avatar-ui';
 import PlayerUI from '../ui/player-private-profile/player-ui';
 import PlayerCredentialsUI from '../ui/player-private-profile/player-credentials-ui';
 import PlayerDeleteUI from '../ui/player-private-profile/player-delete-account-ui';
-
-// import { useSearchParams } from 'next/navigation'
-const mobileStyles = {
-    goMyProfileWrapper: "flex-row justify-center",
-    goMyProfileBtn: "p-4 gb-blue-400"
-};
-
-const desktopStyles = {
-    goMyProfileWrapper: "flex-row center",
-    goMyProfileBtn: "p-4 bg-blue-400 rounded-sm text-blue-900"
-};
+import FooterTermsPolicy from '../ui/footer-terms-policy';
 
 const getCsrfToken = () => {
     return document.cookie
@@ -29,6 +18,7 @@ const getCsrfToken = () => {
         .find(row => row.startsWith('csrf_token='))
         ?.split('=')[1];
 };
+
 export default function ProfilePagePrivate()
 {
 const { t } = useTranslation();
@@ -36,8 +26,7 @@ const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(true);
     const { user, authloading, checkAuth } = useAuth();
     const [player, setPlayer] = useState(null);
-    const [serverError, setServerError ] = useState(''); 
-    const { styles } = useStyles(mobileStyles, desktopStyles);
+    const [serverError, setServerError ] = useState('');
     
     // const searchParams = useSearchParams()
     // const id = searchParams.get('id') // Obtiene "123"
@@ -106,23 +95,41 @@ const { t } = useTranslation();
 
 }, [authloading, user, router]); 
 
-    if (isLoading) return <div>Cargando tu perfil...</div>;
+    if (isLoading) return (
+        <main className="h-dvh bg-page-bg flex flex-col items-center justify-center">
+            <p className="text-muted">{t?.common?.loading || "Loading..."}</p>
+        </main>
+    );
 
     return (
         <>
-        { serverError ? (serverError) : (
-        <main className=''>
+        { serverError ? (
+            <main className="h-dvh bg-page-bg flex flex-col items-center justify-center">
+                <p className="error-message">{serverError}</p>
+            </main>
+        ) : (
+        <main className="min-h-dvh bg-page-bg flex flex-col">
             <NavigationAppUI  />
-            <h1>{t?.profilePage?.title}</h1>
-            {console.info("Player in component: ", player)}
-            <AvatarUpload />
-            <PlayerUI />
-            <PlayerCredentialsUI />
-            <div className={styles.goProfileWrapper}>
-                <Link href="/me" className={styles.goMyProfileBtn}>Go my Profile</Link>
+            <div className="flex flex-1 items-start justify-center py-8">
+                <div className="page-content-container-scrollable">
+                    <div className="content-container-md">
+                        <h1>{t?.profilePage?.title}</h1>
+                        {console.info("Player in component: ", player)}
+                        <AvatarUpload />
+                        <PlayerUI />
+                        <PlayerCredentialsUI />
+                        <div className="flex-row justify-center">
+                            <Link href="/me" className="link-primary">
+                                {t?.profilePage?.viewProfile || "View My Profile"}
+                            </Link>
+                        </div>
+                        <PlayerDeleteUI />
+                    </div>
+                </div>
             </div>
-            <PlayerDeleteUI />
-
+            <div className="pb-4">
+                <FooterTermsPolicy />
+            </div>
         </main>
         )}
         </>

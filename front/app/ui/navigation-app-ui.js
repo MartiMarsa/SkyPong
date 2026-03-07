@@ -1,71 +1,133 @@
-import Link from 'next/link';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleUser } from '@fortawesome/free-solid-svg-icons';
-import { useTranslation } from '../hooks/use-translation';
-import { useStyles } from '../hooks/use-styles';
-import { useAuth } from '../context/auth-context';
-import HomeButtonUi from './home-button-ui.js';
-import UserMenuUI from './user-menu-ui.js';
+'use client';
+
+import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslation } from "../hooks/use-translation";
+import { useStyles } from "../hooks/use-styles";
+import { useAuth } from "../context/auth-context";
+import { Button } from "./base/Button";
+import { Avatar } from "./base/Avatar";
+import SkypongLogo from "./skypong-logo.js";
 
 const mobileStyles = {
-  nav: 'flex items-center justify-between p-2 text-3xl',
+  nav: "navigation-app",
 };
 
 const desktopStyles = {
-  nav: 'flex items-center justify-between p-2 text-3xl',
+  nav: "navigation-app",
 };
 
-export default function NavigationAppUI({ home, userURL, compactGuestActions = false }) {
+export default function NavigationAppUI({
+  home,
+  userURL,
+  compactGuestActions = false,
+}) {
   const { t } = useTranslation();
   const { styles } = useStyles(mobileStyles, desktopStyles);
   const { user, logout } = useAuth();
+  const router = useRouter();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const showGuestActions = !user;
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
+
+  const handleLogout = async () => {
+    setIsDropdownOpen(false);
+    await logout();
+    router.push('/');
+  };
+
+  const handleNavigate = (path) => {
+    setIsDropdownOpen(false);
+    router.push(path);
+  };
+
   return (
     <nav className={styles.nav}>
-      {home ? <HomeButtonUi url={home} /> : <div />}
+      {/* Left side: SKYPONG logo (hidden on homepage) */}
+      <SkypongLogo />
 
-      {showGuestActions ? (
-        compactGuestActions ? (
-          <div className="ml-auto flex items-center gap-3 text-base font-medium text-slate-900">
-            <Link href="/login" className="transition hover:opacity-70">
-              Log in
-            </Link>
-            <span>/</span>
-            <Link href="/signup" className="transition hover:opacity-70">
-              Sign Up
-            </Link>
-            <Link href="/signup" aria-label="Open sign up" className="text-4xl transition hover:opacity-70">
-              <FontAwesomeIcon icon={faCircleUser} />
-            </Link>
-          </div>
-        ) : (
-          <div className="ml-auto flex items-center gap-3">
-            <Link
-              href="/signup"
-              className="rounded-lg border border-slate-400/40 bg-transparent px-4 py-2 text-sm font-semibold text-slate-100 transition hover:border-slate-200 hover:bg-slate-700/40"
-            >
-              Sign up
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400"
-            >
+      {/* Right side: Authentication actions */}
+      <div className="nav-actions">
+        {showGuestActions ? (
+          // Guest users: Login/Sign Up buttons
+          <>
+            <Button href="/login" variant="secondary" size="md" font="display">
               Login
-            </Link>
+            </Button>
+            <Button href="/signup" variant="primary" size="md" font="display">
+              Sign up
+            </Button>
+          </>
+        ) : (
+          // Logged in users: Avatar with dropdown menu
+          <div className="relative" ref={dropdownRef}>
+            <Avatar
+              src={user?.avatarUrl}
+              fallbackText={user?.nickname || "User"}
+              size="md"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            />
+
+            {/* Dropdown menu */}
+            {isDropdownOpen && (
+              <>
+                {/* Overlay backdrop */}
+                <div
+                  className="fixed inset-0 z-40"
+                  style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }}
+                  onClick={() => setIsDropdownOpen(false)}
+                />
+
+                {/* Dropdown menu content */}
+                <div className="dropdown-menu-avatar">
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    font="body"
+                    onClick={() => handleNavigate('/me')}
+                  >
+                    {t.navigation.profile}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    font="body"
+                    onClick={() => handleNavigate('/updateme')}
+                  >
+                    {t.navigation.settings}
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="md"
+                    font="body"
+                    onClick={handleLogout}
+                  >
+                    {t.navigation.logout}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
-        )
-      ) : (
-        <div className="ml-auto flex items-center gap-4 text-base sm:text-lg">
-          {!home && (
-            <Link href="/" onClick={() => logout()}>
-              {t.navigation.logout}
-            </Link>
-          )}
-          {userURL && <UserMenuUI userURL={userURL} />}
-        </div>
-      )}
+        )}
+      </div>
     </nav>
   );
 }

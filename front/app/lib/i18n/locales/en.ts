@@ -12,16 +12,24 @@ const en = {
         hi: "Hi!",
         nickname: "Nickname",
         winphrase: "Win Phrase",
+        userData: "User Data",
+        changePassword: "Change Password",
         deleteBtn: "Delete Account",
-        deleteAccountWarning: "This will remove permanently your account. This acction is irreverible. Ate you sure?",
+        deleteAccountTitle: "Are you absolutely sure?",
+        deleteAccountWarning: "This will remove permanently your account. This action is irreversible. Are you sure?",
+        typeConfirm: "Type",
+        toContinue: "to continue",
+        mustTypeConfirm: "Must type CONFIRM exactly",
+        confirmDelete: "Delete Account",
         errors: {
-            nicknameRequired: "Nickname vacío",
-            nicknameMinLength: (len: number)=>{ return (`La Frase de la vitoria debe contener ${len}`)},
-            winphraseRequired: "Nickname vacío",
-            winphraseMinLength: (len: number)=>{ return (`La Frase de la vitoria debe contener ${len}`)},
+            nicknameRequired: "Nickname required",
+            nicknameMinLength: (len: number)=>{ return (`Nickname must contain at least ${len} characters`)},
+            winphraseRequired: "Win phrase required",
+            winphraseMinLength: (len: number)=>{ return (`Win phrase must contain at least ${len} characters`)},
         }
     },
     avatar: {
+        changeImage: "Change Image",
         error: {
             uploadError: "Error in image upload",
             avatarNotFound: "Avatar not found",
@@ -30,6 +38,12 @@ const en = {
             unknownError: "Unknown error",
             tooLarge: "Image file too large",
         }
+    },
+    common: {
+        loading: "Loading...",
+        uploading: "Uploading...",
+        cancel: "Cancel",
+        backHome: "Back to Home",
     },
     serverError: {
         conectionError: "Server conection error",
@@ -204,6 +218,7 @@ const en = {
     },
     profilePage: {
         title: "Player Profile",
+        viewProfile: "View My Profile",
     },
     signInPage: {
         title: "Sign In",
@@ -231,6 +246,7 @@ const en = {
     navigation: {
         home: "Home",
         profile: "Profile",
+        settings: "Settings",
         logout: "Log out",
         goBack: "Go back",
     },
@@ -264,6 +280,27 @@ const en = {
         remove: "eliminar",
     },
     form: {
+    labels: {
+        email: 'Email',
+        username: 'Username',
+        nickname: 'Nickname',
+        password: 'Password',
+        confirmPassword: 'Confirm Password',
+        currentPassword: 'Current Password',
+        newPassword: 'New Password',
+        winPhrase: 'Win Phrase',
+    },
+    placeholders: {
+        email: 'your@email.com',
+        username: 'Enter your username',
+        nickname: 'Choose a nickname',
+        password: 'Enter your password',
+        confirmPassword: 'Re-enter your password',
+        currentPassword: 'Current password',
+        newPassword: 'New password',
+        winPhrase: 'Enter your victory phrase',
+        playerName: 'Player name',
+    },
     errors: {
         emailRequired: 'Email is required',
         emailMinLength: 'Email must be at least 8 characters long',
@@ -285,11 +322,11 @@ const en = {
     },
     emailPlaceholder: 'your@email.com',
     passwordLabel: 'Password',
-    changePassword: "Cambiar contraseña",
+    changePassword: "Change Password",
     goBackHome: 'Back to home',
     submitting: "Submitting...",
     cancel: "Cancel",
-    loading: "Cargando...",
+    loading: "Loading...",
     },
     leaderboard: {
         title: "Leaderboard",

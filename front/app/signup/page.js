@@ -1,46 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useStyles } from '../hooks/use-styles';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema } from "../lib/form-validation/auth";
 import { useTranslation } from '../hooks/use-translation';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../context/auth-context'
+import { useAuth } from '../context/auth-context';
 import Link from 'next/link';
-
-const mobileStyles = {
-    main: "flex flex-col justify-center items-center min-h-screen",
-    goBackWrapper: "absolute top-4 left-4",
-    spanTitle: "text-center text-sm mb-2",
-    h1: "text-lg text-center",
-    article: 'flex flex-col justify-center items-center max-w-2xs',
-    textInput: 'w-full h-10 px-3 border border-gray-300 rounded',
-    textInputError: 'w-full h-10 px-3 border border-red-500 rounded',
-    submitButton: 'p-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 w-full rounded',
-    form: 'flex flex-col p-4 gap-4 w-full',
-    errorMessage: 'text-red-500 text-sm mt-1',
-    inputWrapper: 'w-full',
-    registerWrapper: 'mt-4 text-center',
-};
-
-const desktopStyles = {
-    ...mobileStyles,
-    spanTitle: "text-center text-lg mb-2",
-    h1: "text-xl",
-    article: 'flex flex-col justify-center items-center max-w-md w-full',
-    textInput: 'w-full h-8 px-3 border border-gray-300 rounded',
-    textInputError: 'w-full h-8 px-3 border border-red-500 rounded',
-};
+import { TextField, Button } from '../ui/base';
+import FooterTermsPolicy from '../ui/footer-terms-policy';
 
 export default function SignUpPage() {
     const router = useRouter();
     const { user, checkAuth } = useAuth();
     const { t } = useTranslation();
-    const { styles } = useStyles(mobileStyles, desktopStyles);
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -119,77 +93,98 @@ export default function SignUpPage() {
     return (
         <>
         { isLoading ? (<div className=''>Loading...</div>) : (
-            <main className={styles.main}>
-                <div className={styles.goBackWrapper}>
-                    <Link href="/">
-                        <FontAwesomeIcon icon={faArrowLeft} /> {t.form.goBackHome}
+            <main className="h-dvh bg-page-bg flex flex-col">
+                <div className="back-button-position">
+                    <Link href="/" className="skypong-logo">
+                        SKYPONG
                     </Link>
                 </div>
 
-                <article className={styles.article}> 
-                    <span className={styles.spanTitle}>{t.signUpPage.title}</span>
-                    <h1 className={styles.h1}>{t.homePage.title}</h1>
-                    
-                    {/* Use handleSubmit */}
-                    <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
+                <div className="flex flex-1 items-center justify-center">
+                    <div className="page-content-container">
+                        <div className="content-container-sm">
+                            <div className="form-wrapper">
+                                <div className="text-center">
+                                    <span className="text-sm md:text-lg mb-2 block">{t.signUpPage.title}</span>
+                                    <h1 className="text-lg md:text-xl mb-6">{t.homePage.title}</h1>
+                                </div>
+                            
+                            {/* Use handleSubmit */}
+                            <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit(onSubmit)}>
 
-                        {/* Email Field */}
-                        <div className={styles.inputWrapper}>
-                            <input 
-                                className={errors.email ? styles.textInputError : styles.textInput}
-                                type="email" 
-                                placeholder={t.form.emailPlaceholder}
-                                autoComplete="email"
-                                {...register('email')} 
-                            />
-                            {errors.email && <p>{errors.email.message}</p>}
+                                {/* Email Field */}
+                                <div className="w-full">
+                                    <TextField
+                                        name="email"
+                                        type="email"
+                                        label={t.form.labels.email}
+                                        placeholder={t.form.placeholders.email}
+                                        autoComplete="email"
+                                        register={register}
+                                        error={errors.email?.message}
+                                    />
+                                </div>
+
+                                {/* Password Field */}
+                                <div className="w-full">
+                                    <TextField
+                                        name="password"
+                                        type="password"
+                                        label={t.form.labels.newPassword}
+                                        placeholder={t.form.placeholders.newPassword}
+                                        autoComplete="new-password"
+                                        register={register}
+                                        error={errors.password?.message}
+                                    />
+                                </div>
+
+                                {/* Confirm Password Field */}
+                                <div className="w-full">
+                                    <TextField
+                                        name="confirmPassword"
+                                        type="password"
+                                        label={t.form.labels.confirmPassword}
+                                        placeholder={t.form.placeholders.confirmPassword}
+                                        autoComplete="new-password"
+                                        register={register}
+                                        error={errors.confirmPassword?.message}
+                                    />
+                                </div>
+                                
+                                {/* Server Error - Reserved space to prevent layout shift */}
+                                <div className="error-message-space">
+                                    { serverError && (
+                                        <p className="error-message">
+                                                { console.log("Error:", serverError)}
+                                                {serverError}
+                                            </p>
+                                    )}
+                                </div>
+
+                                <Button 
+                                    type="submit"
+                                    variant="primary"
+                                    size="lg"
+                                    disabled={isSubmitting}
+                                    className="w-full"
+                                >
+                                    {isSubmitting ? t.signUpPage.submitting : t.signUpPage.submitButton}
+                                </Button>
+                            </form>
+
+                                <div className="mt-4 text-center">
+                                    <Link href="/login" className="link-primary">{t.signUpPage.hasAccount}</Link>
+                                </div>
+                            </div>
                         </div>
-
-                        {/* Password Field */}
-                        <div className={styles.inputWrapper}>
-                            <input 
-                                className={errors.password ? styles.textInputError : styles.textInput}
-                                type="password" 
-                                placeholder={t.signUpPage.newPasswordLabel}
-                                autoComplete="new-password"
-                                {...register('password')}  
-                            />
-                            {errors.password && <p>{errors.password.message}</p>}
-                        </div>
-
-                        {/* Confirm Password Field */}
-                        <div className={styles.inputWrapper}>
-                            <input 
-                                className={errors.confirmPassword ? styles.textInputError : styles.textInput}
-                                type="password" 
-                                placeholder={t.signUpPage.confirmPasswordLabel}
-                                autoComplete="new-password"
-                                {...register('confirmPassword')} 
-                                />
-                            {errors.password && <p>{errors.password.message}</p>}
-                        </div>
-                        { serverError && (
-                            <p className={styles.errorMessage}>
-                                    { console.log("Error:", serverError)}
-                                    {serverError}
-                                </p>
-                        )}
-
-                        <button 
-                            className={styles.submitButton} 
-                            type="submit"
-                            disabled={isSubmitting}
-                            >
-                            {isSubmitting ? t.signUpPage.submitting : t.signUpPage.submitButton}
-                        </button>
-                    </form>
-
-                    <div className={styles.registerWrapper}>
-                        <Link href="/login">{t.signUpPage.hasAccount}</Link>
                     </div>
-                </article>
+                </div>
+
+                <div className="mt-auto pb-4">
+                    <FooterTermsPolicy />
+                </div>
             </main>
-                        )}
+        )}
         </>
     );
 }

@@ -8,9 +8,10 @@ import { useRouter } from 'next/navigation';
 import PlayerInfo from '../ui/player-public-profile/player-info-ui';
 import PlayerAchievementsUI from '../ui/player-public-profile/player-achievements-ui';
 import AchievementsSection from '../ui/player-public-profile/AchievementsSection';
-import { useParams } from 'next/navigation'
+import { useParams } from 'next/navigation';
 import FriendsList from '../ui/player-public-profile/friend-list.ui';
 import GameHistory from '../ui/player-public-profile/GameHistory';
+import FooterTermsPolicy from '../ui/footer-terms-policy';
 
 export default function ProfilePagePublic()
 {
@@ -58,14 +59,23 @@ export default function ProfilePagePublic()
         }).finally(setCsrfToken(csrfToken));
     }, [id, authloading]);
     return (
-        <main>
+        <main className="min-h-dvh bg-page-bg flex flex-col">
             { console.info("Public profile data:", profile) }
             <NavigationAppUI  />
-            <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
-            {profile && <PlayerInfo profile={profile} />}
-            { profile && <GameHistory userId={profile.id} />}
-            {profile && <FriendsList currentUserId={user?.id} targetId={profile?.id} csrfToken={csrfToken}/>}
-            { profile && <AchievementsSection t={t.t} stats={profile?.stats} /> }
+            <div className="flex flex-1 items-start justify-center py-8">
+                <div className="page-content-container-scrollable">
+                    <div className="content-container-xl">
+                        <h1>{t.t?.homePage?.title || "Public Profilactic" }</h1>
+                        {profile && <PlayerInfo profile={profile} />}
+                        { profile && <GameHistory userId={profile.id} />}
+                        {profile && <FriendsList currentUserId={user?.id} targetId={profile?.id} csrfToken={csrfToken}/>}
+                        { profile && <AchievementsSection t={t.t} stats={profile?.stats} /> }
+                    </div>
+                </div>
+            </div>
+            <div className="pb-4">
+                <FooterTermsPolicy />
+            </div>
         </main>
     );
 }

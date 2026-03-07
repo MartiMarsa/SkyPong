@@ -1,41 +1,21 @@
 'use client';
 import { useTranslation } from '../context/language-context';
-import { useStyles } from '../hooks/use-styles';
-
-const mobileStyles = {
-  nav: 'flex items-center gap-4',
-  langItem: 'rounded-xl border border-slate-600/70 bg-slate-800/70 p-1 shadow-md shadow-slate-950/50',
-  langButton:
-    'rounded-lg border border-slate-400/40 bg-slate-900/80 px-4 py-2 text-sm font-semibold tracking-wide text-slate-100 transition hover:border-slate-200 hover:bg-slate-700/50',
-};
-const desktopStyles = {
-  nav: 'flex items-center gap-4',
-  langItem: 'rounded-xl border border-slate-600/70 bg-slate-800/70 p-1 shadow-md shadow-slate-950/50',
-  langButton:
-    'rounded-lg border border-slate-400/40 bg-slate-900/80 px-4 py-2 text-sm font-semibold tracking-wide text-slate-100 transition hover:border-slate-200 hover:bg-slate-700/50',
-};
+import { Button } from './base/Button';
 
 export default function NavigationLanguageUI() {
-  const { styles } = useStyles(mobileStyles, desktopStyles);
   const { changeLanguage } = useTranslation();
 
   return (
-    <nav className={styles.nav}>
-      <div className={styles.langItem}>
-        <button type="button" onClick={() => changeLanguage('es')} className={styles.langButton}>
-          ESP
-        </button>
-      </div>
-      <div className={styles.langItem}>
-        <button type="button" onClick={() => changeLanguage('en')} className={styles.langButton}>
-          ENG
-        </button>
-      </div>
-      <div className={styles.langItem}>
-        <button type="button" onClick={() => changeLanguage('it')} className={styles.langButton}>
-          ITA
-        </button>
-      </div>
+    <nav className="flex gap-4">
+      <Button onClick={() => changeLanguage('es')} variant="ghost" size="sm" font="body">
+        ESP
+      </Button>
+      <Button onClick={() => changeLanguage('en')} variant="ghost" size="sm" font="body">
+        ENG
+      </Button>
+      <Button onClick={() => changeLanguage('it')} variant="ghost" size="sm" font="body">
+        ITA
+      </Button>
     </nav>
   );
 }

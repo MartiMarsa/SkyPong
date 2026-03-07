@@ -5,11 +5,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { encodeConfig } from '../lib/game/game-session-config';
 import { getAvailableRooms } from '../lib/game/room-service';
 import { useAuth } from '../context/auth-context';
-import { useStyles } from '../hooks/use-styles';
 import { useTranslation } from '../hooks/use-translation';
 import FooterTermsPolicy from '../ui/footer-terms-policy';
 import NavigationAppUI from '../ui/navigation-app-ui';
-import { Button } from '../ui/base';
+import { Button, TextField } from '../ui/base';
 
 const STATES = {
   SELECT_MODE: 'SELECT_MODE',
@@ -41,18 +40,10 @@ const PLAYER_COLORS = [
   { hex: '#F4E04D', name: 'Yellow' },
 ];
 
-const mobileStyles = {
-  main: 'h-dvh bg-[#d9d9d9] text-slate-900',
-};
-
-const desktopStyles = {
-  main: 'h-dvh overflow-hidden bg-[#d9d9d9] px-6 text-slate-900 lg:px-10',
-};
-
 function ColorPicker({ selectedColor, onColorSelect, label }) {
   return (
     <div className="flex flex-col gap-3">
-      <label className="text-sm font-semibold uppercase tracking-wide text-slate-700">{label}</label>
+      <label className="text-sm font-semibold uppercase tracking-wide text-muted">{label}</label>
       <div className="flex flex-wrap gap-3">
         {PLAYER_COLORS.map((color) => (
           <button
@@ -102,20 +93,19 @@ function GameOverlay({ gameUrl, onExit }) {
 
 function PlayPanel({ title, subtitle, children }) {
   return (
-    <section className="w-full max-w-lg rounded-[2rem] border-2 border-slate-700 bg-[#e7e7e7]/70 p-6 shadow-sm sm:p-8">
+    <div className="w-full max-w-lg">
       <div className="mb-6 space-y-2 text-center">
         <h1 className="text-4xl font-black uppercase tracking-tight sm:text-5xl">{title}</h1>
-        {subtitle && <p className="text-sm font-semibold text-slate-700 sm:text-base">{subtitle}</p>}
+        {subtitle && <p className="text-sm font-semibold text-muted sm:text-base">{subtitle}</p>}
       </div>
       <div className="flex flex-col gap-3">{children}</div>
-    </section>
+    </div>
   );
 }
 
 export default function PlayPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { styles } = useStyles(mobileStyles, desktopStyles);
   const [state, setState] = useState(STATES.SELECT_MODE);
   const [config, setConfig] = useState(INITIAL_CONFIG);
   const [rooms, setRooms] = useState([]);
@@ -197,15 +187,17 @@ export default function PlayPage() {
 
   if (state === STATES.LOADING) {
     return (
-      <main className={`${styles.main} overflow-hidden`}>
-        <div className="mx-auto flex h-full w-full max-w-6xl flex-col rounded-[2.5rem] border-2 border-slate-700 px-4 py-6 sm:px-8 sm:py-8">
-          <NavigationAppUI userURL={hasCredentials ? '/user-home' : '/login'} compactGuestActions />
-          <section className="flex min-h-0 flex-1 items-center justify-center">
-            <PlayPanel title="Pong" subtitle={t.play.loadingGame} />
-          </section>
-          <div className="pt-4 text-slate-800">
-            <FooterTermsPolicy />
+      <main className="h-dvh bg-page-bg text-slate-900 flex flex-col">
+        <NavigationAppUI userURL={hasCredentials ? '/user-home' : '/login'} compactGuestActions />
+        <div className="flex flex-1 items-center justify-center">
+          <div className="page-content-container">
+            <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 py-4 md:gap-8 md:py-6 lg:gap-10 lg:py-10">
+              <PlayPanel title="Pong" subtitle={t.play.loadingGame} />
+            </section>
           </div>
+        </div>
+        <div className="mt-auto pb-4">
+          <FooterTermsPolicy />
         </div>
       </main>
     );
@@ -216,13 +208,13 @@ export default function PlayPage() {
   }
 
   return (
-    <main className={`${styles.main} overflow-hidden`}>
-      <div className="mx-auto flex h-full w-full max-w-6xl flex-col rounded-[2.5rem] border-2 border-slate-700 px-4 py-6 sm:px-8 sm:py-8">
-        <NavigationAppUI userURL={hasCredentials ? '/user-home' : '/login'} compactGuestActions />
-
-        <section className="flex min-h-0 flex-1 items-center justify-center py-4 md:py-6 lg:py-10">
-          <div className="flex w-full flex-col items-center gap-4">
-            {error && <p className="text-sm font-semibold text-red-600">{t.play.error} {error}</p>}
+    <main className="h-dvh bg-page-bg text-slate-900 flex flex-col">
+      <NavigationAppUI userURL={hasCredentials ? '/user-home' : '/login'} compactGuestActions />
+      <div className="flex flex-1 items-center justify-center">
+        <div className="page-content-container">
+          <section className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 py-4 md:gap-8 md:py-6 lg:gap-10 lg:py-10">
+            <div className="flex w-full flex-col items-center gap-4">
+              {error && <p className="error-message text-sm">{t.play.error} {error}</p>}
 
             {state === STATES.SELECT_MODE && (
               <PlayPanel title="Pong" subtitle={t.play.chooseGameMode}>
@@ -321,14 +313,15 @@ export default function PlayPage() {
                 <Button variant="primary" className="w-full" onClick={refreshRooms} disabled={loadingRooms}>
                   {loadingRooms ? t.play.loading : t.play.refresh}
                 </Button>
-                {roomError && <p className="text-sm font-semibold text-red-600">{t.play.failedLoadRooms}</p>}
+                {roomError && <p className="error-message text-sm">{t.play.failedLoadRooms}</p>}
                 {rooms.length === 0 && !loadingRooms && <p className="text-sm text-slate-700">{t.play.noRoomsAvailable}</p>}
                 {rooms.map((room) => (
-                  <div key={room.id} className="flex items-center justify-between rounded-xl border border-slate-500 bg-white/70 px-3 py-2">
-                    <span className="text-sm font-medium">{room.creatorName ? `${room.creatorName}${t.play.room}` : room.name}</span>
+                  <div key={room.id} className="room-list-item">
+                    <span className="room-name">{room.creatorName ? `${room.creatorName}${t.play.room}` : room.name}</span>
                     <Button
                       variant="primary"
                       size="sm"
+                      className="shrink-0"
                       onClick={() => {
                         setConfig((prev) => ({ ...prev, gameMode: 'online-join', roomId: room.id }));
                         setState(STATES.CONFIGURE_GAME);
@@ -353,18 +346,18 @@ export default function PlayPage() {
             {state === STATES.CONFIGURE_GAME && (
               <PlayPanel title="Setup" subtitle={t.play.configureMatch}>
                 {user?.nickname ? (
-                  <p className="rounded-xl border border-slate-500 bg-white/70 px-4 py-3 text-sm">{t.play.name}: <strong>{user.nickname}</strong></p>
+                  <div className="flex flex-col gap-3">
+                    <label className="text-sm font-semibold uppercase tracking-wide text-muted">{t.play.name}</label>
+                    <p className="text-lg font-display font-semibold text-primary">{user.nickname}</p>
+                  </div>
                 ) : (
-                  <label className="flex flex-col gap-2 text-sm font-semibold text-slate-700">
-                    {t.play.name}
-                    <input
-                      type="text"
-                      placeholder={t.play.enterYourName}
-                      value={config.playerName || ''}
-                      onChange={(e) => setConfig((prev) => ({ ...prev, playerName: e.target.value }))}
-                      className="rounded-xl border border-slate-500 bg-white px-4 py-3 text-base font-medium text-slate-900"
-                    />
-                  </label>
+                  <TextField
+                    label={t.play.name}
+                    type="text"
+                    placeholder={t.play.enterYourName}
+                    value={config.playerName || ''}
+                    onChange={(value) => setConfig((prev) => ({ ...prev, playerName: value }))}
+                  />
                 )}
                 {config.gameMode !== 'online-join' && (
                   <label className="flex flex-col gap-2 text-sm font-semibold text-slate-700">
@@ -419,15 +412,12 @@ export default function PlayPage() {
 
             {state === STATES.LOCAL_P1_SETUP && (
               <PlayPanel title="Player 1" subtitle={t.play.playerSetup}>
-                <label className="flex flex-col gap-2 text-sm font-semibold text-slate-700">
-                  {t.play.name}
-                  <input
-                    type="text"
-                    value={config.playerName || ''}
-                    onChange={(e) => setConfig((prev) => ({ ...prev, playerName: e.target.value }))}
-                    className="rounded-xl border border-slate-500 bg-white px-4 py-3 text-base font-medium text-slate-900"
-                  />
-                </label>
+                <TextField
+                  label={t.play.name}
+                  type="text"
+                  value={config.playerName || ''}
+                  onChange={(value) => setConfig((prev) => ({ ...prev, playerName: value }))}
+                />
                 <ColorPicker
                   selectedColor={config.playerColor}
                   onColorSelect={(hex) => setConfig((prev) => ({ ...prev, playerColor: hex }))}
@@ -451,15 +441,12 @@ export default function PlayPage() {
 
             {state === STATES.LOCAL_P2_SETUP && (
               <PlayPanel title="Player 2" subtitle={t.play.playerSetup}>
-                <label className="flex flex-col gap-2 text-sm font-semibold text-slate-700">
-                  {t.play.name}
-                  <input
-                    type="text"
-                    value={config.player2Name || ''}
-                    onChange={(e) => setConfig((prev) => ({ ...prev, player2Name: e.target.value }))}
-                    className="rounded-xl border border-slate-500 bg-white px-4 py-3 text-base font-medium text-slate-900"
-                  />
-                </label>
+                <TextField
+                  label={t.play.name}
+                  type="text"
+                  value={config.player2Name || ''}
+                  onChange={(value) => setConfig((prev) => ({ ...prev, player2Name: value }))}
+                />
                 <ColorPicker
                   selectedColor={config.player2Color || '#F6511D'}
                   onColorSelect={(hex) => setConfig((prev) => ({ ...prev, player2Color: hex }))}
@@ -487,10 +474,10 @@ export default function PlayPage() {
             )}
           </div>
         </section>
-
-        <div className="pt-4 text-slate-800">
-          <FooterTermsPolicy />
         </div>
+      </div>
+      <div className="mt-auto pb-4">
+        <FooterTermsPolicy />
       </div>
     </main>
   );

@@ -67,10 +67,14 @@ interface TextFieldProps extends VariantProps<typeof inputVariants> {
   type?: 'text' | 'email' | 'password' | 'number';
   className?: string;
   disabled?: boolean;
+  // React Hook Form support
+  name?: string;
+  register?: any;
+  autoComplete?: string;
 }
 
 export function TextField({
-  variant,
+  variant = 'filled',
   size,
   font,
   label,
@@ -82,21 +86,28 @@ export function TextField({
   type = 'text',
   className,
   disabled = false,
+  name,
+  register,
+  autoComplete,
 }: TextFieldProps) {
   const hasError = !!error;
+  
+  // Determine if using React Hook Form or controlled mode
+  const isRHFMode = !!register && !!name;
+  const registration = isRHFMode ? register(name) : {};
   
   return (
     <div className="w-full">
       {label && (
-        <label className={labelVariants({ size })}>
+        <label htmlFor={name} className={labelVariants({ size })}>
           {label}
         </label>
       )}
       <input
+        id={name}
         type={type}
         placeholder={placeholder}
-        value={value}
-        onChange={(e) => onChange?.(e.target.value)}
+        autoComplete={autoComplete}
         className={cn(
           inputVariants({ 
             variant,
@@ -107,6 +118,10 @@ export function TextField({
           })
         )}
         disabled={disabled}
+        {...(isRHFMode 
+          ? registration 
+          : { value, onChange: (e) => onChange?.(e.target.value) }
+        )}
       />
       {(error || helperText) && (
         <p className={cn(

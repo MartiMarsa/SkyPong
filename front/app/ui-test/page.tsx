@@ -4,14 +4,33 @@ import {
   Button, 
   TextField, 
   Chip,
+  Avatar,
 } from '../ui/base';
 import { useTranslation } from '../context/language-context';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 export default function UITestPage() {
   const { t } = useTranslation();
   const [textValue, setTextValue] = useState('');
   const [textError, setTextError] = useState('');
+
+  // React Hook Form example schema
+  const formSchema = z.object({
+    username: z.string().min(3, 'Username must be at least 3 characters'),
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+  });
+
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(formSchema),
+  });
+
+  const onSubmit = (data: any) => {
+    alert('Form submitted: ' + JSON.stringify(data, null, 2));
+  };
 
   return (
     <div className="min-h-dvh bg-gray-50 p-8">
@@ -91,6 +110,48 @@ export default function UITestPage() {
           </div>
         </section>
 
+        {/* TextField with React Hook Form Section */}
+        <section className="mb-12">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">TextField with React Hook Form</h2>
+          
+          <div className="p-4 bg-blue-50 rounded-lg mb-4">
+            <p className="text-sm text-blue-800 mb-2">This example shows TextField integrated with React Hook Form + Zod validation</p>
+            <p className="text-xs text-gray-600">Try submitting with invalid values to see validation errors</p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="max-w-md space-y-6">
+            <TextField 
+              name="username"
+              label="Username (RHF)" 
+              placeholder="At least 3 characters"
+              register={register}
+              error={errors.username?.message as string}
+            />
+
+            <TextField 
+              name="email"
+              type="email"
+              label="Email (RHF)" 
+              placeholder="Enter valid email"
+              register={register}
+              error={errors.email?.message as string}
+            />
+
+            <TextField 
+              name="password"
+              type="password"
+              label="Password (RHF)" 
+              placeholder="At least 6 characters"
+              register={register}
+              error={errors.password?.message as string}
+            />
+
+            <Button type="submit" variant="primary">
+              Submit Form
+            </Button>
+          </form>
+        </section>
+
         {/* Chip Section */}
         <section className="mb-12">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Chip</h2>
@@ -108,6 +169,73 @@ export default function UITestPage() {
               <Chip variant="success">Online</Chip>
               <Chip variant="warning">In Game</Chip>
               <Chip variant="error">Offline</Chip>
+            </div>
+          </div>
+        </section>
+
+        {/* Avatar Section */}
+        <section className="mb-12">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">Avatar</h2>
+          
+          <p className="text-sm text-gray-600 mb-2">Avatar sizes</p>
+          <div className="flex flex-wrap gap-4 items-center mb-6">
+            <Avatar size="sm" fallbackText="John Doe" />
+            <Avatar size="md" fallbackText="John Doe" />
+            <Avatar size="lg" fallbackText="John Doe" />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Avatar with image</p>
+          <div className="flex flex-wrap gap-4 items-center mb-6">
+            <Avatar 
+              size="sm" 
+              src="/avatar/default-avatar.webp" 
+              alt="User avatar"
+            />
+            <Avatar 
+              size="md" 
+              src="/avatar/default-avatar.webp" 
+              alt="User avatar"
+            />
+            <Avatar 
+              size="lg" 
+              src="/avatar/default-avatar.webp" 
+              alt="User avatar"
+            />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Avatar with fallback initials (different names)</p>
+          <div className="flex flex-wrap gap-4 items-center mb-6">
+            <Avatar size="md" fallbackText="Alice" />
+            <Avatar size="md" fallbackText="Bob" />
+            <Avatar size="md" fallbackText="Charlie" />
+            <Avatar size="md" fallbackText="Diana" />
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Clickable avatar (hover to see effect)</p>
+          <div className="flex flex-wrap gap-4 items-center mb-6">
+            <Avatar 
+              size="md" 
+              fallbackText="John Doe"
+              onClick={() => alert('Avatar clicked!')}
+            />
+            <Avatar 
+              size="md" 
+              src="/avatar/default-avatar.webp"
+              onClick={() => alert('Avatar with image clicked!')}
+            />
+          </div>
+
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm md:text-base text-gray-600 text-blue-800 mb-2">Example usage in navigation:</p>
+            <p className="text-xs text-gray-600 mb-2">Shows user's uploaded image, or first letter of nickname as fallback</p>
+            <div className="flex gap-4 items-center">
+              <Avatar 
+                size="md" 
+                src="/avatar/default-avatar.webp"
+                fallbackText="SkyPong User"
+                onClick={() => alert('Open user menu')}
+              />
+              <span className="text-sm text-gray-600">← Click to open user menu</span>
             </div>
           </div>
         </section>
