@@ -309,10 +309,14 @@ export class Game {
           if (mat?.subSurface?.tintColor) mat.subSurface.tintColor = Color3.FromHexString(color);
         });
       },
-      onBallUpdate: ({ x, y, z }) => {
+      onBallUpdate: ({ x, y, z, vx, vy, vz }) => {
         this._gameLoop?.updateBallPosition(x, y, z);
+        this._gameLoop?.updateBallVelocity(vx, vy, vz);
       },
       onBallCollision: ({ lastImpactX, lastImpactZ, collisionTime }) => {
+        // Approach A: Notify game loop for enhanced lerp speed
+        // triggerBounce kept for API compatibility but doesn't affect position
+        this._gameLoop?.notifyCollision();
         ball.triggerBounce(lastImpactX, lastImpactZ, collisionTime);
       },
       onPaddleUpdate: ({ paddleIndex, x, z, enabled }) => {

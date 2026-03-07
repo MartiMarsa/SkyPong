@@ -60,7 +60,6 @@ function getPlayerLink(profileId : string, playerId : string, nickname : string)
 {
     const {user} = useAuth();
 
-
     if (playerId === profileId || isMe(playerId, user.id))
         return nickname;
     else
