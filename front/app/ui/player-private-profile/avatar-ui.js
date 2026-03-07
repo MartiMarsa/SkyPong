@@ -75,7 +75,9 @@ const getCookie = (name) => {
           return;
         }
         console.info("Avatar uploaded: ", response);
-        user.avatarURL = `/uploads/avatars/${user.id}.webp`;
+        if (user) {
+          user.avatarURL = `/uploads/avatars/${user.id}.webp`;
+        }
     } catch (error) {
       console.error("Error avatar: ", error);
     } finally {

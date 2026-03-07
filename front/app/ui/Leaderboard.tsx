@@ -182,7 +182,7 @@ export default function Leaderboard({userId}) {
         </p>
       )}
       {players.map((p, i) => (
-        <LeaderboardRow key={p.user_id} player={p} rank={i + 1} profileURL={whoisURL(p.user_id, user.id)} isMe={isMe(p.user_id, user.id)} />
+        <LeaderboardRow key={p.user_id} player={p} rank={i + 1} profileURL={whoisURL(p.user_id, user?.id)} isMe={isMe(p.user_id, user?.id)} />
       ))}
     </div>
   );
