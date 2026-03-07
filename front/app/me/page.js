@@ -38,17 +38,22 @@ export default function ProfilePageMe() {
     }, [user, authloading, router]);
 
     // Count achievements (locked vs unlocked)
+    const games = (stats) => { return stats.wins + stats.losses}
     const achievementCount = profile?.stats ? (() => {
         const stats = profile.stats;
-        let count = 0;
-        if (stats.total_games >= 1) count++;
-        if (stats.total_games >= 10) count++;
-        if (stats.total_games >= 50) count++;
-        if (stats.total_games >= 100) count++;
+        console.info("Player stats:", profile.stats);
+        let count = 1;
+        const totalGames = games(stats);
+        console.info("Player Total Games: ", totalGames);
+        if (totalGames >= 1) count++;
+        if (totalGames >= 10) count++;
+        if (totalGames >= 50) count++;
+        if (totalGames >= 100) count++;
         if (stats.wins >= 1) count++;
         if (stats.wins >= 10) count++;
         if (stats.wins >= 50) count++;
         if (stats.total_games > 0 && (stats.wins / stats.total_games) >= 0.7) count++;
+        console.log("Total achievements: ". count);
         return count;
     })() : 0;
 
@@ -125,7 +130,7 @@ export default function ProfilePageMe() {
                                     )}
 
                                     {activeTab === 'leaderboard' && (
-                                        <Leaderboard />
+                                        <Leaderboard userId={user?.id} />
                                     )}
                                 </div>
                             </div>

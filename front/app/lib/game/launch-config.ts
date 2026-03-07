@@ -1,3 +1,4 @@
+import { useTranslation } from '@/hooks/use-translation';
 import { z } from 'zod';
 
 /** Supported game modes for launch configuration. */
@@ -16,8 +17,13 @@ export interface GameConfig {
   readonly onlineRole?: 'create' | 'join';
 }
 
-const gameConfigSchema = z
-  .object({
+const gameConfigSchema = (t : any) => {
+const messages = {
+    difficultyRequired: t?.game?.difficultyRequired || 'AI mode requires a difficulty setting.',
+    diffultyOnlyAIMode: t?.game?.diffultyOnlyAIMode ||  'Only AI mode can include difficulty.',
+    onlineRoleOnlyForOlineMode: t?.game.onlineRoleOnlyForOlineMode || 'Only ONLINE mode can include onlineRole.', 
+}
+  return z.object({
     mode: z.enum(GAME_MODES),
     difficulty: z.enum(GAME_DIFFICULTIES).optional(),
     pointsToWin: z.number().int().min(3).max(11),
@@ -29,24 +35,25 @@ const gameConfigSchema = z
     if (value.mode === 'AI' && !value.difficulty) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'AI mode requires a difficulty setting.',
+        message: messages.difficultyRequired,
       });
     }
 
     if (value.mode !== 'AI' && value.difficulty) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Only AI mode can include difficulty.',
+        message: messages.diffultyOnlyAIMode,
       });
     }
 
     if (value.mode !== 'ONLINE' && value.onlineRole) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Only ONLINE mode can include onlineRole.',
+        message: messages.onlineRoleOnlyForOlineMode,
       });
     }
   });
+}
 
 function toBase64Url(value: string): string {
   return btoa(value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');

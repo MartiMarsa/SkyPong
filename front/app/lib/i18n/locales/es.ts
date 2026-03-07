@@ -89,6 +89,14 @@ const es = {
         resume: "Reanudar",
         quit: "Salir",
         playButton: "Jugar",
+        player: (num : number) => {return (`Jugador ${num}`)},
+        roomNameField: 'Nombre Sala',
+        erros: {
+            difficultyRequired: 'Modo AI requiere una configuración de dificultad',
+            diffultyOnlyAIMode: 'Unicamente el Modo AI puede incluir difficultad.',
+            onlineRoleOnlyForOlineMode: 'Only ONLINE mode can include onlineRole.',
+
+        }
     },
     play: {
         chooseGameMode: "Elige el modo de juego",
@@ -125,7 +133,10 @@ const es = {
         loadingGame: "Cargando juego...",
         error: "Error:",
         failedLoadRooms: "Error al cargar salas. Inténtalo de nuevo.",
-        room: "'s sala",
+        room: "de sala",
+        noRoomAvailable: "No hay salas disponibles",
+        joinRoomBtn: 'Unirse',
+        roomListTitle: 'Listado de Salas',
     },
     legal: {
         terms: "Términos de servicio",
@@ -229,6 +240,7 @@ const es = {
         submitButton: "Iniciar sesión",
         passwordForgottenLinkText: "¿Olvidaste tu contraseña?",
         loading: "Cargando...",
+        refresh: "Refrescar",
     },
     signUpPage: {
         title: "Registrarse",
@@ -365,16 +377,16 @@ const es = {
             login30Days: "Veterano",
             login30DaysDesc: "Inicia sesión durante 30 días consecutivos.",
         },
-        wonGamesAchievements: {
+        playGamesAchievements: {
             title: "Logros de Juegos Ganados",
-            firsgame: "Novato",
-            firsgameDesc: "Gana tu primer juego.",
-            win5Games: "Principiante",
-            win5GamesDesc: "Gana 5 juegos.",
-            win50Games: "Intermedio",
-            win50GamesDesc: "Gana 50 juegos.",
-            win500Games: "Experto",
-            win500GamesDesc: "Gana 500 juegos.",
+            firstgame: "Novato",
+            firstgameDesc: "Juega tu primer juego.",
+            play5Games: "Principiante",
+            play5GamesDesc: "Juega 5 juegos.",
+            play50Games: "Intermedio",
+            play50GamesDesc: "Juega 50 juegos.",
+            play500Games: "Experto",
+            play500GamesDesc: "Juega 500 juegos.",
         },
     },
     profile: {
@@ -404,12 +416,8 @@ const es = {
         leaderboard: {
             title: "Clasificación",
             rank: "Rango",
-            player: "Jugador",
             totalGames: "Juegos totales:",
             noPlayers: "Aún no hay jugadores.",
-            loading: "Cargando...",
-            online: "En línea",
-            idle: "Inactivo",
         },
     },
     uiTest: {
