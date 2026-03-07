@@ -185,7 +185,7 @@ export default function PlayerUI({ userURL })
                         disabled={isSubmitting}
                         className="w-full"
                     >
-                        {isSubmitting ? t.signUpPage.submitting : t.signUpPage.submitButton}
+                        {isSubmitting ? t.form.submitting : t.common.save}
                     </Button>
                 </form>
             )

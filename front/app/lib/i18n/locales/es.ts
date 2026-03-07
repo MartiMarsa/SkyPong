@@ -44,6 +44,7 @@ const es = {
         uploading: "Subiendo...",
         cancel: "Cancelar",
         backHome: "Volver al Inicio",
+        save: "Guardar",
     },
     serverError: {
         conectionError: "Server conection error",

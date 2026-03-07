@@ -41,6 +41,7 @@ const it = {
         uploading: "Caricamento...",
         cancel: "Annulla",
         backHome: "Torna alla Home",
+        save: "Salva",
     },
     serverError: {
         conectionError: "Server conection error",
