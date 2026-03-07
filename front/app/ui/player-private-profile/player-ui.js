@@ -38,9 +38,9 @@ export default function PlayerUI({ userURL })
         if (player)
             return;
         try {
-            console.log("Solicitando perfil para ID:", user.id);
+            console.log("Solicitando perfil para ID:", user?.id);
             
-            const response = await fetch(`/api/profile/${user.id}`, {
+            const response = await fetch(`/api/profile/${user?.id}`, {
                 method: 'GET',
                 credentials: 'include',
             });
@@ -145,7 +145,7 @@ export default function PlayerUI({ userURL })
     return (
         <>
         { isLoading ? (
-            <img src={`/api/profile/avatars/${user.id}.webp`} />
+            <img src={`/api/profile/avatars/${user?.id}.webp`} />
             ) :
             (
                 <form id="playerDataForm" onSubmit={handleSubmit(onSubmit, (errors) => console.log("Validation errors:", errors))} className="form-wrapper">

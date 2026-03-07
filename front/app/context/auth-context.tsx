@@ -100,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       // 2. Limpiar el estado local e ir a home pase lo que pase
       setUser(null);
+      setHasCredentials(false);
       router.push('/login');
       router.refresh(); // Limpia la caché de Next.js
     }
