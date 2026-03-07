@@ -1,8 +1,9 @@
 import { AdvancedDynamicTexture, TextBlock, StackPanel, Control } from "@babylonjs/gui";
 import { GUI_STYLES } from "../config/GUIStyles";
-import { UITexts, Language, HUDTexts } from "../config/UITexts";
+import { UITexts, Language, HUDTexts, ControlHintTexts } from "../config/UITexts";
 import { GUIElements } from "./GUIElements";
 import { touchDetection } from "../utils/touchDetection";
+import { GameMode } from "../types/GameSessionConfig";
 
 export class GameHUD {
   private _player1Container: StackPanel;
@@ -13,6 +14,7 @@ export class GameHUD {
   private _player1ScoreText: TextBlock;
   private _player2ScoreText: TextBlock;
   private _countdownText: TextBlock;
+  private _controlHintTexts: TextBlock[] = [];
 
   private _player1Name: string;
   private _player2Name: string;
@@ -21,7 +23,7 @@ export class GameHUD {
   private _isMobile: boolean;
   private _texts: HUDTexts;
 
-  constructor(private _texture: AdvancedDynamicTexture, language: Language = 'en') {
+  constructor(private _texture: AdvancedDynamicTexture, language: Language = 'en', gameMode?: GameMode) {
     this._isMobile = touchDetection();
     this._texts = UITexts[language].hud;
     this._player1Name = this._texts.player1Default;
@@ -76,6 +78,33 @@ export class GameHUD {
 
     this._countdownText = GUIElements.CreateText("countdownText", "", GUI_STYLES.TEXT.COUNTDOWN);
     this._texture.addControl(this._countdownText);
+
+    // Create control hints for non-touch devices
+    if (!this._isMobile && gameMode) {
+      const controlHintTexts: ControlHintTexts = UITexts[language].controlHints;
+      const lines: string[] = gameMode === 'local-2p'
+        ? [controlHintTexts.paddleControlP1, controlHintTexts.paddleControlP2]
+        : [controlHintTexts.paddleControlSingle];
+
+      lines.forEach((line, i) => {
+        const tb = new TextBlock(`controlHint${i}`, line);
+        tb.color = GUI_STYLES.TEXT.CONTROL_HINT.color;
+        tb.fontSize = GUI_STYLES.TEXT.CONTROL_HINT.fontSize;
+        tb.shadowColor = GUI_STYLES.TEXT.CONTROL_HINT.shadowColor!;
+        tb.shadowOffsetX = GUI_STYLES.TEXT.CONTROL_HINT.shadowOffsetX!;
+        tb.shadowOffsetY = GUI_STYLES.TEXT.CONTROL_HINT.shadowOffsetY!;
+        tb.shadowBlur = GUI_STYLES.TEXT.CONTROL_HINT.shadowBlur!;
+        tb.resizeToFit = true;
+        tb.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+        tb.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
+        tb.textHorizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
+        tb.left = "20px";
+        tb.top = `${-60 - (lines.length - 1 - i) * 22}px`;
+        tb.isVisible = false;
+        this._texture.addControl(tb);
+        this._controlHintTexts.push(tb);
+      });
+    }
   }
 
   public showPauseButton(onClick: () => void): void {
@@ -103,12 +132,16 @@ export class GameHUD {
     this._player1Container.isVisible = true;
     this._player2Container.isVisible = true;
     this._countdownText.isVisible = false;
+    
+    this._controlHintTexts.forEach(tb => tb.isVisible = true);
   }
 
   public hide(): void {
     this._player1Container.isVisible = false;
     this._player2Container.isVisible = false;
     this._countdownText.isVisible = false;
+    
+    this._controlHintTexts.forEach(tb => tb.isVisible = false);
   }
 
   public updateCountdown(text: string): void {

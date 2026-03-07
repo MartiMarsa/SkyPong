@@ -19,10 +19,17 @@ export interface GameOverTexts {
   score: string;
 }
 
+export interface ControlHintTexts {
+  paddleControlSingle: string;
+  paddleControlP1: string;
+  paddleControlP2: string;
+}
+
 export interface LanguageTexts {
   gameOver: GameOverTexts;
   pause: PauseTexts;
   hud: HUDTexts;
+  controlHints: ControlHintTexts;
 }
 
 export const UITexts: Record<string, LanguageTexts> = {
@@ -44,6 +51,11 @@ export const UITexts: Record<string, LanguageTexts> = {
       player2Default: "Player 2",
       scoreDefault: "0",
     },
+    controlHints: {
+      paddleControlSingle: "Paddle control keys : A - D",
+      paddleControlP1: "Paddle control keys P1: A - D",
+      paddleControlP2: "Paddle control keys P2: J - L",
+    },
   },
   es: {
     gameOver: {
@@ -63,6 +75,11 @@ export const UITexts: Record<string, LanguageTexts> = {
       player2Default: "Jugador 2",
       scoreDefault: "0",
     },
+    controlHints: {
+      paddleControlSingle: "Teclas de control de paleta : A - D",
+      paddleControlP1: "Teclas de control de paleta P1: A - D",
+      paddleControlP2: "Teclas de control de paleta P2: J - L",
+    },
   },
   it: {
     gameOver: {
@@ -81,6 +98,11 @@ export const UITexts: Record<string, LanguageTexts> = {
       player1Default: "Giocatore 1",
       player2Default: "Giocatore 2",
       scoreDefault: "0",
+    },
+    controlHints: {
+      paddleControlSingle: "Tasti di controllo racchetta : A - D",
+      paddleControlP1: "Tasti di controllo racchetta P1: A - D",
+      paddleControlP2: "Tasti di controllo racchetta P2: J - L",
     },
   },
 };

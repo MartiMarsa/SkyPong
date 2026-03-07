@@ -24,6 +24,10 @@ export class GUIElements {
     if (style.paddingLeft) text.paddingLeft = style.paddingLeft;
     if (style.paddingRight) text.paddingRight = style.paddingRight;
 
+    if (style.textHorizontalAlignment !== undefined) {
+      text.textHorizontalAlignment = style.textHorizontalAlignment;
+    }
+
     if (style.textVerticalAlignment !== undefined) {
       text.textVerticalAlignment = style.textVerticalAlignment;
     } else {
