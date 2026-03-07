@@ -133,7 +133,7 @@ export default function PlayerCredentialsUI({ userURL })
             disabled={isLoading || isSubmitting}
             className="w-full"
         >
-            {isLoading ? t.form.submitting : t.signUpPage.submitButton}
+            {isLoading ? t.form.submitting : t.common.save}
         </Button>
     </form>
 ); 

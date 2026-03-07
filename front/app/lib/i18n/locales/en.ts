@@ -41,6 +41,7 @@ const en = {
         uploading: "Uploading...",
         cancel: "Cancel",
         backHome: "Back to Home",
+        save: "Save",
     },
     serverError: {
         conectionError: "Server conection error",
