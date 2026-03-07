@@ -9,7 +9,7 @@ const en = {
         howToPlay: "How to play?",
     },
     user: {
-        hi: "Hi!",
+        hi: (name) =>(`Hi, ${name}!`),
         nickname: "Nickname",
         winphrase: "Win Phrase",
         userData: "User Data",
