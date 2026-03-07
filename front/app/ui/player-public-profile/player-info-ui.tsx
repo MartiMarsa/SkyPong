@@ -2,6 +2,8 @@
 
 import { Avatar, StatCard } from '../base';
 import { useTranslation } from '../../context/language-context';
+import AddFriendButton from './AddFriendButton'
+import { useAuth } from '../../context/auth-context';
 
 interface PlayerStats {
   wins: number;
@@ -20,11 +22,12 @@ interface PlayerProfile {
 
 interface PlayerInfoProps {
   profile: PlayerProfile;
+  csrfToken: string;
 }
 
-export default function PlayerInfo({ profile }: PlayerInfoProps) {
+export default function PlayerInfo({ profile, csrfToken }: PlayerInfoProps) {
   const { t } = useTranslation();
-
+  const { user } = useAuth();
   // Calculate stats
   const wins = profile?.stats?.wins || 0;
   const losses = profile?.stats?.losses || 0;
@@ -85,6 +88,9 @@ export default function PlayerInfo({ profile }: PlayerInfoProps) {
           variant="danger"
         />
       </div>
+      { user.id !== profile.id ? (<div className="">
+        <AddFriendButton currentUserId={user?.id} targetId={profile.id} csrfToken={csrfToken} />
+      </div>) : ("") }
     </>
   );
 }
