@@ -4,6 +4,7 @@ import { getTokenDB } from '../database/dbTokens';
 import { privateKey, publicKey } from '../keys';
 import * as AuthInterfaces from '../types/auth.interfaces';
 
+// --- CREATE REFRESH TOKEN ---
 export async function createRefreshToken(userId: string): Promise<string> {
     	const db = getTokenDB();
     	const tokenId = randomUUID();
@@ -23,6 +24,7 @@ export async function createRefreshToken(userId: string): Promise<string> {
 	return token;
 }
 
+// --- VERIFY REFRESH TOKEN ---
 export async function verifyRefreshToken(token: string): Promise<AuthInterfaces.RefreshPayload | null> {
     	try {
 		const payload: any = jwt.verify(token, publicKey, { issuer: 'auth-service' });
@@ -44,6 +46,7 @@ export async function verifyRefreshToken(token: string): Promise<AuthInterfaces.
     	}
 }
 
+// --- REVOKE REFRESH TOKEN ---
 export async function revokeRefreshToken(tokenId: string): Promise<void> {
     	const db = getTokenDB();
     	db.run(`UPDATE refresh_tokens SET revoked = 1 WHERE id = ?`, [tokenId]);
@@ -55,6 +58,7 @@ export async function revokeRefreshTokenById(userId: string): Promise<void> {
 	      [userId]);
 }
 
+// --- CHECKER IF REFRESH TOKEN IS VALID ---
 export async function isTokenRevoked(tokenId: string): Promise<boolean> {
     	const db = getTokenDB();
     	const row: any = await new Promise((res, rej) => {
@@ -65,6 +69,7 @@ export async function isTokenRevoked(tokenId: string): Promise<boolean> {
     	return !row ? true : !!row.revoked;
 }
 
+// --- CLEANUP REFRESH TOKEN GARBAGE ---
 export function refreshTokenCleanup() {
     const db = getTokenDB();
 

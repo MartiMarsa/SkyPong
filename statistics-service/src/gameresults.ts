@@ -8,7 +8,10 @@ export { StatsEnums };
 // --- DB ---
 const db = getDbHelpers(getStatisticsDB());
 
+// --- UTILS ---
 const AI_USER_IDS = new Set<string>(Object.values(StatsEnums.AIUserType));
+
+// --- MAIN FUNCTIONS ---
 
 function detectGameMode(user1Id: string, user2Id: string): StatsEnums.GameMode {
   	if (AI_USER_IDS.has(user1Id) || AI_USER_IDS.has(user2Id)) {
@@ -62,7 +65,7 @@ export async function addGameStats(game: StatsTypes.GameResult): Promise<void> {
 
 		const game_mode = detectGameMode(p1.user_id, p2.user_id);	
 
-		console.log("----> GAME MODE IS: ", game_mode);
+		console.log("[stats addGameStats game mode: ]", game_mode);
 
       	await run(
 	    	`

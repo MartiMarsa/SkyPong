@@ -9,8 +9,8 @@ const leaderboardDbPath = process.env.STATS_DB_PATH?.trim() || path.join(leaderb
 fs.mkdirSync(path.dirname(leaderboardDbPath), { recursive: true });
 
 const db = new sqlite3.Database(leaderboardDbPath, sqlite3.OPEN_READWRITE | sqlite3.OPEN_CREATE, err => {
-      	if (err) console.error('Leaderboard DB error', err);
-      	else console.log('Connected leaderboard DB');
+								if (err) console.error('Leaderboard DB error', err);
+								else console.log('Connected leaderboard DB');
 });
 
 export function initLeaderboardDB() {
@@ -71,11 +71,11 @@ export function initLeaderboardDB() {
 }
 
 export function getLeaderboardDB() {
-      	return db;
+	return db;
 }
 
 export function closeLeaderboardDB(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    db.close(err => (err ? reject(err) : resolve()));
-  });
+  	return new Promise((resolve, reject) => {
+				   	   db.close(err => (err ? reject(err) : resolve()));
+					   });
 }

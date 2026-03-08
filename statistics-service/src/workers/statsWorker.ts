@@ -3,7 +3,7 @@ import { getStatisticsDB } from '../database/dbStats';
 import { sleep, getDbHelpers } from '../utils/helpers';
 import * as StatsTypes from '../types/stats.types';
 
-// --- CONFIG ---
+// --- CONFIGURATION ---
 const PROFILE_API = process.env.PROFILE_SERVICE_URL!;
 
 if (!process.env.PROFILE_SERVICE_URL) {

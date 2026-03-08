@@ -30,6 +30,8 @@ import { updatePlayerInfoSchema } from './validation/checkInput';
 import * as ProfileTypes from './types/profile.types';
 import * as ProfileInterfaces from './types/profile.interfaces';
 
+
+// --- CONFIGURATION ---
 const fastify = Fastify({logger: true});
 
 const chatClients = new Set<ProfileTypes.ChatClient>();
