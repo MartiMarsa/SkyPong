@@ -42,11 +42,16 @@ export default function PlayerInfo({ profile, csrfToken }: PlayerInfoProps) {
     <>
       {/* Profile Header */}
       <section className="profile-header">
-        <Avatar 
-          size="lg" 
-          src={profile?.avatarUrl || '/avatar/default-avatar.webp'} 
-          fallbackText={profile?.nickname || 'Player'}
-        />
+        <div className="flex flex-col items-center gap-3">
+          <Avatar 
+            size="lg" 
+            src={profile?.avatarUrl || '/avatar/default-avatar.webp'} 
+            fallbackText={profile?.nickname || 'Player'}
+          />
+          {user && user.id !== profile.id && (
+            <AddFriendButton currentUserId={user?.id} targetId={profile.id} csrfToken={csrfToken} />
+          )}
+        </div>
         <div className="profile-identity">
           <h2 className="text-2xl md:text-3xl font-bold font-display text-gray-900">
             {profile?.nickname || 'Player'}
@@ -88,9 +93,6 @@ export default function PlayerInfo({ profile, csrfToken }: PlayerInfoProps) {
           variant="danger"
         />
       </div>
-      {user && user.id !== profile.id ? (<div className="">
-        <AddFriendButton currentUserId={user?.id} targetId={profile.id} csrfToken={csrfToken} />
-      </div>) : ("") }
     </>
   );
 }

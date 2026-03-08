@@ -291,6 +291,17 @@ const it = {
         playerUnbloqued: "Giocatore sbloccato",
         remove: "Rimuovi",
         nooutgoingRequests: "Nessuna richiesta in uscita",
+        addFriend: "+ AGGIUNGI AMICO",
+        requestSent: "RICHIESTA INVIATA",
+        acceptRequest: "ACCETTA RICHIESTA",
+        unavailable: "NON DISPONIBILE",
+        removeFriend: "✕ RIMUOVI AMICO",
+        block: "🚫 BLOCCA",
+        unblock: "↩ SBLOCCA",
+        cancelRequest: "✕ ANNULLA RICHIESTA",
+        nowFriends: "✓ Ora siete amici!",
+        requestSentSuccess: "Richiesta inviata",
+        itsMe: "<-⭐ Sono io Mario! 🍄",
     },
     form: {
         labels: {

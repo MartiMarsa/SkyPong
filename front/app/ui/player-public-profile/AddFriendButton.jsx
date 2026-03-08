@@ -30,6 +30,8 @@
 import { useState, useEffect, useCallback } from "react";
 import api from "../../api/api";
 import Toast from "../messaging/toast";
+import { useTranslation } from "../../context/language-context";
+import { cn } from "@/lib/utils";
 
 // ─── Relation states ──────────────────────────────────────────────────────────
 // null          → no relation
@@ -39,55 +41,7 @@ import Toast from "../messaging/toast";
 // "blocked"     → I blocked them
 // "blocked_by"  → they blocked me
 
-// ─── Design tokens ────────────────────────────────────────────────────────────
-const mono = "'Courier New', monospace";
-
-const STATES = {
-  null: {
-    label: "+ AÑADIR AMIGO",
-    color: "#00d2be",
-    bg: "rgba(0,210,190,0.1)",
-    border: "rgba(0,210,190,0.4)",
-    hoverBg: "rgba(0,210,190,0.2)",
-  },
-  accepted: {
-    label: "✓ AMIGOS",
-    color: "#22c55e",
-    bg: "rgba(34,197,94,0.1)",
-    border: "rgba(34,197,94,0.35)",
-    hoverBg: "rgba(34,197,94,0.18)",
-  },
-  pending_out: {
-    label: "◌ SOLICITUD ENVIADA",
-    color: "#f59e0b",
-    bg: "rgba(245,158,11,0.08)",
-    border: "rgba(245,158,11,0.3)",
-    hoverBg: "rgba(245,158,11,0.15)",
-  },
-  pending_in: {
-    label: "◈ ACEPTAR SOLICITUD",
-    color: "#a78bfa",
-    bg: "rgba(167,139,250,0.1)",
-    border: "rgba(167,139,250,0.4)",
-    hoverBg: "rgba(167,139,250,0.2)",
-  },
-  blocked: {
-    label: "🚫 BLOQUEADO",
-    color: "#ef4444",
-    bg: "rgba(239,68,68,0.08)",
-    border: "rgba(239,68,68,0.3)",
-    hoverBg: "rgba(239,68,68,0.15)",
-  },
-  blocked_by: {
-    label: "— NO DISPONIBLE",
-    color: "#3a5060",
-    bg: "transparent",
-    border: "rgba(255,255,255,0.06)",
-    hoverBg: "transparent",
-  },
-};
-
-// ─── Dropdown menu ──────────────────) : (router.push('/')) }──────────────────────────────────────────
+// ─── Dropdown menu ────────────────────────────────────────────────────────────
 function DropdownMenu({ items, onClose }) {
   useEffect(() => {
     const handler = () => onClose();
@@ -98,48 +52,20 @@ function DropdownMenu({ items, onClose }) {
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      style={{
-        position: "absolute",
-        top: "calc(100% + 6px)",
-        right: 0,
-        background: "#0d1117",
-        border: "1px solid rgba(255,255,255,0.1)",
-        borderRadius: "10px",
-        padding: "6px",
-        zIndex: 100,
-        minWidth: "180px",
-        boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
-      }}
+      className="dropdown-menu-avatar"
     >
       {items.map((item) => (
         <button
           key={item.label}
           onClick={() => { item.action(); onClose(); }}
-          style={{
-            display: "block",
-            width: "100%",
-            background: "none",
-            border: "none",
-            borderRadius: "7px",
-            padding: "9px 14px",
-            textAlign: "left",
-            fontFamily: mono,
-            fontSize: "11px",
-            letterSpacing: "0.07em",
-            color: item.danger ? "#ef4444" : "#8899aa",
-            cursor: "pointer",
-            transition: "background 0.15s, color 0.15s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = item.danger
-              ? "rgba(239,68,68,0.1)"
-              : "rgba(255,255,255,0.05)";
-            e.currentTarget.style.color = item.danger ? "#ef4444" : "#c9d8e0";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "none";
-            e.currentTarget.style.color = item.danger ? "#ef4444" : "#8899aa";
-          }}
+          className={cn(
+            "w-full text-left px-3 py-2 rounded-md",
+            "font-display text-[11px] uppercase tracking-wider",
+            "transition-colors duration-150",
+            item.danger
+              ? "text-danger hover:bg-red-50"
+              : "text-gray-700 hover:bg-gray-100"
+          )}
         >
           {item.label}
         </button>
@@ -150,6 +76,7 @@ function DropdownMenu({ items, onClose }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function AddFriendButton({ currentUserId, targetId, csrfToken }) {
+  const { t } = useTranslation();
   const [relation, setRelation] = useState(undefined); // undefined = loading
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -158,6 +85,34 @@ export default function AddFriendButton({ currentUserId, targetId, csrfToken }) 
 
   const csrf = csrfToken;
   const notify = (msg, type = "ok") => setToast({ msg, type });
+
+  // ── State styling configuration using design system ──
+  const getStateStyles = () => ({
+    null: {
+      label: t.player.addFriend,
+      classes: "bg-primary hover:bg-primary-hover text-white"
+    },
+    accepted: {
+      label: "✓ " + t.player.friends.toUpperCase(),
+      classes: "bg-chip-success hover:bg-green-200 text-chip-success-text"
+    },
+    pending_out: {
+      label: "◌ " + t.player.requestSent,
+      classes: "bg-chip-warning hover:bg-yellow-200 text-chip-warning-text"
+    },
+    pending_in: {
+      label: "◈ " + t.player.acceptRequest,
+      classes: "bg-chip-warning hover:bg-yellow-200 text-chip-warning-text"
+    },
+    blocked: {
+      label: "🚫 " + t.player.blocked.toUpperCase(),
+      classes: "bg-chip-error hover:bg-red-200 text-chip-error-text"
+    },
+    blocked_by: {
+      label: "— " + t.player.unavailable,
+      classes: "bg-gray-200 text-gray-600 cursor-not-allowed"
+    }
+  });
 
   // ── Fetch current relation status ──
   const fetchStatus = useCallback(async () => {
@@ -200,50 +155,56 @@ export default function AddFriendButton({ currentUserId, targetId, csrfToken }) 
     }
   };
 
-  const sendRequest   = () => act(() => api(`/api/profile/friends/${targetId}`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId} }), "Solicitud enviada");
-  const cancelRequest = () => act(() => api(`/api/profile/friends/${targetId}/cancel`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId}  }), "Solicitud cancelada");
-  const acceptRequest = () => act(() => api(`/api/profile/friends/${targetId}/accept`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf },  body: { userId: currentUserId, targetId: targetId} }), "✓ ¡Ahora sois amigos!");
-  const rejectRequest = () => act(() => api(`/api/profile/friends/${targetId}/reject`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId} }), "Solicitud rechazada");
-  const removeFriend  = () => act(() => api(`/api/profile/friends/${targetId}`, { method: "DELETE", headers: { 'x-csrf-token': csrf } }), "Amigo eliminado");
-  const blockUser     = () => act(() => api(`/api/profile/friends/${targetId}/block`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId} }), "Usuario bloqueado");
-  const unblockUser   = () => act(() => api(`/api/profile/friends/${targetId}/unblock`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId} }), "Usuario desbloqueado");
+  const sendRequest   = () => act(() => api(`/api/profile/friends/${targetId}`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId} }), t.player.requestSentSuccess);
+  const cancelRequest = () => act(() => api(`/api/profile/friends/${targetId}/cancel`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId}  }), t.player.requestCancelled);
+  const acceptRequest = () => act(() => api(`/api/profile/friends/${targetId}/accept`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf },  body: { userId: currentUserId, targetId: targetId} }), t.player.nowFriends);
+  const rejectRequest = () => act(() => api(`/api/profile/friends/${targetId}/reject`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId} }), t.player.requestRejected);
+  const removeFriend  = () => act(() => api(`/api/profile/friends/${targetId}`, { method: "DELETE", headers: { 'x-csrf-token': csrf } }), t.player.friendRemoved);
+  const blockUser     = () => act(() => api(`/api/profile/friends/${targetId}/block`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId} }), t.player.playerBloqued);
+  const unblockUser   = () => act(() => api(`/api/profile/friends/${targetId}/unblock`, { method: "POST", headers: { 'Content-Type' : 'application/json', 'x-csrf-token' : csrf }, body: { userId: currentUserId, targetId: targetId} }), t.player.playerUnbloqued);
 
 
   if (relation === "me") {
     return (
-        <div style={{ fontFamily: mono, fontSize: "11px", backgroundColor:"rgb(21 29 42)", color: "#92994a", letterSpacing: "0.1em", border: "1px dashed #687d8b ", borderRadius: "5px", padding: "7px" }}>
-           {"<-⭐ It's me Mario! 🍄"}
+        <div className={cn(
+          "btn-sm rounded-full",
+          "font-display tracking-wide",
+          "bg-chip-default text-chip-default-text"
+        )}>
+           {t.player.itsMe}
         </div>
     );
   }
+
   // ── Loading ──
   if (relation === undefined) {
     return (
-      <div style={{ fontFamily: mono, fontSize: "11px", color: "#3a5060", letterSpacing: "0.1em" }}>
+      <div className="font-display text-[11px] text-gray-400 tracking-wide">
         ...
       </div>
     );
   }
 
-  const style = STATES[relation] || STATES[null];
+  const stateStyles = getStateStyles();
+  const style = stateStyles[relation] || stateStyles[null];
 
   // ── Dropdown items per state ──
   const dropdownItems = {
     accepted: [
-      { label: "✕ ELIMINAR AMIGO", action: removeFriend, danger: true },
-      { label: "🚫 BLOQUEAR", action: blockUser, danger: true },
+      { label: t.player.removeFriend, action: removeFriend, danger: true },
+      { label: t.player.block, action: blockUser, danger: true },
     ],
     pending_out: [
-      { label: "✕ CANCELAR SOLICITUD", action: cancelRequest, danger: true },
-      { label: "🚫 BLOQUEAR", action: blockUser, danger: true },
+      { label: t.player.cancelRequest, action: cancelRequest, danger: true },
+      { label: t.player.block, action: blockUser, danger: true },
     ],
     pending_in: [
-      { label: "✓ ACEPTAR", action: acceptRequest },
-      { label: "✕ RECHAZAR", action: rejectRequest, danger: true },
-      { label: "🚫 BLOQUEAR", action: blockUser, danger: true },
+      { label: "✓ " + t.player.accept.toUpperCase(), action: acceptRequest },
+      { label: "✕ " + t.player.reject.toUpperCase(), action: rejectRequest, danger: true },
+      { label: t.player.block, action: blockUser, danger: true },
     ],
     blocked: [
-      { label: "↩ DESBLOQUEAR", action: unblockUser },
+      { label: t.player.unblock, action: unblockUser },
     ],
   };
 
@@ -261,55 +222,60 @@ export default function AddFriendButton({ currentUserId, targetId, csrfToken }) 
   const hasDropdown = ["accepted", "pending_out", "pending_in", "blocked"].includes(relation);
 
   return (
-    <div style={{ position: "relative", display: "inline-flex", gap: "4px", alignItems: "center" }}>
+    <div className="relative inline-flex flex-col items-end gap-1.5">
 
-      {/* Main button */}
-      <button
-        onClick={primaryAction || undefined}
-        disabled={busy || relation === "blocked_by"}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        style={{
-          background: hover && primaryAction ? style.hoverBg : style.bg,
-          border: `1px solid ${style.border}`,
-          borderRadius: hasDropdown ? "8px 0 0 8px" : "8px",
-          padding: "8px 16px",
-          fontFamily: mono,
-          fontSize: "11px",
-          letterSpacing: "0.1em",
-          fontWeight: 700,
-          color: style.color,
-          cursor: busy || !primaryAction ? "not-allowed" : "pointer",
-          opacity: busy ? 0.6 : 1,
-          transition: "all 0.18s",
-          textTransform: "uppercase",
-          whiteSpace: "nowrap",
-        }}
-      >
-        {busy ? "..." : style.label}
-      </button>
-
-      {/* Dropdown chevron — only when there are extra actions */}
-      {hasDropdown && (
+      <div className="inline-flex">
+        {/* Main button */}
         <button
-          onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o); }}
-          disabled={busy}
-          style={{
-            background: menuOpen ? style.hoverBg : style.bg,
-            border: `1px solid ${style.border}`,
-            borderLeft: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: "0 8px 8px 0",
-            padding: "8px 10px",
-            color: style.color,
-            cursor: "pointer",
-            fontSize: "10px",
-            opacity: busy ? 0.6 : 1,
-            transition: "all 0.18s",
-          }}
+          onClick={primaryAction || undefined}
+          disabled={busy || relation === "blocked_by"}
+          onMouseEnter={() => setHover(true)}
+          onMouseLeave={() => setHover(false)}
+          className={cn(
+            // Layout
+            "inline-flex items-center justify-center",
+            "btn-sm",
+            
+            // Typography
+            "font-display font-bold uppercase tracking-wider",
+            "whitespace-nowrap",
+            
+            // Shape
+            hasDropdown ? "rounded-l-full" : "rounded-full",
+            
+            // Interactions
+            "transition-all duration-200",
+            "focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-1",
+            "disabled:opacity-60 disabled:cursor-not-allowed",
+            
+            // State-specific styling
+            style.classes
+          )}
         >
-          {menuOpen ? "▲" : "▼"}
+          {busy ? "..." : style.label}
         </button>
-      )}
+
+        {/* Dropdown chevron — only when there are extra actions */}
+        {hasDropdown && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setMenuOpen(o => !o); }}
+            disabled={busy}
+            className={cn(
+              "inline-flex items-center justify-center",
+              "px-2.5 py-2",
+              "font-display text-[10px]",
+              "rounded-r-full -ml-1",
+              "transition-all duration-200",
+              "focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-1",
+              "disabled:opacity-60",
+              menuOpen && "brightness-95",
+              style.classes
+            )}
+          >
+            {menuOpen ? "▲" : "▼"}
+          </button>
+        )}
+      </div>
 
       {/* Dropdown */}
       {menuOpen && dropdownItems[relation] && (
