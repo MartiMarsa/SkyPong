@@ -29,7 +29,10 @@ export async function verifyRefreshToken(token: string): Promise<AuthInterfaces.
     	try {
 		const payload: any = jwt.verify(token, publicKey, { issuer: 'auth-service' });
 
-		if (payload.type !== 'refresh' || !payload.sub || !payload.tokenId) return null;
+		if (payload.type !== 'refresh' || !payload.sub || !payload.tokenId){
+			console.log("[auth] Bad refresh token credenciales");
+		   	return null;
+		}
 
 		const db = getTokenDB();
 		const row: any = await new Promise((res, rej) => {
@@ -38,7 +41,10 @@ export async function verifyRefreshToken(token: string): Promise<AuthInterfaces.
 		  	      );
 		});
 
-		if (!row || row.revoked) return null;
+		if (!row || row.revoked) { 
+			console.log("[auth] Can´t find refresh token");
+			return null;
+		}
 
 		return { userId: payload.sub, tokenId: payload.tokenId, type: 'refresh' };
 	} catch {
