@@ -92,13 +92,17 @@ function GameRow({ game, profileId }: { game: GameHistoryItem; profileId: string
 
       {/* Players */}
       <div className="game-players">
-        <Avatar size="sm" src={me.avatar || '/avatar/default-avatar.webp'} fallbackText={me.nickname} />
-        {getPlayerLink(profileId, me.id, me.nickname)}
-        <span className="text-muted text-sm">{me.points}</span>
+        <div className='game-player-info'>
+            <Avatar size="sm" src={me.avatar || '/avatar/default-avatar.webp'} fallbackText={me.nickname} />
+            {getPlayerLink(profileId, me.id, me.nickname)}
+            <span className="text-muted text-sm">{me.points}</span>
+        </div>
         <span className="text-muted text-sm">vs</span>
-        <Avatar size="sm" src={opponent.avatar || '/avatar/default-avatar.webp'} fallbackText={opponent.nickname} />
-        {getPlayerLink(profileId, opponent.id, opponent.nickname)}
-        <span className="text-muted text-sm">{opponent.points}</span>
+        <div className='game-player-info'>
+            <Avatar size="sm" src={opponent.avatar || '/avatar/default-avatar.webp'} fallbackText={opponent.nickname} />
+            {getPlayerLink(profileId, opponent.id, opponent.nickname)}
+            <span className="text-muted text-sm">{opponent.points}</span>
+        </div>
       </div>
 
       {/* Mode badge */}
