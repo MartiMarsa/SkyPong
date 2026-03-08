@@ -39,7 +39,7 @@ export class GameUIManager {
       language,
     );
 
-    this.hud = new GameHUD(this.texture, language);
+    this.hud = new GameHUD(this.texture, language, config.gameMode);
     this.gameOverOverlay = new GameOverOverlay(this.texture, onBackToMenu, config, onRetry, language);
   }
 

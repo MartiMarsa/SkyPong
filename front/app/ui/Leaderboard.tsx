@@ -11,6 +11,7 @@ import { useAuth } from '../context/auth-context';
 
 interface PlayerStat {
   user_id: string;
+  nickname: string;
   played: number;
   wins: number;
   losses: number;
@@ -25,6 +26,13 @@ interface LeaderboardResponse {
 }
 
 const POLL_INTERVAL = 30_000; // 30s
+
+function formatWinratePercentage(winrate: number | null | undefined): string {
+  if (winrate == null) return '—';
+
+  const normalizedRate = winrate <= 1 ? winrate * 100 : winrate;
+  return `${Math.round(normalizedRate)}%`;
+}
 
 function useLeaderboard() {
   const [players, setPlayers] = useState<PlayerStat[]>([]);
@@ -152,7 +160,7 @@ function LeaderboardRow({
         </span>
         <span className="text-xs text-muted">
           {t.player.winRate}:{' '}
-          {player.winrate != null ? `${Math.round(player.winrate)}%` : '—'}
+          {formatWinratePercentage(player.winrate)}
         </span>
       </div>
       <WinLossBar wins={player.wins} losses={player.losses} />

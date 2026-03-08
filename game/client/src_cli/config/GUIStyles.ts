@@ -14,6 +14,7 @@ export interface ITextStyle {
   horizontalAlignment?: number;
   verticalAlignment?: number;
   top?: string;
+  textHorizontalAlignment?: number;
   textVerticalAlignment?: number;
   paddingTop?: string;
   paddingBottom?: string;
@@ -145,6 +146,20 @@ export const GUI_STYLES = {
       fontSize: 36,
       fontWeight: "bold",
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
+    } as ITextStyle,
+    CONTROL_HINT: {
+      color: "#FFFBFC90",
+      fontSize: 16,
+      fontWeight: "normal",
+      shadowColor: "#01040080",
+      shadowOffsetX: 1,
+      shadowOffsetY: 1,
+      shadowBlur: 4,
+      horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_LEFT,
+      verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
+      textHorizontalAlignment: Control.HORIZONTAL_ALIGNMENT_LEFT,
+      paddingLeft: "20px",
+      paddingBottom: "20px",
     } as ITextStyle,
   },
 

@@ -39,7 +39,7 @@ export class InputManager {
             const inputs = this.inputMap[sessionId];
 
             if (inputs["j"]) direction -= 1;
-            if (inputs["k"]) direction += 1;
+            if (inputs["l"]) direction += 1;
         }
 
         return direction;
