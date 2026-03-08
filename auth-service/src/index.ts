@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import fetch from 'node-fetch';
 import chalk from 'chalk';
 import { randomUUID } from 'crypto';
-import { signup, login, generateEmail } from './auth';
+import { signup, login, generateEmail, checkActiveSession } from './auth';
 import { initDB, getDB } from './database/db';
 import { initTokenDB, getTokenDB } from './database/dbTokens';
 import { privateKey, publicKey } from './keys';
@@ -320,6 +320,13 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
 
     try {
         const user = await login(email, password);
+
+		const hasActiveSession = await checkActiveSession(user.id);
+        if (hasActiveSession) {
+            return reply.status(403).send({
+                error: { code: 'ALREADY_LOGGED_IN', message: 'User is already logged in elsewhere' }
+            });
+        }
         
         const token = await generateToken({ 
             id: user.id, 

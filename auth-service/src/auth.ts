@@ -78,3 +78,17 @@ export async function login(email: string, password: string): Promise<AuthInterf
 	});
 }
 
+export async function checkActiveSession(userId: string): Promise<boolean> {
+    const db = getDB();
+
+    return new Promise<boolean>((resolve, reject) => {
+        db.get(
+            `SELECT id FROM user_sessions WHERE user_id = ? AND expires_at > datetime('now')`,
+            [userId],
+            (err, row) => {
+                if (err) return reject(err);
+                resolve(!!row);
+            }
+        );
+    });
+}
