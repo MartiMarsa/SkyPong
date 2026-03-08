@@ -291,6 +291,17 @@ const en = {
         requestRejected: "Request rejected",
         requestCancelled: "Request cancelled",
         nooutgoingRequests: "No outgoing requests",
+        addFriend: "+ ADD FRIEND",
+        requestSent: "REQUEST SENT",
+        acceptRequest: "ACCEPT REQUEST",
+        unavailable: "NOT AVAILABLE",
+        removeFriend: "✕ REMOVE FRIEND",
+        block: "🚫 BLOCK",
+        unblock: "↩ UNBLOCK",
+        cancelRequest: "✕ CANCEL REQUEST",
+        nowFriends: "✓ You are now friends!",
+        requestSentSuccess: "Friend request sent",
+        itsMe: "<-⭐ It's me Mario! 🍄",
     },
     form: {
     labels: {

@@ -301,6 +301,17 @@ const es = {
         playerUnbloqued: "Jugador desbloqueado",
         remove: "Eliminar",
         nooutgoingRequests: "Sin solicitudes salientes",
+        addFriend: "+ AÑADIR AMIGO",
+        requestSent: "SOLICITUD ENVIADA",
+        acceptRequest: "ACEPTAR SOLICITUD",
+        unavailable: "NO DISPONIBLE",
+        removeFriend: "✕ ELIMINAR AMIGO",
+        block: "🚫 BLOQUEAR",
+        unblock: "↩ DESBLOQUEAR",
+        cancelRequest: "✕ CANCELAR SOLICITUD",
+        nowFriends: "✓ ¡Ahora sois amigos!",
+        requestSentSuccess: "Solicitud enviada",
+        itsMe: "<-⭐ ¡Soy yo Mario! 🍄",
     },
     form: {
       labels: {

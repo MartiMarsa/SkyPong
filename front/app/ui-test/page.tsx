@@ -668,6 +668,160 @@ export default function UITestPage() {
           </div>
         </section>
 
+        {/* AddFriendButton Section */}
+        <section className="mb-12">
+          <h2 className="text-xl md:text-2xl font-semibold mb-4">AddFriendButton (Player Profile)</h2>
+          
+          <p className="text-sm text-gray-600 mb-4">
+            This component shows the relationship status between the logged-in user and another player's profile.
+            It provides context-aware actions based on the current relationship state.
+          </p>
+
+          <div className="p-4 bg-blue-50 rounded-lg mb-6">
+            <p className="text-sm text-blue-800 mb-2">Component States (Design System - Borderless, Rounded-Full):</p>
+            <ul className="text-xs text-gray-700 space-y-1 ml-4 list-disc">
+              <li><strong>No Relationship:</strong> Purple primary button (no borders, rounded-full)</li>
+              <li><strong>Friends:</strong> Chip-success green with dropdown menu (remove, block)</li>
+              <li><strong>Request Sent:</strong> Chip-warning yellow with dropdown (cancel, block)</li>
+              <li><strong>Request Received:</strong> Chip-warning yellow "Accept Request" with dropdown (reject, block)</li>
+              <li><strong>Blocked:</strong> Chip-error red with dropdown (unblock)</li>
+              <li><strong>Blocked By:</strong> Gray, disabled state (no interaction)</li>
+              <li><strong>Me (Own Profile):</strong> Chip-default gray (informational only)</li>
+            </ul>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2">Visual Examples (Static Display)</p>
+          <div className="space-y-4 mb-6">
+            {/* Mock display of all states */}
+            <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+              <div>
+                <span className="text-sm font-medium text-gray-900">No Relationship</span>
+                <p className="text-xs text-gray-500">Click to send friend request</p>
+              </div>
+              <button
+                className="inline-flex items-center justify-center btn-sm font-display font-bold uppercase tracking-wider rounded-full transition-all duration-200 bg-primary hover:bg-primary-hover text-white"
+              >
+                + ADD FRIEND
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+              <div>
+                <span className="text-sm font-medium text-gray-900">Friends</span>
+                <p className="text-xs text-gray-500">Click dropdown for more options</p>
+              </div>
+              <div className="inline-flex">
+                <button
+                  className="inline-flex items-center justify-center btn-sm font-display font-bold uppercase tracking-wider rounded-l-full transition-all duration-200 bg-chip-success hover:bg-green-200 text-chip-success-text"
+                >
+                  ✓ FRIENDS
+                </button>
+                <button
+                  className="inline-flex items-center justify-center px-2.5 py-2 font-display text-[10px] rounded-r-full -ml-1 transition-all duration-200 bg-chip-success hover:bg-green-200 text-chip-success-text"
+                >
+                  ▼
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+              <div>
+                <span className="text-sm font-medium text-gray-900">Request Sent</span>
+                <p className="text-xs text-gray-500">Waiting for other player to accept</p>
+              </div>
+              <div className="inline-flex">
+                <button
+                  className="inline-flex items-center justify-center btn-sm font-display font-bold uppercase tracking-wider rounded-l-full transition-all duration-200 bg-chip-warning hover:bg-yellow-200 text-chip-warning-text"
+                >
+                  ◌ REQUEST SENT
+                </button>
+                <button
+                  className="inline-flex items-center justify-center px-2.5 py-2 font-display text-[10px] rounded-r-full -ml-1 transition-all duration-200 bg-chip-warning hover:bg-yellow-200 text-chip-warning-text"
+                >
+                  ▼
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+              <div>
+                <span className="text-sm font-medium text-gray-900">Request Received</span>
+                <p className="text-xs text-gray-500">Click to accept, or use dropdown to reject/block</p>
+              </div>
+              <div className="inline-flex">
+                <button
+                  className="inline-flex items-center justify-center btn-sm font-display font-bold uppercase tracking-wider rounded-l-full transition-all duration-200 bg-chip-warning hover:bg-yellow-200 text-chip-warning-text"
+                >
+                  ◈ ACCEPT REQUEST
+                </button>
+                <button
+                  className="inline-flex items-center justify-center px-2.5 py-2 font-display text-[10px] rounded-r-full -ml-1 transition-all duration-200 bg-chip-warning hover:bg-yellow-200 text-chip-warning-text"
+                >
+                  ▼
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+              <div>
+                <span className="text-sm font-medium text-gray-900">Blocked</span>
+                <p className="text-xs text-gray-500">Use dropdown to unblock</p>
+              </div>
+              <div className="inline-flex">
+                <button
+                  className="inline-flex items-center justify-center btn-sm font-display font-bold uppercase tracking-wider rounded-l-full transition-all duration-200 bg-chip-error hover:bg-red-200 text-chip-error-text"
+                >
+                  🚫 BLOCKED
+                </button>
+                <button
+                  className="inline-flex items-center justify-center px-2.5 py-2 font-display text-[10px] rounded-r-full -ml-1 transition-all duration-200 bg-chip-error hover:bg-red-200 text-chip-error-text"
+                >
+                  ▼
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+              <div>
+                <span className="text-sm font-medium text-gray-900">Blocked By Other Player</span>
+                <p className="text-xs text-gray-500">Disabled state - no interaction possible</p>
+              </div>
+              <button
+                disabled
+                className="inline-flex items-center justify-center btn-sm font-display font-bold uppercase tracking-wider rounded-full transition-all duration-200 opacity-60 cursor-not-allowed bg-gray-200 text-gray-600"
+              >
+                — NOT AVAILABLE
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-200 bg-blue-50">
+              <div>
+                <span className="text-sm font-medium text-gray-900">Viewing Own Profile</span>
+                <p className="text-xs text-gray-500">Special state when user views their own profile</p>
+              </div>
+              <div className="btn-sm rounded-full font-display tracking-wide bg-chip-default text-chip-default-text">
+                {"<-⭐ It's me Mario! 🍄"}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800 mb-2">Usage in Player Profile:</p>
+            <div className="bg-white p-3 rounded-md border">
+              <code className="text-xs text-gray-800 block">
+                {`<AddFriendButton
+  currentUserId={user.id}
+  targetId={profileId}
+  csrfToken={csrfToken}
+/>`}
+              </code>
+            </div>
+            <p className="text-xs text-gray-600 mt-2">
+              The component automatically fetches the relationship status and displays the appropriate button state with context-aware actions.
+            </p>
+          </div>
+        </section>
+
         {/* Design System Section - Tailwind v4 CSS Variable System */}
         <section className="mb-12">
           <h2 className="text-xl md:text-2xl font-semibold mb-4">Design System (Tailwind v4 Theme)</h2>
