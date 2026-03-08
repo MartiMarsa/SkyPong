@@ -71,9 +71,9 @@ export function refreshTokenCleanup() {
     setInterval(() => {
         db.run(`
             UPDATE refresh_tokens SET revoked = 1
-            WHERE expires_at < datetime('now', 'localtime')
+            WHERE expires_at < CURRENT_TIMESTAMP
         `);
     }, 15 * 60 * 1000);
 
-    console.log(`[auth] Refresh tokens cleanup done at ${new Date().toISOString()}`);
+    console.log(`[auth] Refresh tokens cleanup done at CURRENT_TIMESTAMP`);
 }

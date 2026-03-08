@@ -106,7 +106,7 @@ async function apply(
           played = played + 1,
           winrate = ((wins + ?) * 1.0 / (played + 1)),
           rate = ?,
-          updated_at = (datetime('now','localtime'))
+          updated_at = CURRENT_TIMESTAMP
         WHERE user_id = ?
         `,
         [
@@ -134,7 +134,7 @@ async function applyAi(
           played = played + 1,
           winrate = ((wins + ?) * 1.0 / (played + 1)),
           rate = ?,
-          updated_at = (datetime('now','localtime'))
+          updated_at = CURRENT_TIMESTAMP
         WHERE user_id = ?
         `,
         [
@@ -244,7 +244,7 @@ export async function createPlayer(userId: string) {
 
       await db.run(
         `INSERT INTO players (user_id, nickname, last_access_at, logged, access_expires_at)
-         VALUES (?, ?, (datetime('now','localtime')), 1, ?)`,
+         VALUES (?, ?, CURRENT_TIMESTAMP, 1, ?)`,
         [userId, nickname, exp]
       );
 
@@ -252,7 +252,7 @@ export async function createPlayer(userId: string) {
 		   INSERT OR IGNORE INTO player_stats
 		   (user_id, played, wins, losses, winrate, rate, updated_at)
 		   VALUES
-		   (?, 0, 0, 0, 0, 0, (datetime('now','localtime')))
+		   (?, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
 		   `, 
 		   [userId]
 		  );
@@ -261,7 +261,7 @@ export async function createPlayer(userId: string) {
            INSERT OR IGNORE INTO player_ai_stats
            (user_id, played, wins, losses, winrate, rate, updated_at)
            VALUES
-           (?, 0, 0, 0, 0, 0, (datetime('now','localtime')))
+           (?, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
            `,
            [userId]
           );
@@ -388,14 +388,14 @@ export async function updatePlayerOnlineStatus(userId: string, logged: boolean) 
             if (exp) {
                 await db.run(
                     `UPDATE players 
-                     SET last_access_at = (datetime('now','localtime')), logged = 1, access_expires_at = ? 
+                     SET last_access_at = CURRENT_TIMESTAMP, logged = 1, access_expires_at = ? 
                      WHERE user_id = ?`,
                     [exp, userId]
                 );
             } else {
                 await db.run(
                     `UPDATE players 
-                     SET last_access_at = (datetime('now','localtime')), logged = 0, access_expires_at = ? 
+                     SET last_access_at = CURRENT_TIMESTAMP, logged = 0, access_expires_at = ? 
                      WHERE user_id = ?`,
                     [repoDate, userId]
                 );
@@ -406,7 +406,7 @@ export async function updatePlayerOnlineStatus(userId: string, logged: boolean) 
 		} else {
             await db.run(
                 `UPDATE players 
-                 SET last_access_at = (datetime('now','localtime')), logged = 0, access_expires_at = ? 
+                 SET last_access_at = CURRENT_TIMESTAMP, logged = 0, access_expires_at = ? 
                  WHERE user_id = ?`,
                 [repoDate, userId]
             );
@@ -437,7 +437,7 @@ export async function softdeletePlayer(userId: string) {
 			 	   nickname = ?,
 			 	   avatarUrl = ?,
 			 	   deleted = 1,
-			 	   deleted_at = (datetime('now','localtime')),
+			 	   deleted_at = CURRENT_TIMESTAMP,
 				   access_expires_at = '2025-12-01'
 			   	   WHERE user_id = ?
 			   	   `,
@@ -477,7 +477,7 @@ export async function updatePlayerStats(
     const reserve = await db.run(
       `
       INSERT OR IGNORE INTO processed_games(game_id, processed_at)
-      VALUES (?, (datetime('now','localtime')))
+      VALUES (?, CURRENT_TIMESTAMP)
       `,
       [gameId]
     );

@@ -6,8 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-RUN apk add --no-cache sqlite tzdata
-ENV TZ=Europe/Madrid
+RUN apk add --no-cache sqlite
 
 COPY . .
 

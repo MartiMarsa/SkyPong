@@ -24,107 +24,6 @@ function run(db: sqlite3.Database, sql: string): Promise<void> {
     db.run(sql, err => (err ? reject(err) : resolve()));
   });
 }
-/*
-export function initProfileDB(): Promise<void> {
-
-	return new Promise((resolve, reject) => {
-		db.serialize(() => {
-
-			let failed = false;
-
-			const onError = (err: Error | null) => {
-				if (err && !failed) {
-			      		failed = true;
-			      		db.run('ROLLBACK');
-			      		reject(err);
-				}
-		  	};
-
-			db.run('PRAGMA journal_mode = WAL');
-			db.run('PRAGMA foreign_keys = ON');
-			db.run('BEGIN');
-
-			db.run(`CREATE TABLE IF NOT EXISTS players (
- 				user_id TEXT PRIMARY KEY,
- 				nickname TEXT NOT NULL,
- 				avatarUrl TEXT,
- 				winPhrase TEXT,
- 				localization TEXT DEFAULT 'es',
-				created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-				deleted INTEGER NOT NULL DEFAULT 0,
-				deleted_at TEXT
- 			)`, onError);
-
-			db.run(`CREATE UNIQUE INDEX IF NOT EXISTS players_nickname_unique
-			       ON players(nickname)
-			       `, onError);
-			      
-			db.run(`CREATE TABLE IF NOT EXISTS player_stats (
-				user_id TEXT PRIMARY KEY,
-				played INTEGER DEFAULT 0,
-		      		wins INTEGER DEFAULT 0,
-		      		losses INTEGER DEFAULT 0,
-				winrate REAL DEFAULT 0,
-				rate INTEGER DEFAULT 0,
-				updated_at TEXT,
-		      		FOREIGN KEY(user_id) REFERENCES players(user_id) ON DELETE CASCADE
-			)`, onError);
-
-			db.run(`CREATE INDEX IF NOT EXISTS idx_stats_user
-			       ON player_stats(user_id)
-			       `, onError);
-
-			db.run(`CREATE TABLE IF NOT EXISTS processed_games (
-				game_id TEXT PRIMARY KEY,
-				processed_at TEXT
-
-			)`, onError);
-
-
-			db.run(`CREATE TABLE IF NOT EXISTS friends (
-			      	id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-			      	user1_id TEXT NOT NULL,
-			      	user2_id TEXT NOT NULL,
-
-			      	status TEXT NOT NULL CHECK(status IN ('pending', 'accepted', 'blocked')),
-
-			      	requester_id TEXT NOT NULL,
-
-				blocked_by TEXT,
-
-			      	created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-
-			      	CHECK (user1_id < user2_id),
-			      	CHECK (user1_id != user2_id),
-
-			      	FOREIGN KEY(user1_id) REFERENCES players(user_id) ON DELETE CASCADE,
-			      	FOREIGN KEY(user2_id) REFERENCES players(user_id) ON DELETE CASCADE,
-			      	FOREIGN KEY(requester_id) REFERENCES players(user_id) ON DELETE CASCADE,
-				FOREIGN KEY(blocked_by) REFERENCES players(user_id) ON DELETE CASCADE,
-
-			      	UNIQUE(user1_id, user2_id)
-			)`, onError);
-
-			db.run(`CREATE INDEX IF NOT EXISTS idx_players_stats_updated
-			       ON player_stats(updated_at)`, 
-			       onError);
-
-			db.run(`CREATE INDEX IF NOT EXISTS friends_request_time
-			       ON friends(created_at)
-			       `, onError);
-
-			db.run('COMMIT', err => {
-				if (err) {
-			      		db.run('ROLLBACK');
-			      		return reject(err);
-				}
-
-				resolve();
-			});
-	    	});
-      	});
-}*/
 
 export async function initProfileDB(): Promise<void> {
   try {
@@ -138,7 +37,7 @@ export async function initProfileDB(): Promise<void> {
         avatarUrl TEXT,
         winPhrase TEXT,
         localization TEXT DEFAULT 'es',
-        created_at TEXT DEFAULT (datetime('now','localtime')),
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         deleted INTEGER NOT NULL DEFAULT 0,
         deleted_at TEXT,
         last_access_at TEXT DEFAULT '2025-12-01',
@@ -207,7 +106,7 @@ export async function initProfileDB(): Promise<void> {
         status TEXT NOT NULL CHECK(status IN ('pending', 'accepted', 'blocked')),
         requester_id TEXT NOT NULL,
         blocked_by TEXT,
-        created_at TEXT DEFAULT (datetime('now','localtime')),
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         CHECK (user1_id < user2_id),
         CHECK (user1_id != user2_id),
         FOREIGN KEY(user1_id) REFERENCES players(user_id) ON DELETE CASCADE,

@@ -20,8 +20,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 RUN apk add --no-cache sqlite
 
-RUN apk add --no-cache sqlite tzdata
-ENV TZ=Europe/Madrid
+RUN apk add --no-cache sqlite
 
 RUN addgroup -S app && adduser -S app -G app
 

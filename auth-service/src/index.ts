@@ -483,8 +483,8 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
                 dbToken.run(`UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?`, [userId]);
 
                 // 2. Borrar directamente (si el usuario no existe, this.changes será 0)
-                db.run(`UPDATE users SET email = ?, password_version = password_version + 1, deleted_at = (datetime('now','localtime')) WHERE id = ?`, [mockEmail, userId], function (err) {
-                    if (err) {
+                db.run(`UPDATE users SET email = ?, password_version = password_version + 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?`, [mockEmail, userId], function (err) {
+                   if (err) {
                         db.run('ROLLBACK');
                         return reject(err);
                     }
