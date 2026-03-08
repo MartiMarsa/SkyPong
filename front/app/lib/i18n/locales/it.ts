@@ -351,6 +351,8 @@ const it = {
         submitting: "Invio...",
         cancel: "Annulla",
         loading: "Caricamento...",
+        passwordUpdateLoginAgain: "Contraseña actualizada. Entra de nuevo por motivos de seguridad."
+
     },
     leaderboard: {
         title: "Classifica",

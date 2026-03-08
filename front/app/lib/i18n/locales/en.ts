@@ -352,6 +352,7 @@ const en = {
     submitting: "Submitting...",
     cancel: "Cancel",
     loading: "Loading...",
+    passwordUpdateLoginAgain: "Password Updated. Please, login again for security reasons."
     },
     leaderboard: {
         title: "Leaderboard",

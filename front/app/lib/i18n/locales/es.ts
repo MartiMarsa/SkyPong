@@ -363,6 +363,7 @@ const es = {
         submitting: "Enviando...",
         cancel: "Cancelar",
         loading: "Cargando...",
+        passwordUpdateLoginAgain: "Contraseña actualizada. Entra de nuevo por motivos de seguridad."
     },
     leaderboard: {
         title: "Tabla de clasificación",
