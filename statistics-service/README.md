@@ -1,18 +1,18 @@
 # Stat Service
 
-This is a TypeScript-based statistics and leaderboard service built with Fastify.
-It tracks game results between players, updates a leaderboard, and synchronizes with a profile service.
+TypeScript-based statistics and leaderboard service built with **Fastify**.
+Tracks game results between players, updates a leaderboard, and synchronizes with a Profile Service.
 
 ---
 
 ## Features
 
-* Tracks game results between 2 players
-* Stores statistics in SQLite
-* Leaderboard with multiple indexes (rate, winrate, wins, played)
+* Tracks game results between **exactly 2 players**
+* Stores statistics in **SQLite**
+* Leaderboard with multiple indexes: `rate`, `winrate`, `wins`, `played`
 * Synchronization workers for statistics and leaderboard
 * REST API for submitting game results and fetching leaderboard
-* Token-based service authentication
+* Token-based internal authentication
 
 ---
 
@@ -25,32 +25,58 @@ It tracks game results between players, updates a leaderboard, and synchronizes 
 
 ---
 
+## Project Structure
+
+```
+.
+├── Dockerfile
+├── package.json
+├── package-lock.json
+├── README.md
+├── src
+│   ├── database
+│   │   ├── dbLeaderboard.ts
+│   │   └── dbStats.ts
+│   ├── gameresults.ts
+│   ├── index.ts
+│   ├── types
+│   │   ├── stats.const.ts
+│   │   ├── stats.enums.ts
+│   │   └── stats.types.ts
+│   ├── utils
+│   │   └── helpers.ts
+│   └── workers
+│       ├── leaderboardWorker.ts
+│       └── statsWorker.ts
+└── tsconfig.json
+
+```
+
+---
+
 ## NPM Scripts
 
-* npm run dev — Run in development mode with hot reload
-* npm run build — Compile TypeScript to dist/
-* npm start — Run the compiled JS from dist/
+* `npm run dev` — Run in development mode with hot reload (`ts-node-dev`)
+* `npm run build` — Compile TypeScript to `dist/`
+* `npm start` — Run compiled JS from `dist/`
 
 ---
 
 ## Configuration & Security
 
-* Service token for internal API access
-
-  * Set via `SERVICE_TOKEN` environment variable (default: "secret" for local dev)
-* SQLite databases:
+* **Service token** for internal API access: Set via `SERVICE_TOKEN` environment variable.
+* **SQLite databases** (created automatically in project root or `./data`):
 
   * `statistics.db` — Stores game results
   * `leaderboard.db` — Stores cached leaderboard data
-* Database files are created automatically in the project root
 
 ---
 
-## Docker Notes
+## Docker
 
-* Container exposes port 6000
-* Volume ./data persists SQLite databases
-* Set `SERVICE_TOKEN` as environment variable inside container for security
+* Container exposes **port 6000**
+* Volume `./data` persists SQLite databases
+* Set `SERVICE_TOKEN` in container environment for security
 
 ---
 
@@ -58,36 +84,65 @@ It tracks game results between players, updates a leaderboard, and synchronizes 
 
 ### Add Game Result
 
-* POST `/internal/statistics/gameresult/update`
-* Headers: `Authorization: Bearer <SERVICE_TOKEN>`
-* Body schema:
+* **POST** `/internal/statistics/gameresult/update`
+* **Headers**: `Authorization: Bearer <SERVICE_TOKEN>`
+* **Body schema**:
 
-  * `game_id`: string
-  * `start_at`: string
-  * `end_at`: string
-  * `players`: array of exactly 2 objects
+```
+{
+  "game_id": "string",
+  "start_at": "ISO string",
+  "end_at": "ISO string",
+  "players": [
+    {
+      "user_id": "string",
+      "user_score": 0,
+      "user_result": "win|loss"
+    },
+    {
+      "user_id": "string",
+      "user_score": 0,
+      "user_result": "win|loss"
+    }
+  ]
+}
+```
 
-    * `user_id`: string
-    * `user_score`: number
-    * `user_result`: "win" | "loss"
+* Must have exactly 2 players.
 
 ### Get Leaderboard
 
-* GET `/statistics/leaderboard`
-* Query params:
+* **GET** `/statistics/leaderboard`
+* **Query params**:
 
   * `by` — leaderboard index (`rate`, `winrate`, `wins`, `played`)
   * `limit` — number of results (default 50)
   * `offset` — offset for pagination (default 0)
-* Response: `leaderboard` array with fields:
+* **Response**:
 
-  * `user_id`
-  * `played`
-  * `wins`
-  * `losses`
-  * `winrate`
-  * `rate`
-  * `updated_at`
+```
+{
+  "leaderboard": [
+    {
+      "user_id": "string",
+      "played": 10,
+      "wins": 6,
+      "losses": 4,
+      "winrate": 0.6,
+      "rate": 1500,
+      "updated_at": "ISO string",
+      "nickname": "string",
+      "avatarUrl": "string"
+    }
+  ]
+}
+```
+
+### Get Games History by User
+
+* **GET** `/internal/statistics/games/history/:id`
+* **Headers**: `Authorization: Bearer <SERVICE_TOKEN>`
+* Returns all games where user participated.
 
 ---
 
@@ -100,18 +155,14 @@ It tracks game results between players, updates a leaderboard, and synchronizes 
   * `game_id`, `user1_id`, `user2_id`, `user1_score`, `user2_score`
   * `user1_result`, `user2_result`, `start_at`, `end_at`
   * `processed`, `processing`, `processed_at`, `created_at`
-
-* Table `sync_state`:
-
-  * `id`, `last_sync`
+  * `game_mode` (`ai` | `remote-pvp`)
 
 ### Leaderboard DB (`leaderboard.db`)
 
 * Table `leaderboard_cache`:
 
   * `user_id`, `played`, `wins`, `losses`, `winrate`, `rate`, `updated_at`
-
-* Indexes on `rate`, `winrate`, `played`, `wins`
+* Indexes: `rate`, `winrate`, `played`, `wins`
 
 ---
 
@@ -120,15 +171,15 @@ It tracks game results between players, updates a leaderboard, and synchronizes 
 ### Statistics Worker
 
 * Fetches unprocessed games from `games_and_results`
-* Sends updates to Profile Service API
+* Sends updates to **Profile Service API**
 * Marks games as processed
-* Runs in a loop with exponential backoff on errors
+* Runs in a loop with exponential backoff
 
 ### Leaderboard Worker
 
 * Fetches leaderboard updates from Profile Service API
 * Updates `leaderboard_cache`
-* Runs in a loop with exponential backoff on errors
+* Runs in a loop with exponential backoff
 
 ---
 
@@ -136,29 +187,37 @@ It tracks game results between players, updates a leaderboard, and synchronizes 
 
 1. Clone the repository:
 
+```
 git clone <repo-url>
 cd stat-service
+```
 
 2. Install dependencies:
 
+```
 npm install
+```
 
 3. Run in development mode:
 
+```
 npm run dev
+```
 
 4. Or build and run production:
 
+```
 npm run build
 npm start
+```
 
-5. Ensure `SERVICE_TOKEN` is set in your environment if using internal APIs.
+5. Ensure `SERVICE_TOKEN` is set in environment for internal APIs.
 
 ---
 
 ## Shutdown
 
-* The service handles `SIGINT` and `SIGTERM`
+* Handles `SIGINT` and `SIGTERM`
 * Stops Fastify server
 * Closes SQLite databases
 * Stops statistics and leaderboard workers
@@ -167,7 +226,7 @@ npm start
 
 ## Notes
 
-* Requires Profile Service for leaderboard synchronization
+* Requires **Profile Service** for leaderboard synchronization
 * Ensure both `statistics.db` and `leaderboard.db` are writable
-* Default internal token is "secret"; change in production
+* Default internal token is `"secret"` for local development; change in production
 

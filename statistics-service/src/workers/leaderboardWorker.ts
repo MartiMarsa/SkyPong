@@ -1,8 +1,8 @@
 import axios from 'axios';
-import { getLeaderboardDB } from './dbLeaderboard';
-import { sleep, getDbHelpers } from './helpers';
-import * as StatsTypes from './stats.types';
-import * as StatsConst from './stats.const';
+import { getLeaderboardDB } from '../database/dbLeaderboard';
+import { sleep, getDbHelpers } from '../utils/helpers';
+import * as StatsTypes from '../types/stats.types';
+import * as StatsConst from '../types/stats.const';
 
 // --- CONFIG ---
 const PROFILE_API = process.env.PROFILE_SERVICE_URL!;

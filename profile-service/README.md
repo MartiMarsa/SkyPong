@@ -1,169 +1,386 @@
 # Player Service
 
-Player Service is a microservice built with Node.js, TypeScript, Fastify, and SQLite. It manages player profiles, avatars, and social interactions (friends, requests, blocks).
+Player Service is a **Node.js + TypeScript microservice** responsible for managing player profiles, statistics, social relationships, and profile data used by other services in the system.
+
+The service exposes HTTP APIs for profile operations and communicates with other internal services (Auth and Stats) to synchronize session state and game results.
 
 ---
 
-## Technologies
+# Technologies
 
 - Node.js
 - TypeScript
 - Fastify
 - SQLite3
-- Sharp
-- ts-node-dev
-- Chalk
+- Axios
+- Zod (input validation)
+- Sharp (avatar processing)
+- ts-node-dev (development)
+- Chalk (logging)
 
 ---
 
-## Architecture
+# Architecture
 
-The service uses layered architecture:
+The service follows a **layered architecture**:
 
-HTTP Routes (Fastify) → Service Layer → Repository Layer → SQLite Database
+HTTP Routes → Service Layer → Repository Layer → SQLite Database
 
-### Layers
+### Layer Responsibilities
 
-Routes (index.ts)
-- Handles HTTP requests
-- Reads headers and params
-- Calls services
-- Returns responses
+**Routes**
+- Handle HTTP requests
+- Parse headers and parameters
+- Validate input
+- Call service logic
 
-Service Layer (friendService.ts)
-- Contains business logic
+**Service Layer**
+- Implements domain logic
 - Validates user actions
-- Prevents invalid states
-- Throws domain errors
+- Coordinates repositories and external services
 
-Repository Layer (friend.ts, player.ts)
+**Repository Layer**
 - Executes SQL queries
 - Works directly with SQLite
-- Returns raw data
+- Returns structured data
 
-Database Layer (dbPlayers.ts)
+**Database Layer**
 - Initializes database
-- Creates tables
-- Manages connection
+- Creates tables and indexes
+- Manages database connection
 
 ---
 
-## Database Structure
+# Project Structure
 
-### players
+```
+src/
+ ├── index.ts
+ ├── dbPlayers.ts
+ ├── player.ts
+ ├── friend.ts
+ ├── friendService.ts
+ │
+ ├── types/
+ │   ├── profile.enums.ts
+ │   ├── profile.interfaces.ts
+ │   └── profile.types.ts
+ │
+ ├── utils/
+ │   └── helpers.ts
+ │
+ ├── validation/
+ │   └── checkInput.ts
+ │
+uploads/
+ └── avatars/
 
-user_id TEXT PRIMARY KEY  
-nickname TEXT NOT NULL  
-avatarUrl TEXT  
-winPhrase TEXT  
-localization TEXT  
-created_at TEXT 
+dist/
+```
 
-### player_stats
+---
+
+# Database
+
+The service uses **SQLite** for persistence.
+
+## players
+
+Stores base profile data.
+
+```
 user_id TEXT PRIMARY KEY
-wins INTEGER DEFAULT 0
-losses INTEGER DEFAULT 0
-
-### friends
-
-id INTEGER PRIMARY KEY  
-user1_id TEXT  
-user2_id TEXT  
-status TEXT (pending, accepted, blocked)  
-requester_id TEXT  
-blocked_by TEXT  
-created_at TEXT  
+nickname TEXT
+avatarUrl TEXT
+winPhrase TEXT
+localization TEXT
+created_at TEXT
+last_access_at TEXT
+logged INTEGER
+access_expires_at TEXT
+deleted INTEGER
+deleted_at TEXT
+```
 
 ---
 
-## Authentication
+## player_stats
 
-This service uses header-based authentication.
+Stores competitive statistics.
+
+```
+user_id TEXT PRIMARY KEY
+wins INTEGER
+losses INTEGER
+played INTEGER
+winrate REAL
+rate INTEGER
+updated_at TEXT
+```
+
+---
+
+## player_ai_stats
+
+Stores statistics for matches against AI.
+
+```
+user_id TEXT PRIMARY KEY
+wins INTEGER
+losses INTEGER
+rate INTEGER
+```
+
+---
+
+## friends
+
+Stores user relationships.
+
+```
+id INTEGER PRIMARY KEY
+user1_id TEXT
+user2_id TEXT
+status TEXT
+requester_id TEXT
+blocked_by TEXT
+created_at TEXT
+```
+
+status values:
+
+- pending
+- accepted
+- blocked
+
+---
+
+# Core Features
+
+## Profile Management
+
+- Create player profile
+- Update profile information
+- Upload avatar
+- Soft delete profile
+
+## Social System
+
+- Send friend requests
+- Accept / reject requests
+- Cancel outgoing requests
+- Block / unblock users
+- List friends
+- Query relationship state
+
+## Player Statistics
+
+- Update rating after games
+- Support PvP and AI matches
+- Maintain leaderboard data
+- Track winrate and rating
+
+## Game History
+
+Game history is fetched from the **Statistics Service** and enriched with player profile data.
+
+---
+
+# Authentication
+
+The service supports two authentication modes.
+
+## Client Requests
 
 Client requests must include:
+
+```
 x-user-id: USER_ID
+```
 
-Internal service requests use:
+---
+
+## Internal Service Requests
+
+Internal services must use a service token:
+
+```
 Authorization: Bearer SERVICE_TOKEN
+```
 
 ---
 
-## Data Flow
+# API Endpoints
 
-### Friend Request Flow
+## Profile
 
-1. Client sends request
-2. Route reads userId from header
-3. Service validates relation
-4. Repository executes SQL
-5. Database stores result
-6. Response returned
+```
+GET /me
+```
 
-### Profile Flow
+Returns private player profile.
 
-1. User calls /me
-2. Service checks database
-3. Creates profile if missing
-4. Returns player data
+```
+PATCH /me
+```
 
-### Avatar Upload Flow
+Update player profile.
 
-1. Client uploads file
-2. Fastify validates size
-3. Sharp resizes image
-4. File saved to storage
-5. Database updated
+```
+POST /me/avatar
+```
 
----
+Upload avatar.
 
-## API Endpoints
+```
+GET /users/:id
+```
 
-### Profile
+Get public profile.
 
-GET /me — Get private profile  
-PATCH /me — Update profile  
-POST /me/avatar — Upload avatar  
-GET /users/:id — Get public profile  
+```
+POST /internal/profile/delete
+```
 
-POST /internal/profile/delete — Delete profile (internal)
+Soft delete profile (internal use).
 
 ---
 
-### Friends
+## Friends
 
-POST /friends/:toId — Send friend request  
-POST /friends/:requesterId/accept — Accept request  
-POST /friends/:requesterId/reject — Reject request  
-POST /friends/:requesterId/cancel — Cancel outgoing request  
-DELETE /friends/:friendId — Remove friend  
+```
+POST /friends/:toId
+```
 
-POST /friends/:targetId/block — Block user  
-POST /friends/:targetId/unblock — Unblock user  
+Send friend request.
 
-GET /friends — Get friends list  
-GET /friends/requests/incoming — Get incoming requests  
-GET /friends/requests/outgoing — Get outgoing requests  
-GET /friends/blocked — Get blocked users  
-GET /friends/:otherId/status — Get relationship status  
+```
+POST /friends/:requesterId/accept
+```
+
+Accept friend request.
+
+```
+POST /friends/:requesterId/reject
+```
+
+Reject friend request.
+
+```
+POST /friends/:requesterId/cancel
+```
+
+Cancel outgoing request.
+
+```
+DELETE /friends/:friendId
+```
+
+Remove friend.
+
+```
+POST /friends/:targetId/block
+```
+
+Block user.
+
+```
+POST /friends/:targetId/unblock
+```
+
+Unblock user.
+
+```
+GET /friends
+```
+
+Get friends list.
+
+```
+GET /friends/requests/incoming
+```
+
+Incoming friend requests.
+
+```
+GET /friends/requests/outgoing
+```
+
+Outgoing friend requests.
+
+```
+GET /friends/blocked
+```
+
+List blocked users.
+
+```
+GET /friends/:otherId/status
+```
+
+Get relationship status.
 
 ---
 
-## Error Handling
+# Leaderboard Synchronization
 
-The service returns structured error responses:
+Leaderboard data includes:
+
+- played
+- wins
+- losses
+- winrate
+- rate
+- updated_at
+
+Leaderboard queries support **incremental synchronization** using `updated_at`.
+
+---
+
+# Game Result Processing
+
+When a match result is received:
+
+1. Game ID is reserved to prevent double processing
+2. Player statistics are loaded
+3. Rating changes are calculated
+4. Stats are updated inside a transaction
+5. Changes are committed
+
+AI matches are processed using a separate rating calculation.
+
+---
+
+# Input Validation
+
+Validation is implemented using **Zod**.
+
+Example rules:
+
+- nickname must be at least 4 characters
+- winPhrase cannot be empty
+- at least one field must be provided in update requests
+
+---
+
+# Error Handling
+
+The service returns structured errors.
+
+Example response:
 
 ```json
 {
   "error": {
     "code": "ERROR_CODE",
-    "message": "ERROR_MESSAGE"
+    "message": "Human readable message"
   }
 }
 ```
----
 
-## Common error codes:
+Common error codes:
 
+```
 UNAUTHORIZED
 ALREADY_EXISTS
 REQUEST_NOT_FOUND
@@ -173,57 +390,77 @@ NOT_BLOCKED
 NOT_FRIENDS
 CANNOT_ADD_SELF
 CANNOT_BLOCK_SELF
+```
 
 ---
 
-## Environment Variables
+# Environment Variables
 
-Create a .env file:
-SERVICE_TOKEN=your_secret_token
+Create a `.env` file:
 
----
-
-## File Structure
-src/
- ├── index.ts
- ├── dbPlayers.ts
- ├── player.ts
- ├── friend.ts
- ├── friendService.ts
-uploads/
- └── avatars/
-dist/
+```
+SERVICE_TOKEN=your_internal_service_token
+AUTH_API=http://auth-service
+STATS_API=http://stats-service
+```
 
 ---
 
-## Notes
+# Setup & Run
 
-SQLite is used for simplicity
-All relations use normalized user IDs
-Blocking overrides friend state
-One relation per user pair
-Foreign keys are enabled
-Cascade delete is active
+Clone repository:
 
----
-
-## Setup & Run (Automated)
-Use a single script to fully setup and run the service:
-
+```
 git clone <repo-url>
 cd profile
-./setup-and-run.sh
+```
+
+Install dependencies:
+
+```
+npm install
+```
+
+Run development server:
+
+```
+npm run dev
+```
+
+Build project:
+
+```
+npm run build
+```
+
+Run production build:
+
+```
+npm start
+```
 
 ---
 
-## Clean up before you go or do git push (Automated)
+# Cleanup Script
 
-Use a single script to clean up:
+Before pushing or shutting down:
 
 ```bash
 ./clean-up.sh
 ```
+
 ---
 
-## License
+# Notes
+
+- SQLite is used for simplicity and portability
+- All relations use normalized user IDs
+- One relation exists per user pair
+- Soft delete preserves historical data
+- Database operations use transactions for consistency
+
+---
+
+# License
+
 ISC

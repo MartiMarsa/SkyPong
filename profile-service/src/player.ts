@@ -1,9 +1,12 @@
-import { getProfileDB } from './dbPlayers';
-import { getDbHelpers } from './helpers';
 import crypto from 'crypto';
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import { getProfileDB } from './database/dbPlayers';
+import { getDbHelpers } from './utils/helpers';
+import * as ProfileTypes from './types/profile.types';
+import * as ProfileInterfaces from './types/profile.interfaces';
+import * as ProfileEnums from './types/profile.enums';
 
 // --- CONFIG ---
 const MAX_RETRIES = 5;
@@ -43,98 +46,12 @@ console.log("[profile] Auth service token:", SERVICE_TOKEN);
 
 // --- TYPES ---
 
-interface UpdatePlayerInfo {
-  nickname?: string;
-  winPhrase?: string;
-  localization?: string;
-}
+const AI_USER_IDS = new Set<string>(Object.values(ProfileEnums.AIUserType));
 
-type PlayerResult = {
-  user_id: string;
-  result: 'win' | 'loss';
-};
-
-interface PlayerStats {
-    played: number;
-    wins: number;
-    losses: number;
-    winrate: number;
-    rate: number;
-    updated_at: string | null;
-}
-
-interface PlayerInfo {
-    id: string;
-    nickname: string;
-    avatarUrl: string | null;
-    winPhrase: string | null;
-    localization: string;
-    created_at: string;
-	last_access_at: string;
-	logged: number;
-	access_expires_at: string | null;
-    stats: PlayerStats;
-}
-
-interface PlayerGamesHistoryData {
-  id: string;
-  nickname: string;
-  avatar: string | null;
-  points: number;
-  session_expires_at: string | null;
-  last_access: string | null;
-  logged: number;
-}
-
-interface AIGamesHistoryData {
-  id: AIUserType;
-  nickname: string;
-  avatar: string | null;
-  points: number;
-  session_expires_at: null;
-  last_access: null;
-  logged: number;
-}
-
-interface GameHistoryItem {
-  gameId: string;
-  gameMode: 'ai' | 'remote-pvp';
-  gameDate: string;
-  player1: PlayerGamesHistoryData | AIGamesHistoryData;
-  player2: PlayerGamesHistoryData | AIGamesHistoryData;
-  winner: number;
-}
-
-
-type LeaderboardRow = {
-  user_id: string;
-
-  played: number;
-  wins: number;
-  losses: number;
-
-  winrate: number;
-  rate: number;
-
-  updated_at: string;
-};
-
-type ApplyResult =
-  | { applied: false }
-  | { applied: true; rate: number };
-
-export enum AIUserType {
-  EASY = 'ai-easy',
-  MEDIUM = 'ai-medium',
-  HARD = 'ai-hard',
-}
-
-const AI_USER_IDS = new Set<string>(Object.values(AIUserType));
-
-const AI_RATES: Record<AIUserType, number> = {
-	[AIUserType.EASY]: 800,
-	[AIUserType.MEDIUM]: 1200,
-	[AIUserType.HARD]: 1600,
+const AI_RATES: Record<ProfileEnums.AIUserType, number> = {
+	[ProfileEnums.AIUserType.EASY]: 800,
+	[ProfileEnums.AIUserType.MEDIUM]: 1200,
+	[ProfileEnums.AIUserType.HARD]: 1600,
 };
 
 // --- UTILS ---
@@ -170,7 +87,7 @@ function calculateHumanAiRate(
   aiUserId: string,
   result: 'win' | 'loss'
 ): number {
-  const aiRate = AI_RATES[aiUserId as AIUserType];
+  const aiRate = AI_RATES[aiUserId as ProfileEnums.AIUserType];
   return calculateRate(humanRate, aiRate, result);
 }
 
@@ -189,7 +106,7 @@ async function apply(
           played = played + 1,
           winrate = ((wins + ?) * 1.0 / (played + 1)),
           rate = ?,
-          updated_at = (datetime('now','localtime'))
+          updated_at = CURRENT_TIMESTAMP
         WHERE user_id = ?
         `,
         [
@@ -217,7 +134,7 @@ async function applyAi(
           played = played + 1,
           winrate = ((wins + ?) * 1.0 / (played + 1)),
           rate = ?,
-          updated_at = (datetime('now','localtime'))
+          updated_at = CURRENT_TIMESTAMP
         WHERE user_id = ?
         `,
         [
@@ -281,7 +198,7 @@ const PROFILE_QUERY = `
 // GET PLAYER
 // --------------------------------------------------
 
-export async function getPlayerById(userId: string): Promise<PlayerInfo | null> {
+export async function getPlayerById(userId: string): Promise<ProfileInterfaces.PlayerInfo | null> {
 
 	const row = await db.get<any>(PROFILE_QUERY, [userId]);
 	
@@ -327,7 +244,7 @@ export async function createPlayer(userId: string) {
 
       await db.run(
         `INSERT INTO players (user_id, nickname, last_access_at, logged, access_expires_at)
-         VALUES (?, ?, (datetime('now','localtime')), 1, ?)`,
+         VALUES (?, ?, CURRENT_TIMESTAMP, 1, ?)`,
         [userId, nickname, exp]
       );
 
@@ -335,7 +252,7 @@ export async function createPlayer(userId: string) {
 		   INSERT OR IGNORE INTO player_stats
 		   (user_id, played, wins, losses, winrate, rate, updated_at)
 		   VALUES
-		   (?, 0, 0, 0, 0, 0, (datetime('now','localtime')))
+		   (?, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
 		   `, 
 		   [userId]
 		  );
@@ -344,7 +261,7 @@ export async function createPlayer(userId: string) {
            INSERT OR IGNORE INTO player_ai_stats
            (user_id, played, wins, losses, winrate, rate, updated_at)
            VALUES
-           (?, 0, 0, 0, 0, 0, (datetime('now','localtime')))
+           (?, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
            `,
            [userId]
           );
@@ -383,7 +300,7 @@ export async function createPlayer(userId: string) {
 
 export async function updatePlayerInfo(
   userId: string,
-  data: UpdatePlayerInfo
+  data: ProfileInterfaces.UpdatePlayerInfo
 ) {
 
   const fields: string[] = [];
@@ -471,14 +388,14 @@ export async function updatePlayerOnlineStatus(userId: string, logged: boolean) 
             if (exp) {
                 await db.run(
                     `UPDATE players 
-                     SET last_access_at = (datetime('now','localtime')), logged = 1, access_expires_at = ? 
+                     SET last_access_at = CURRENT_TIMESTAMP, logged = 1, access_expires_at = ? 
                      WHERE user_id = ?`,
                     [exp, userId]
                 );
             } else {
                 await db.run(
                     `UPDATE players 
-                     SET last_access_at = (datetime('now','localtime')), logged = 0, access_expires_at = ? 
+                     SET last_access_at = CURRENT_TIMESTAMP, logged = 0, access_expires_at = ? 
                      WHERE user_id = ?`,
                     [repoDate, userId]
                 );
@@ -489,7 +406,7 @@ export async function updatePlayerOnlineStatus(userId: string, logged: boolean) 
 		} else {
             await db.run(
                 `UPDATE players 
-                 SET last_access_at = (datetime('now','localtime')), logged = 0, access_expires_at = ? 
+                 SET last_access_at = CURRENT_TIMESTAMP, logged = 0, access_expires_at = ? 
                  WHERE user_id = ?`,
                 [repoDate, userId]
             );
@@ -520,7 +437,7 @@ export async function softdeletePlayer(userId: string) {
 			 	   nickname = ?,
 			 	   avatarUrl = ?,
 			 	   deleted = 1,
-			 	   deleted_at = (datetime('now','localtime')),
+			 	   deleted_at = CURRENT_TIMESTAMP,
 				   access_expires_at = '2025-12-01'
 			   	   WHERE user_id = ?
 			   	   `,
@@ -548,9 +465,9 @@ export async function softdeletePlayer(userId: string) {
 
 export async function updatePlayerStats(
   gameId: string,
-  p1: PlayerResult,
-  p2: PlayerResult
-): Promise<ApplyResult> {
+  p1: ProfileTypes.PlayerResult,
+  p2: ProfileTypes.PlayerResult
+): Promise<ProfileTypes.ApplyResult> {
 
   await db.exec('BEGIN IMMEDIATE');
 
@@ -560,7 +477,7 @@ export async function updatePlayerStats(
     const reserve = await db.run(
       `
       INSERT OR IGNORE INTO processed_games(game_id, processed_at)
-      VALUES (?, (datetime('now','localtime')))
+      VALUES (?, CURRENT_TIMESTAMP)
       `,
       [gameId]
     );
@@ -661,7 +578,7 @@ export async function updatePlayerStats(
 
 export async function getLeaderboard(lastSync: string) {
 
-  const rows = await db.all<LeaderboardRow>(
+  const rows = await db.all<ProfileTypes.LeaderboardRow>(
     `
     SELECT
       s.user_id,
@@ -740,7 +657,7 @@ async function getProfilesByIds(userIds: string[]) {
 // PUBLIC PROFILE
 // --------------------------------------------------
 
-export async function getUserPublicProfile(userId: string): Promise<PlayerInfo | null> {
+export async function getUserPublicProfile(userId: string): Promise<ProfileInterfaces.PlayerInfo | null> {
 
 	const row = await db.get<any>(PROFILE_QUERY, [userId]);
 
@@ -773,7 +690,7 @@ export async function getUserPublicProfile(userId: string): Promise<PlayerInfo |
 // HISTORY OF USER'S GAMES
 // --------------------------------------------------
 
-export async function getUserGameHistory(userId: string): Promise<GameHistoryItem[]> {
+export async function getUserGameHistory(userId: string): Promise<ProfileInterfaces.GameHistoryItem[]> {
   try {
     const url = `${STATS_API}/internal/statistics/games/history/${userId}`;
     const response = await axios.get<any[]>(url, {
@@ -782,15 +699,14 @@ export async function getUserGameHistory(userId: string): Promise<GameHistoryIte
 
     const games = response.data;
 
-	// Распечатываем весь ответ от axios
 	console.log('Games:', games);
 
-    const result: GameHistoryItem[] = [];
+    const result: ProfileInterfaces.GameHistoryItem[] = [];
 
     for (const game of games) {
       // Player 1
-      let player1: PlayerGamesHistoryData | AIGamesHistoryData;
-      if (Object.values(AIUserType).includes(game.user1_id)) {
+      let player1: ProfileInterfaces.PlayerGamesHistoryData | ProfileInterfaces.AIGamesHistoryData;
+      if (Object.values(ProfileEnums.AIUserType).includes(game.user1_id)) {
         player1 = {
           id: game.user1_id,
           nickname: game.user1_id,
@@ -815,8 +731,8 @@ export async function getUserGameHistory(userId: string): Promise<GameHistoryIte
       }
 
       // Player 2
-      let player2: PlayerGamesHistoryData | AIGamesHistoryData;
-      if (Object.values(AIUserType).includes(game.user2_id)) {
+      let player2: ProfileInterfaces.PlayerGamesHistoryData | ProfileInterfaces.AIGamesHistoryData;
+      if (Object.values(ProfileEnums.AIUserType).includes(game.user2_id)) {
         player2 = {
           id: game.user2_id,
           nickname: game.user2_id,

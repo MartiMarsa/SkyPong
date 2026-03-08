@@ -1,34 +1,9 @@
 import argon2 from 'argon2';
 import { randomBytes, randomUUID } from 'crypto';
-import { getDB } from './db';
-import { hashPassword, verifyPassword } from './password';
-import { getDbHelpers } from './helpers';
-
-export interface AuthUser {
-	id: string,
-	email: string;
-	twofa_enabled: number;
-	password_version: number;
-	token_version: number;
-}
-
-export interface OAuthProfile {
-	id: string;
-	email?: string;
-}
-
-interface UserRow {
-  id: string;
-  email: string;
-  password_hashed: string;
-  password_version: number;
-  token_version: number;
-  twofa_enabled: number;
-  provider?: string;
-  provider_id?: string;
-  needs_password?: number;
-  deleted_at?: string | null;
-}
+import { getDB } from './database/db';
+import { hashPassword, verifyPassword } from './validation/password';
+import { getDbHelpers } from './utils/helpers';
+import * as AuthInterfaces from './types/auth.interfaces';
 
 // --- UTILS ---
 function generateUserId() {
@@ -44,7 +19,7 @@ export function generateEmail(): string {
   return `deleted_${tail}_@${tail}.deleted`;
 }
 
-function toAuthUser(row: UserRow): AuthUser {
+function toAuthUser(row: AuthInterfaces.UserRow): AuthInterfaces.AuthUser {
   return {
     id: row.id,
     email: row.email,
@@ -55,11 +30,11 @@ function toAuthUser(row: UserRow): AuthUser {
 }
 
 // --- MAIN FUNCTIONS ---
-export async function signup(email: string, password: string): Promise<AuthUser> {
+export async function signup(email: string, password: string): Promise<AuthInterfaces.AuthUser> {
 	const hash = await hashPassword(password);
 
 	const userId = generateUserId();
-	return new Promise<AuthUser>((resolve, reject) => {
+	return new Promise<AuthInterfaces.AuthUser>((resolve, reject) => {
 		const db = getDB();
 		db.run(
 			`INSERT INTO users (id, email, password_hashed) VALUES(?, ?, ?)`,
@@ -78,10 +53,10 @@ export async function signup(email: string, password: string): Promise<AuthUser>
 	});
 }
 
-export async function login(email: string, password: string): Promise<AuthUser> {
+export async function login(email: string, password: string): Promise<AuthInterfaces.AuthUser> {
 	const db = getDB();
 
-	return new Promise<AuthUser>((resolve, reject) => {
+	return new Promise<AuthInterfaces.AuthUser>((resolve, reject) => {
 		db.get(
 			`SELECT * FROM users WHERE email = ?`,
 		       [email],
@@ -103,67 +78,3 @@ export async function login(email: string, password: string): Promise<AuthUser> 
 	});
 }
 
-export async function oauthLoginOrSignup(
-  profile: OAuthProfile,
-  provider: string
-): Promise<{ user: AuthUser; isNew: boolean }> {
-
-  const h = getDbHelpers(getDB());
-
-  let row = await h.get<UserRow>(
-    `SELECT * FROM users WHERE provider=? AND provider_id=?`,
-    [provider, profile.id]
-  );
-
-  if (row?.deleted_at) {
-    throw new Error('ACCOUNT_DELETED');
-  }
-
-  if (row) {
-    return { user: toAuthUser(row), isNew: false };
-  }
-
-  if (profile.email) {
-    row = await h.get<UserRow>(
-      `SELECT * FROM users WHERE email=?`,
-      [profile.email]
-    );
-
-    if (row) {
-      await h.run(
-        `UPDATE users SET provider=?, provider_id=? WHERE id=?`,
-        [provider, profile.id, row.id]
-      );
-
-      return { user: toAuthUser(row), isNew: false };
-    }
-  }
-
-  // --- SIGNUP ---
-  const userId = generateUserId();
-  const hash = await hashPassword(randomUUID());
-
-  await h.run(
-    `INSERT INTO users (
-      id,
-      email,
-      password_hashed,
-      needs_password,
-      provider,
-      provider_id,
-      password_version
-    ) VALUES (?, ?, ?, 1, ?, ?, 1)`,
-    [userId, profile.email ?? null, hash, provider, profile.id]
-  );
-
-  return {
-    user: {
-      id: userId,
-      email: profile.email ?? '',
-      twofa_enabled: 0,
-      password_version: 1,
-      token_version: 0,
-    },
-    isNew: true
-  };
-}

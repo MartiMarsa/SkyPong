@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
-import { privateKey } from './keys';
-import { getDB } from './db';
+import { privateKey } from '../keys';
+import { getDB } from '../database/db';
 
 export async function generateToken(user: {
     id: string;
@@ -9,17 +9,12 @@ export async function generateToken(user: {
     token_version: number;
 }) {
 
-    function toSqlLocalDatetime(date: Date): string {
-        const offset = date.getTimezoneOffset(); // смещение в минутах
-        const localDate = new Date(date.getTime() - offset * 60 * 1000);
-        return localDate.toISOString().slice(0, 19).replace('T', ' ');
+    function toSqlUtcDatetime(date: Date): string {
+        return date.toISOString().slice(0, 19).replace('T', ' ');
     }
 
     const issuedAt = new Date();
-    const expiresAt = new Date(issuedAt.getTime() + 60 * 60 * 1000); // +1 час
-
-    const issuedAtLocalSeconds = Math.floor((issuedAt.getTime() - issuedAt.getTimezoneOffset() * 60000) / 1000);
-    const expiresAtLocalSeconds = Math.floor((expiresAt.getTime() - expiresAt.getTimezoneOffset() * 60000) / 1000);
+    const expiresAt = new Date(issuedAt.getTime() + 60 * 60 * 1000); // +1 hour
 
     const token = jwt.sign(
         {
@@ -28,8 +23,8 @@ export async function generateToken(user: {
             tv: user.token_version,
             iss: 'auth-service',
             aud: 'transcendence',
-            iat: issuedAtLocalSeconds,
-            exp: expiresAtLocalSeconds,
+            iat: Math.floor(issuedAt.getTime() / 1000),
+            exp: Math.floor(expiresAt.getTime() / 1000),
         },
         privateKey,
         { algorithm: 'RS256' }
@@ -42,21 +37,19 @@ export async function generateToken(user: {
             `
             INSERT INTO user_sessions (id, user_id, issued_at, expires_at, token_version)
             VALUES (?, ?, ?, ?, ?)
-			ON CONFLICT(user_id)
-			DO UPDATE SET
-			id = excluded.id,
-			issued_at = ?,
-			expires_at = ?,
-			token_version = excluded.token_version
+            ON CONFLICT(user_id)
+            DO UPDATE SET
+                id = excluded.id,
+                issued_at = excluded.issued_at,
+                expires_at = excluded.expires_at,
+                token_version = excluded.token_version
             `,
             [
                 crypto.randomUUID(),
                 user.id,
-                toSqlLocalDatetime(issuedAt),
-                toSqlLocalDatetime(expiresAt),
+                toSqlUtcDatetime(issuedAt),
+                toSqlUtcDatetime(expiresAt),
                 user.token_version,
-				toSqlLocalDatetime(issuedAt),
-                toSqlLocalDatetime(expiresAt),
             ],
             (err) => (err ? reject(err) : resolve())
         );
@@ -64,7 +57,6 @@ export async function generateToken(user: {
 
     return token;
 }
-
 
 
 export async function deleteUserSession(userId: string): Promise<void> {
@@ -82,9 +74,9 @@ export function startSessionCleanup() {
     setInterval(() => {
         db.run(`
             DELETE FROM user_sessions
-            WHERE expires_at < datetime('now','localtime')
+            WHERE expires_at < CURRENT_TIMESTAMP
         `);
     }, 15 * 60 * 1000);
 
-	console.log(`[auth] Session cleanup done at ${new Date().toISOString() }`);
+	console.log(`[auth] Session cleanup done at CURRENT_TIMESTAMP`);
 }

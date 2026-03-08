@@ -1,20 +1,6 @@
 import { resolve } from 'dns';
-import { getProfileDB } from './dbPlayers';
-
-export type RelationRow = {
-      	status: 'pending' | 'accepted' | 'blocked';
-      	requester_id: string;
-      	blocked_by: string | null;
-};
-
-export type FriendUser = {
-      	user_id: string;
-      	nickname: string;
-      	avatarUrl: string | null;
-      	created_at: string;
-		last_access_at?: string;
-		logged?: number;
-};
+import { getProfileDB } from './database/dbPlayers';
+import * as ProfileTypes from './types/profile.types';
 
 function normalizeId(a: string, b: string): [string, string] {
 	return a < b ? [a, b] : [b, a];
@@ -101,22 +87,6 @@ export async function removeFriend(userId: string, friendId: string): Promise<vo
 	});
 }
 
-// // --- BLOCK USER ---
-// export async function blockUser(userId: string, targetId: string): Promise<void> {
-// 	const db = getProfileDB();
-// 	const [u1, u2] = normalizeId(userId, targetId);
-
-// 	const result = new Promise((resolve : any, reject: any) => {
-// 		db.run(`INSERT INTO friends (user1_id, user2_id, status, blocked_by) VALUES (?, ?, 'blocked', ?) ON CONFLICT(user1_id, user2_id) DO UPDATE SET status = 'blocked', blocked_by = excluded.blocked_by`,
-// 			[u1, u2, userId],
-// 			err => {
-// 				if (err) return reject(err);
-// 				resolve();
-// 			});
-// 	});
-//     console.info("Bloked user result: ", result);
-// }
-
 export async function blockUser(userId: string, targetId: string): Promise<void> {
     const db = getProfileDB();
     const [u1, u2] = normalizeId(userId, targetId);
@@ -171,20 +141,6 @@ export async function unblockUser(userId: string, targetId: string): Promise<voi
     );
   });
 }
-
-// --- GET FRIEND LIST ---
-// export async function getFriends(userId: string): Promise<any[]> {
-// 	const db = getProfileDB();
-
-// 	return new Promise((resolve, reject) => {
-// 		db.all(`SELECT p.user_id, p.nickname, p.avatarUrl FROM friends f JOIN players p ON (p.user_id = f.user1_id OR p.user_id = f.user2_id) WHERE f.status = 'accepted' AND (f.user1_id = ? OR f.user2_id = ?) AND p.user_id != ?`,
-// 			[userId, userId, userId],
-// 			(err, rows) => {
-// 				if (err) return reject(err);
-// 				resolve(rows);
-// 			});
-// 	});
-// }
 
 export async function getFriends(userId: string): Promise<any[]> {
   const db = getProfileDB();
@@ -275,23 +231,6 @@ export async function getIncomingRequests(userId: string): Promise<any[]> {
 }
 
 // --- GET OUTGOING FRIEND REQUESTS ---
-// export async function getOutgoingRequests(userId: string): Promise<any[]> {
-// 	const db = getProfileDB();
-
-// 	return new Promise((resolve, reject) => {
-// 		db.all(`SELECT p.user_id, p.nickname, p.avatarUrl, f.created_at
-//          FROM friends f
-//          JOIN players p ON p.user_id = f.requester_id 
-//              WHERE f.status = 'pending' 
-//              AND requester_id = ? AND (f.user1_id = ? OR f.user2_id = ?)`,
-// 			[userId, userId, userId],
-// 			(err, rows) => {
-// 				if (err) return reject(err);
-// 				resolve(rows);
-// 			});
-// 	});
-// }
-
 export async function getOutgoingRequests(userId: string): Promise<any[]> {
   const db = getProfileDB();
 
@@ -322,11 +261,11 @@ export async function getOutgoingRequests(userId: string): Promise<any[]> {
 }
 
 // --- GET BLOCK LIST ---
-export async function getBlocklist(userId: string): Promise<FriendUser[]> {
+export async function getBlocklist(userId: string): Promise<ProfileTypes.FriendUser[]> {
 	const db = getProfileDB();
 
 	return new Promise((resolve, reject) => {
-		db.all<FriendUser>(`
+		db.all<ProfileTypes.FriendUser>(`
 						   SELECT 
 						   p.user_id, 
 						   p.nickname, 
@@ -352,12 +291,12 @@ export async function getBlocklist(userId: string): Promise<FriendUser[]> {
 }
 
 // --- GET FRIEND STATUS ---
-export async function getFriendStatus(userId: string, otherId: string): Promise<RelationRow | null> {
+export async function getFriendStatus(userId: string, otherId: string): Promise<ProfileTypes.RelationRow | null> {
 	const db = getProfileDB();
 	const [u1, u2] = normalizeId(userId, otherId);
 
 	return new Promise((resolve, reject) => {
-		db.get<RelationRow>(`
+		db.get<ProfileTypes.RelationRow>(`
 							SELECT 
 							status, 
 							requester_id, 

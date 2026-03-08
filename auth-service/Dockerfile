@@ -22,8 +22,7 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 RUN apk add --no-cache sqlite
-RUN apk add --no-cache sqlite tzdata
-ENV TZ=Europe/Madrid
+RUN apk add --no-cache sqlite
 ARG UID=1000
 ARG GID=1000
 # RUN addgroup -g ${GID} app && adduser -u ${UID} -G app -S app

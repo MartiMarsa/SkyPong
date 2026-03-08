@@ -1,5 +1,5 @@
 import * as repo from './friend';
-import { RelationRow, FriendUser } from './friend';
+import * as ProfileTypes from './types/profile.types';
 
 // --- SEND FRIEND REQUEST ---
 export async function sendFriendRequestService(fromId: string, toId: string): Promise<void> {
@@ -72,31 +72,31 @@ export async function unblockUserService(userId: string, targetId: string): Prom
 }
 
 // --- GET FRIEND LIST ---
-export async function getFriendsService(userId: string): Promise<FriendUser[]> {
+export async function getFriendsService(userId: string): Promise<ProfileTypes.FriendUser[]> {
 	return repo.getFriends(userId);
 }
 
 // --- GET FRIEND OF TARGET LIST ---
-export async function getFriendsOfTargetService(userId: string, targetId: string): Promise<FriendUser[]> {
+export async function getFriendsOfTargetService(userId: string, targetId: string): Promise<ProfileTypes.FriendUser[]> {
 	return repo.getFriendsOfTarget(userId, targetId);
 }
 
 // --- GET INCOMING FRIEND REQUESTS ---
-export async function getIncomingRequestsService(userId: string): Promise<FriendUser[]> {
+export async function getIncomingRequestsService(userId: string): Promise<ProfileTypes.FriendUser[]> {
 	return repo.getIncomingRequests(userId);
 }
 
 // --- GET OUTGOING FRIEND REQUESTS ---
-export async function getOutgoingRequestsService(userId: string): Promise<FriendUser[]> {
+export async function getOutgoingRequestsService(userId: string): Promise<ProfileTypes.FriendUser[]> {
 	return repo.getOutgoingRequests(userId);
 }
 
 // --- GET BLOCK LIST ---
-export async function getBlocklistService(userId: string): Promise<FriendUser[]> {
+export async function getBlocklistService(userId: string): Promise<ProfileTypes.FriendUser[]> {
 	return repo.getBlocklist(userId);
 }
 
 // --- GET FRIEND STATUS ---
-export async function getFriendStatusService(userId: string, otherId: string): Promise<RelationRow | null> {
+export async function getFriendStatusService(userId: string, otherId: string): Promise<ProfileTypes.RelationRow | null> {
 	return repo.getFriendStatus(userId, otherId);
 }

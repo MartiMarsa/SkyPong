@@ -33,10 +33,7 @@ RUN apt-get update && apt-get install -y \
     python3 \
     make \
     g++ \
-	tzdata \
     && rm -rf /var/lib/apt/lists/*
-
-ENV TZ=Europe/Madrid
 
 # Creamos un usuario no-root para correr la app
 RUN groupadd -r app && useradd -r -g app app

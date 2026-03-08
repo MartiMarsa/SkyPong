@@ -1,7 +1,7 @@
 import axios from 'axios';
-import { getStatisticsDB } from './dbStats';
-import { sleep, getDbHelpers } from './helpers';
-import * as StatsTypes from './stats.types';
+import { getStatisticsDB } from '../database/dbStats';
+import { sleep, getDbHelpers } from '../utils/helpers';
+import * as StatsTypes from '../types/stats.types';
 
 // --- CONFIG ---
 const PROFILE_API = process.env.PROFILE_SERVICE_URL!;
@@ -87,7 +87,7 @@ async function processGame(game: StatsTypes.GameRow) {
 	    	},
       	});
 
-	await db.run(`UPDATE games_and_results SET processed = 1, processing = 0, processed_at = (datetime('now','localtime')) WHERE game_id = ?`, 
+	await db.run(`UPDATE games_and_results SET processed = 1, processing = 0, processed_at = CURRENT_TIMESTAMP WHERE game_id = ?`, 
 		     [game.game_id]);
 }
 

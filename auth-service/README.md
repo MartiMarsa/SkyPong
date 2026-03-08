@@ -1,111 +1,398 @@
 # Auth Service
 
-This is a TypeScript-based authentication service built with Fastify.  
-It supports JWT-based access tokens, refresh tokens, CSRF protection, and optional 2FA using TOTP.
+A **TypeScript authentication microservice** built with **Fastify**.
 
----
+It provides:
 
-## Features
-
-- User signup and login
-- JWT access tokens (RS256)
-- Refresh tokens with DB storage
+- JWT authentication (RS256)
+- Access tokens + refresh tokens
+- Session tracking
 - CSRF protection
-- 2FA (TOTP + QR code)
 - Password hashing with Argon2
 - SQLite persistence
+- Internal service authentication
+
+This service is designed to be part of a **microservice architecture** and communicates with a **Profile Service**.
 
 ---
 
-## Prerequisites
+# Features
 
-- Node.js 20+
-- npm
-- Docker
-- Git
-
----
-
-## NPM Scripts
-
-- npm run dev — Run in development mode with hot reload
-- npm run build — Compile TypeScript to dist/
-- npm start — Run the compiled JS from dist/
-- npm run generate-keys — Generate JWT key pair (RSA 2048) if missing
+- User signup & login
+- JWT access tokens (RS256)
+- Refresh tokens stored in DB
+- Session validation
+- CSRF protection
+- Password change
+- Account deletion
+- Internal service-to-service authentication
+- Automatic session cleanup
+- Automatic refresh token cleanup
+- Docker-ready
 
 ---
 
-## Keys & Security
+# Technologies Used
 
-- JWT keys (jwt-private.pem and jwt-public.pem) are required for token signing
-- Key paths are configurable via environment variables:
-  - JWT_PRIVATE_KEY_PATH (default: /app/jwt-private.pem)
-  - JWT_PUBLIC_KEY_PATH (default: /app/jwt-public.pem)
-- See .env.example for a starter template.
-- Do not commit private keys in production; for local development, they can be stored in the repo
-- Generate keys locally with:
-  ```bash
-  npm run generate-keys
-  ```
-- CSRF tokens are automatically issued per session
+## Backend
 
----
+- **Node.js 20**
+- **TypeScript**
+- **Fastify**
 
-## Docker Notes
+## Authentication & Security
 
-- Container exposes port 8081
-- Volume ./data persists SQLite databases
-- Keys can be baked into the image if present in the build context (jwt-*.pem)
-- Or mount them as secrets/volumes and set the env vars, for example:
-  ```bash
-  JWT_PRIVATE_KEY_PATH=/run/secrets/jwt-private.pem
-  JWT_PUBLIC_KEY_PATH=/run/secrets/jwt-public.pem
-  ```
-  and mount:
-  ```bash
-  ./secrets/jwt-private.pem:/run/secrets/jwt-private.pem:ro
-  ./secrets/jwt-public.pem:/run/secrets/jwt-public.pem:ro
-  ```
+- **JWT (jsonwebtoken)** — token based authentication
+- **RS256 (RSA 2048)** — asymmetric JWT signing
+- **Argon2id** — password hashing
+- **CSRF protection** using double submit cookie pattern
 
----
+## Database
 
-## API Endpoints
+- **SQLite3**
 
-- POST /auth/signup — Create new user
-- POST /auth/login — Login user
-- POST /auth/password — Change password (authenticated)
-- POST /auth/logout — Logout user
-- DELETE /auth/logout — Delete user
-- POST /auth/refresh — Refresh access token
-- POST /auth/2fa/setup — Generate 2FA secret + QR code
-- POST /auth/2fa/enable — Enable 2FA for user
-- POST /auth/2fa/disable — Disable 2FA for user
-- POST /auth/2fa/verify — Verify 2FA code
-- GET /auth/verify — Verify access token
-- GET /health — Health check
+Two separate databases are used:
 
----
+- `auth.db` → users and sessions
+- `tokens.db` → refresh tokens
 
-Refresh tokens are stored in a SQLite table refresh_tokens
+## Validation
+
+- **Zod** — runtime request validation
+
+## Cryptography
+
+- **Node.js crypto module**
+- RSA key pair generation for JWT signing
+
+## Infrastructure
+
+- **Docker**
+- **Docker multi-stage builds**
+- **Docker entrypoint scripts**
+
+## Internal Communication
+
+- **node-fetch** — HTTP communication between services
+- **Service token authentication**
+
+## Utilities
+
+- **Chalk** — colored logs
 
 ---
 
-## Setup & Run (Automated)
+# Project Structure
 
-Use a single script to fully setup and run the service:
-
-```bash
-git clone <repo-url>
-cd auth-service
-./setup-and-run.sh
+```
+.
+├── Dockerfile
+├── docker-entrypoint.sh
+├── node_modules
+├── package.json
+├── package-lock.json
+├── tsconfig.json
+├── README.md
+│
+├── scripts
+│   └── generate-keys.cjs
+│
+├── src
+│   ├── index.ts
+│   ├── auth.ts
+│   ├── keys.ts
+│   ├── generateKeys.ts
+│   │
+│   ├── database
+│   │   ├── db.ts
+│   │   └── dbTokens.ts
+│   │
+│   ├── tokens
+│   │   ├── token.ts
+│   │   └── refresh.ts
+│   │
+│   ├── validation
+│   │   ├── checkInput.ts
+│   │   └── password.ts
+│   │
+│   ├── utils
+│   │   └── helpers.ts
+│   │
+│   └── types
+│       └── auth.interfaces.ts
 ```
 
 ---
 
-## Clean up before you go or do git push (Automated)
+# Architecture
 
-Use a single script to clean up:
+The service uses **two SQLite databases**.
+
+## Main Database
+
+```
+data/auth.db
+```
+
+Tables:
+
+- `users`
+- `user_sessions`
+
+## Refresh Token Database
+
+```
+data/tokens.db
+```
+
+Tables:
+
+- `refresh_tokens`
+
+Separating refresh tokens improves **security and scalability**.
+
+---
+
+# Environment Variables
+
+Required:
+
+```
+PROFILE_SERVICE_URL=http://profile-service:8080
+SERVICE_TOKEN=internal_service_secret
+```
+
+Optional:
+
+```
+AUTH_DATA_DIR=/app/data
+AUTH_DB_PATH=/app/data/auth.db
+AUTH_TOKENS_DB_PATH=/app/data/tokens.db
+
+JWT_PRIVATE_KEY_PATH=/app/jwt-private.pem
+JWT_PUBLIC_KEY_PATH=/app/jwt-public.pem
+```
+
+---
+
+# JWT Keys
+
+The service uses **RSA 2048 keys** for signing tokens.
+
+Required files:
+
+```
+jwt-private.pem
+jwt-public.pem
+```
+
+Generate locally:
 
 ```bash
-./clean-up.sh
+npm run generate-keys
 ```
+
+---
+
+# Docker Key Handling
+
+During container startup `docker-entrypoint.sh`:
+
+1. Checks `/app/keys`
+2. If empty → copies `jwt-*.pem`
+3. Sets ownership for `app:app`
+
+This allows:
+
+- persistent keys
+- safe container restarts
+
+---
+
+# Docker Usage
+
+## Build Image
+
+```bash
+docker build -t auth-service .
+```
+
+## Run Container
+
+```bash
+docker run -p 8081:8081 \
+  -e PROFILE_SERVICE_URL=http://profile-service:8080 \
+  -e SERVICE_TOKEN=my-secret \
+  -v ./data:/app/data \
+  -v ./keys:/app/keys \
+  auth-service
+```
+
+---
+
+# API Endpoints
+
+## Public
+
+```
+POST /auth/signup
+POST /auth/login
+POST /auth/logout
+GET  /auth/verify
+```
+
+## Authenticated
+
+```
+POST   /auth/password
+DELETE /auth/deleteme
+```
+
+## Internal (service-to-service)
+
+Requires header:
+
+```
+Authorization: Bearer SERVICE_TOKEN
+```
+
+Endpoints:
+
+```
+GET /internal/auth/session_state/:id
+```
+
+---
+
+# Security
+
+## Password Hashing
+
+Passwords are hashed using:
+
+```
+argon2id
+```
+
+---
+
+## JWT Tokens
+
+Access Token:
+
+```
+Algorithm: RS256
+Expiration: 1 hour
+Stored in cookie: access_token
+```
+
+Refresh Token:
+
+```
+Expiration: 7 days
+Stored in cookie: refresh_token
+Stored in database
+```
+
+---
+
+# CSRF Protection
+
+CSRF token stored in cookie:
+
+```
+csrf_token
+```
+
+Client must send header:
+
+```
+X-CSRF-Token
+```
+
+Ignored routes:
+
+```
+/auth/signup
+/auth/login
+/auth/logout
+```
+
+---
+
+# Session Management
+
+Every login creates a session stored in:
+
+```
+user_sessions
+```
+
+Expired sessions are cleaned automatically every:
+
+```
+15 minutes
+```
+
+---
+
+# Refresh Token Cleanup
+
+Expired refresh tokens are revoked automatically every:
+
+```
+15 minutes
+```
+
+---
+
+# Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run development server:
+
+```bash
+npm run dev
+```
+
+Build project:
+
+```bash
+npm run build
+```
+
+Start production build:
+
+```bash
+npm start
+```
+
+---
+
+# Health Check
+
+Endpoint:
+
+```
+GET /health
+```
+
+Response:
+
+```json
+{
+  "status": "ok",
+  "service": "auth-service"
+}
+```
+
+---
+
+# License
+
+MIT
