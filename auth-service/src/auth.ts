@@ -94,3 +94,4 @@ export async function checkActiveSession(userId: string): Promise<boolean> {
         );
     });
 }
+
