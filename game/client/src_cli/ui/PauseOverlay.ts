@@ -36,7 +36,6 @@ export class PauseOverlay {
       ...GUI_STYLES.BUTTON.DEFAULT,
       ...GUI_STYLES.PAUSE_POSITIONS.RESUME_BUTTON,
       zIndex: 101,
-      background: "#235789",
     };
     this._resumeButton = GUIElements.CreateTextButton("resumeButton", this._texts.resume, resumeStyle, () =>
       this._onResume(),
@@ -46,7 +45,6 @@ export class PauseOverlay {
       ...GUI_STYLES.BUTTON.DEFAULT,
       ...GUI_STYLES.PAUSE_POSITIONS.QUIT_BUTTON,
       zIndex: 101,
-      background: "#987284",
     };
     this._quitButton = GUIElements.CreateTextButton("quitButton", this._texts.quitToMenu, quitStyle, () =>
       this._onQuit(),

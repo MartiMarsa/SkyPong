@@ -4,28 +4,28 @@
  */
 export declare const AI_DIFFICULTY: {
     readonly EASY: {
-        readonly REACTION_DELAY_FRAMES: 30;
+        readonly REACTION_DELAY_FRAMES: 37;
         readonly MAX_SPEED_MULTIPLIER: 0.55;
-        readonly ACCURACY: 0.2;
-        readonly PREDICTION_FACTOR: 0.05;
-        readonly ERROR_FREQUENCY: 0.18;
-        readonly DEGRADATION_TICK_INTERVAL: 900;
+        readonly ACCURACY: 0.146;
+        readonly PREDICTION_FACTOR: 0.0366;
+        readonly ERROR_FREQUENCY: 0.222;
+        readonly DEGRADATION_TICK_INTERVAL: 659;
     };
     readonly MEDIUM: {
-        readonly REACTION_DELAY_FRAMES: 20;
+        readonly REACTION_DELAY_FRAMES: 23;
         readonly MAX_SPEED_MULTIPLIER: 0.55;
-        readonly ACCURACY: 0.4;
-        readonly PREDICTION_FACTOR: 0.1;
-        readonly ERROR_FREQUENCY: 0.12;
-        readonly DEGRADATION_TICK_INTERVAL: 1200;
+        readonly ACCURACY: 0.308;
+        readonly PREDICTION_FACTOR: 0.077;
+        readonly ERROR_FREQUENCY: 0.140;
+        readonly DEGRADATION_TICK_INTERVAL: 924;
     };
     readonly HARD: {
-        readonly REACTION_DELAY_FRAMES: 12;
+        readonly REACTION_DELAY_FRAMES: 14;
         readonly MAX_SPEED_MULTIPLIER: 0.75;
-        readonly ACCURACY: 0.66;
-        readonly PREDICTION_FACTOR: 0.45;
-        readonly ERROR_FREQUENCY: 0.07;
-        readonly DEGRADATION_TICK_INTERVAL: 1950;
+        readonly ACCURACY: 0.508;
+        readonly PREDICTION_FACTOR: 0.347;
+        readonly ERROR_FREQUENCY: 0.082;
+        readonly DEGRADATION_TICK_INTERVAL: 1502;
     };
 };
 export declare const AI_BEHAVIOR: {
@@ -42,29 +42,5 @@ export declare const AI_BEHAVIOR: {
         readonly RESET_CARRY_FACTOR: 0.5;
         readonly MAX_LEVEL: 10;
         readonly MIN_ACCURACY: 0.1;
-    };
-};
-    readonly MEDIUM: {
-        readonly REACTION_DELAY_FRAMES: 10;
-        readonly MAX_SPEED_MULTIPLIER: 0.75;
-        readonly ACCURACY: 0.7;
-        readonly PREDICTION_FACTOR: 0.4;
-        readonly ERROR_FREQUENCY: 0.05;
-    };
-    readonly HARD: {
-        readonly REACTION_DELAY_FRAMES: 4;
-        readonly MAX_SPEED_MULTIPLIER: 0.95;
-        readonly ACCURACY: 0.92;
-        readonly PREDICTION_FACTOR: 0.8;
-        readonly ERROR_FREQUENCY: 0.02;
-    };
-};
-export declare const AI_BEHAVIOR: {
-    readonly VELOCITY_FALLBACK: 0.1;
-    readonly MOVEMENT_THRESHOLD: 0.1;
-    readonly ERROR_MULTIPLIER: 2.0;
-    readonly SPEED_CALCULATION: {
-        readonly MIN_FACTOR: 0.5;
-        readonly MAX_FACTOR: 1;
     };
 };

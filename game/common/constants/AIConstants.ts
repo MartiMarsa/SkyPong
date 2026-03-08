@@ -5,28 +5,28 @@
 
 export const AI_DIFFICULTY = {
     EASY: {
-        REACTION_DELAY_FRAMES: 30,
+        REACTION_DELAY_FRAMES: 37,
         MAX_SPEED_MULTIPLIER: 0.55,
-        ACCURACY: 0.2,
-        PREDICTION_FACTOR: 0.05,
-        ERROR_FREQUENCY: 0.18,
-        DEGRADATION_TICK_INTERVAL: 900,     // ~15 seconds at 60fps — degrades fastest
+        ACCURACY: 0.146,
+        PREDICTION_FACTOR: 0.0366,
+        ERROR_FREQUENCY: 0.222,
+        DEGRADATION_TICK_INTERVAL: 659,     // ~11 seconds at 60fps — degrades fastest
     },
     MEDIUM: {
-        REACTION_DELAY_FRAMES: 20,
+        REACTION_DELAY_FRAMES: 23,
         MAX_SPEED_MULTIPLIER: 0.55,
-        ACCURACY: 0.4,
-        PREDICTION_FACTOR: 0.1,
-        ERROR_FREQUENCY: 0.12,
-        DEGRADATION_TICK_INTERVAL: 1200,    // ~20 seconds at 60fps
+        ACCURACY: 0.308,
+        PREDICTION_FACTOR: 0.077,
+        ERROR_FREQUENCY: 0.140,
+        DEGRADATION_TICK_INTERVAL: 924,     // ~15.4 seconds at 60fps
     },
     HARD: {
-        REACTION_DELAY_FRAMES: 12,
+        REACTION_DELAY_FRAMES: 14,
         MAX_SPEED_MULTIPLIER: 0.75,
-        ACCURACY: 0.66,
-        PREDICTION_FACTOR: 0.45,
-        ERROR_FREQUENCY: 0.07,
-        DEGRADATION_TICK_INTERVAL: 1950,    // ~32 seconds at 60fps — degrades slowest
+        ACCURACY: 0.508,
+        PREDICTION_FACTOR: 0.347,
+        ERROR_FREQUENCY: 0.082,
+        DEGRADATION_TICK_INTERVAL: 1502,    // ~25 seconds at 60fps — degrades slowest
     },
 } as const;
 
