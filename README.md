@@ -320,9 +320,9 @@ Prometheus/Grafana/Alertmanager are part of the default stack, enabling performa
 
 ## 1. Executive Summary
 
-Total Major modules fulfilled: **9**
+Total Major modules fulfilled: **10**
 Total Minor modules fulfilled: **4**
-Estimated total points: **22**
+Estimated total points: **24**
 
 ## 2. Fulfilled Modules
 
@@ -357,20 +357,26 @@ Estimated total points: **22**
 ### 2.8 Major: AI Opponent
 - AI room (`ai_game_room`) and AI controller (`AIPaddleController`) are implemented in game server.
 
-### 2.9 Major: Remote players (2 separate computers)
+### 2.9 Major: Implement a complete web-based game where users can play against each other.
+- The game can be real-time multiplayer.
+- Players must be able to play live matches.
+- The game must have clear rules and win/loss conditions.
+- The game can be 2D or 3D.
+
+### 2.10 Major: Remote players (2 separate computers)
 - PvP Colyseus room supports 2 real-time players connected remotely.
 - Room listing/join flow and game-state sync are implemented.
 
-### 2.10 Major: Advanced 3D graphics with Babylon.js
+### 2.11 Major: Advanced 3D graphics with Babylon.js
 - Game backend simulation uses Babylon.js engine primitives and 2D scene entities.
 - Game client/server architecture is designed around Babylon.js-compatible 2D gameplay.
 
-### 2.11 Minor: Gamification system
+### 2.12 Minor: Gamification system
 - Achievements section and progression rules are implemented in the profile UI layer.
 
-### 2.12 Major: Monitoring with Prometheus and Grafana
+### 2.13 Major: Monitoring with Prometheus and Grafana
 - Compose stack includes Prometheus, Grafana, cAdvisor, nginx exporter and dashboards.
 
-### 2.12 Major: Backend as microservices
+### 2.14 Major: Backend as microservices
 - Service decomposition is present (auth/profile/statistics/game/gateway/front/observability).
 
