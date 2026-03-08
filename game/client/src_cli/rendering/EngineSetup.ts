@@ -102,6 +102,10 @@ export class EngineSetup {
         }
 
         camera.attachControl();
+        
+        // Disable arrow keys for camera movement (keep only mouse drag)
+        camera.inputs.removeByType("FreeCameraKeyboardMoveInput");
+        
         return camera;
     }
 }

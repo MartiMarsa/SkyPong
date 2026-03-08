@@ -19,25 +19,25 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: PLACEHOLDER_SQLITE_AUTH
+      device: /Users/palmiro/42/transcendence/volumes/sqlite_auth
   front-dev_vol:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: PLACEHOLDER_FRONT
+      device: /Users/palmiro/42/transcendence/volumes/front-dev
   statistics-service_vol:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: PLACEHOLDER_STATISTICS
+      device: /Users/palmiro/42/transcendence/volumes/statistics
   profile-service_vol:
     driver: local
     driver_opts:
       type: none
       o: bind
-      device: PLACEHOLDER_PROFILE
+      device: /Users/palmiro/42/transcendence/volumes/profile
   uploads:
     driver: local
     driver_opts:
@@ -136,7 +136,7 @@ services:
       - backend
       - internal
     volumes:
-      - PLACEHOLDER_SQLITE_AUTH:/app/data
+      - /Users/palmiro/42/transcendence/volumes/sqlite_auth:/app/data
       - keys:/app/keys
     # user: "${UID}:${GID}" 
       # Optional: mount JWT keys from host secrets
@@ -223,7 +223,7 @@ services:
       - PROFILE_DATA_DIR=/app/data
       - JWT_PUBLIC_KEY_PATH=/app/keys/jwt-public.pem
     volumes:
-      - PLACEHOLDER_PROFILE:/app/data
+      - /Users/palmiro/42/transcendence/volumes/profile:/app/data
       - keys:/app/keys:ro
       - uploads:/app/uploads:rw
       - static:/app/static:ro
@@ -252,7 +252,7 @@ services:
       - STATS_SERVICE_URL=${STATS_SERVICE_URL}
       - STATS_DATA_DIR=/app/data
     volumes:
-      - PLACEHOLDER_STATISTICS:/app/data
+      - /Users/palmiro/42/transcendence/volumes/statistics:/app/data
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:6000/healthz', r=>process.exit(r.statusCode===200?0:1)).on('error', ()=>process.exit(1))"]
       interval: 10s
@@ -269,13 +269,13 @@ services:
       - backend
     volumes:
     # auth-service sqlite
-      - PLACEHOLDER_SQLITE_AUTH:/auth-data
+      - /Users/palmiro/42/transcendence/volumes/sqlite_auth:/auth-data
 
     # profile-service sqlite
-      - PLACEHOLDER_PROFILE:/profile-data
+      - /Users/palmiro/42/transcendence/volumes/profile:/profile-data
 
     # statistics-service sqlite
-      - PLACEHOLDER_STATISTICS:/stats-data
+      - /Users/palmiro/42/transcendence/volumes/statistics:/stats-data
     environment:
       - NODE_ENV=development
       - SEED_MODE=dev

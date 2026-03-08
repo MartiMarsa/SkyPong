@@ -5,11 +5,8 @@ const en = {
         description: "A celestial Pong experience",
         lable: "Go to Home",
     },
-    hero: {
-        howToPlay: "How to play?",
-    },
     user: {
-        hi: "Hi!",
+        hi: ({name, className, url}) =>(`Hi, <a href="${url}" class="${className}"> ${name}</a>!`),
         nickname: "Nickname",
         winphrase: "Win Phrase",
         userData: "User Data",
@@ -44,6 +41,7 @@ const en = {
         uploading: "Uploading...",
         cancel: "Cancel",
         backHome: "Back to Home",
+        save: "Save",
     },
     serverError: {
         conectionError: "Server conection error",
@@ -123,6 +121,9 @@ const en = {
         error: "Error:",
         failedLoadRooms: "Failed to load rooms. Please try again.",
         room: "'s room",
+        noRoomAvailable: "No rooms available",
+        joinRoomBtn: 'Join Room',
+        roomListTitle: 'Room List',
     },
     legal: {
         terms: "Terms of Service",
@@ -186,7 +187,8 @@ const en = {
 
 <h2>3. Do we share your data?</h2>
 <p>Who would even want it? Neither Google nor Facebook care how many times you’ve lost at Pong against a teammate. We don’t sell your data, mainly because we don’t know how to set up a payment gateway without <code>Docker</code> exploding.</p>
-
+        login: "Login",
+        signUp: "SignUp",
 <h2>4. Information Security</h2>
 <div class="data-box">
     if (data.isSafe()) { <br>
@@ -226,6 +228,7 @@ const en = {
         submitButton: "Sign In",
         passwordForgottenLinkText: "Forgot your password?",
         loading: "Loading...",
+        refresh: "Refrescar",
     },
     signUpPage: {
         title: "Sign Up",
@@ -249,6 +252,9 @@ const en = {
         settings: "Settings",
         logout: "Log out",
         goBack: "Go back",
+        login: "Login",
+        signUp: "SignUp",
+        play: "Play",
     },
     player: {
         wins: "Wins",
@@ -286,6 +292,17 @@ const en = {
         requestRejected: "Request rejected",
         requestCancelled: "Request cancelled",
         nooutgoingRequests: "No outgoing requests",
+        addFriend: "+ ADD FRIEND",
+        requestSent: "REQUEST SENT",
+        acceptRequest: "ACCEPT REQUEST",
+        unavailable: "NOT AVAILABLE",
+        removeFriend: "✕ REMOVE FRIEND",
+        block: "🚫 BLOCK",
+        unblock: "↩ UNBLOCK",
+        cancelRequest: "✕ CANCEL REQUEST",
+        nowFriends: "✓ You are now friends!",
+        requestSentSuccess: "Friend request sent",
+        itsMe: "<-⭐ It's me Mario! 🍄",
     },
     form: {
     labels: {
@@ -361,16 +378,16 @@ const en = {
             login30Days: "Veteran",
             login30DaysDesc: "Log in for 30 consecutive days.",
         },
-        wonGamesAchievements: {
+        playGamesAchievements: {
             title: "Games Won Achievements",
-            firsgame: "Rookie",
-            firsgameDesc: "Win your first game.",
-            win5Games: "Beginner",
-            win5GamesDesc: "Win 5 games.",
-            win50Games: "Intermediate",
-            win50GamesDesc: "Win 50 games.",
-            win500Games: "Expert",
-            win500GamesDesc: "Win 500 games.",
+            firstgame: "Rookie",
+            firstgameDesc: "Win your first game.",
+            play5Games: "Beginner",
+            play5GamesDesc: "Play 5 games.",
+            play50Games: "Intermediate",
+            play50GamesDesc: "Play 50 games.",
+            play500Games: "Expert",
+            play500GamesDesc: "Play 500 games.",
         },
     },
     profile: {

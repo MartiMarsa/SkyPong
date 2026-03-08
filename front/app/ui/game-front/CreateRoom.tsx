@@ -25,7 +25,7 @@ export default function CreateRoom({ onCreate, onBack, error = null, isBusy = fa
       <input
         value={roomName}
         onChange={(event) => setRoomName(event.target.value)}
-        placeholder="Room name"
+        placeholder={t?.game?.roomNameField || 'Room Name'}
         disabled={isBusy}
       />
 

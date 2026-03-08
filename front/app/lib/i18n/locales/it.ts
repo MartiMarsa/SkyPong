@@ -5,11 +5,8 @@ const it = {
         description: "Un'esperienza celestiale di Pong",
         lable: "Vai alla Home",
     },
-    hero: {
-        howToPlay: "Come giocare?",
-    },
     user: {
-        hi: "Ciao!",
+        hi: (name) =>(`Ciao, ${name}!`),
         nickname: "Nickname",
         winphrase: "Win Phrase",
         userData: "Dati Utente",
@@ -44,6 +41,7 @@ const it = {
         uploading: "Caricamento...",
         cancel: "Annulla",
         backHome: "Torna alla Home",
+        save: "Salva",
     },
     serverError: {
         conectionError: "Server conection error",
@@ -165,7 +163,10 @@ const it = {
         privacyPage: {
             title: "Privacy (O quel che ne resta)",
             content: `<p>In questo progetto prendiamo la tua privacy sul serio quanto prendiamo i <em>memory leak</em> nel progetto <code>cub3d</code>: ci spaventano, ma a volte li ignoriamo finché qualcuno non ci valuta.</p>
+    navigation: {
 
+        logout: "Logout",
+    },
 <hr>
 
 <h2>1. Quali dati raccogliamo?</h2>
@@ -250,6 +251,9 @@ const it = {
         settings: "Impostazioni",
         logout: "Disconnetti",
         goBack: "Indietro",
+        login: "Entrar",
+        signUp: "Registrarse",
+        play: "Gioca",
     },
     player: {
         wins: "Vittorie",
@@ -287,6 +291,17 @@ const it = {
         playerUnbloqued: "Giocatore sbloccato",
         remove: "Rimuovi",
         nooutgoingRequests: "Nessuna richiesta in uscita",
+        addFriend: "+ AGGIUNGI AMICO",
+        requestSent: "RICHIESTA INVIATA",
+        acceptRequest: "ACCETTA RICHIESTA",
+        unavailable: "NON DISPONIBILE",
+        removeFriend: "✕ RIMUOVI AMICO",
+        block: "🚫 BLOCCA",
+        unblock: "↩ SBLOCCA",
+        cancelRequest: "✕ ANNULLA RICHIESTA",
+        nowFriends: "✓ Ora siete amici!",
+        requestSentSuccess: "Richiesta inviata",
+        itsMe: "<-⭐ Sono io Mario! 🍄",
     },
     form: {
         labels: {
@@ -362,16 +377,16 @@ const it = {
             login30Days: "Veterano",
             login30DaysDesc: "Accedi per 30 giorni consecutivi.",
         },
-        wonGamesAchievements: {
+        playGamesAchievements: {
             title: "Obiettivi di Partite Vinte",
             firsgame: "Novizio",
             firsgameDesc: "Vinci la tua prima partita.",
-            win5Games: "Principiante",
-            win5GamesDesc: "Vinci 5 partite.",
-            win50Games: "Intermedio",
-            win50GamesDesc: "Vinci 50 partite.",
-            win500Games: "Esperto",
-            win500GamesDesc: "Vinci 500 partite.",
+            play5Games: "Principiante",
+            play5GamesDesc: "Gioca 5 partite.",
+            play50Games: "Intermedio",
+            play50GamesDesc: "Gioca 50 partite.",
+            play500Games: "Esperto",
+            play500GamesDesc: "Gioga 500 partite.",
         },
     },
     profile: {

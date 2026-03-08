@@ -78,5 +78,9 @@ export function startSessionCleanup() {
         `);
     }, 15 * 60 * 1000);
 
+<<<<<<< HEAD:auth-service/src/tokens/token.ts
 	console.log(`[auth] Session cleanup done at CURRENT_TIMESTAMP`);
+=======
+	console.log(`[auth] Session cleanup done at ${new Date().toISOString() }`);
+>>>>>>> origin/main:auth-service/src/token.ts
 }

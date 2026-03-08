@@ -1,12 +1,18 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
-import { Badge } from './base';
+import { Avatar, Badge } from './base';
 import { useTranslation } from '../context/language-context';
 import { useRouter } from 'next/navigation';
+import { checkPlayerStatus, PLAYER_STATUS } from '@/lib/players/check-player-status';
+import { whoisURL, isMe } from '../lib/players/whois';
+import { useAuth } from '../context/auth-context';
 
 interface PlayerStat {
   user_id: string;
+  nickname: string;
+  avatarUrl?: string;
   played: number;
   wins: number;
   losses: number;
@@ -21,6 +27,13 @@ interface LeaderboardResponse {
 }
 
 const POLL_INTERVAL = 30_000; // 30s
+
+function formatWinratePercentage(winrate: number | null | undefined): string {
+  if (winrate == null) return '—';
+
+  const normalizedRate = winrate <= 1 ? winrate * 100 : winrate;
+  return `${Math.round(normalizedRate)}%`;
+}
 
 function useLeaderboard() {
   const [players, setPlayers] = useState<PlayerStat[]>([]);
@@ -85,23 +98,27 @@ function WinLossBar({ wins, losses }: { wins: number; losses: number }) {
 
 function LeaderboardRow({
   player,
+  profileURL,
   rank,
+  isMe,
 }: {
   player: PlayerStat;
   rank: number;
+  profileURL: string,
+  isMe: boolean,
 }) {
   const { t } = useTranslation();
   const router = useRouter();
   
-  const isOnline = player.rate > 0;
+  const playerStatus = checkPlayerStatus(player);
 
   const handleRowClick = () => {
-    router.push(`/${player.user_id}`);
+    router.push(profileURL);
   };
 
   return (
     <div 
-      className="leaderboard-row cursor-pointer" 
+      className={`leaderboard-row cursor-pointer ${isMe ? 'leaderboard-row-highlighted' : ''}`}
       onClick={handleRowClick}
       role="button"
       tabIndex={0}
@@ -113,15 +130,28 @@ function LeaderboardRow({
       }}
     >
       <span className="leaderboard-rank">{rank}.</span>
+      <Avatar
+        src={player.avatarUrl}
+        fallbackText={player.nickname}
+        size="sm"
+      />
       <div className="leaderboard-info">
         <div className="leaderboard-name">
-          <span className="font-semibold text-sm md:text-base">{player.user_id}</span>
+          <span className="font-semibold text-sm md:text-base">{player.nickname}</span>
           <Badge 
             size="sm" 
-            variant={isOnline ? "success" : "neutral"}
+            variant={
+              playerStatus === PLAYER_STATUS.active ? "success" :
+              playerStatus === PLAYER_STATUS.absent ? "warning" :
+              playerStatus === PLAYER_STATUS.blocked ? "danger" :
+              "neutral"
+            }
             shape="pill"
           >
-            {isOnline ? t.profile.leaderboard.online : t.profile.leaderboard.idle}
+            {playerStatus === PLAYER_STATUS.absent ? (t.player.absent || 'Absent') : ""}
+            {playerStatus === PLAYER_STATUS.inactive ? (t.player.inactive || 'Inactive') : ""}
+            {playerStatus === PLAYER_STATUS.active ? (t.player.active || 'Active') : ""}
+            {playerStatus === PLAYER_STATUS.blocked ? (t.player.blocked || 'Blocked') : ""}
           </Badge>
         </div>
         <span className="text-xs text-muted">
@@ -129,7 +159,7 @@ function LeaderboardRow({
         </span>
         <span className="text-xs text-muted">
           {t.player.winRate}:{' '}
-          {player.winrate != null ? `${Math.round(player.winrate)}%` : '—'}
+          {formatWinratePercentage(player.winrate)}
         </span>
       </div>
       <WinLossBar wins={player.wins} losses={player.losses} />
@@ -137,10 +167,10 @@ function LeaderboardRow({
   );
 }
 
-export default function Leaderboard() {
+export default function Leaderboard({userId}) {
   const { t } = useTranslation();
   const { players, loading, error } = useLeaderboard();
-
+  const { user } = useAuth();
   return (
     <div className="space-y-3">
       {loading && (
@@ -159,7 +189,7 @@ export default function Leaderboard() {
         </p>
       )}
       {players.map((p, i) => (
-        <LeaderboardRow key={p.user_id} player={p} rank={i + 1} />
+        <LeaderboardRow key={p.user_id} player={p} rank={i + 1} profileURL={whoisURL(p.user_id, user?.id)} isMe={isMe(p.user_id, user?.id)} />
       ))}
     </div>
   );

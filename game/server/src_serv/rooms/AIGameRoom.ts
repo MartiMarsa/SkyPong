@@ -228,6 +228,12 @@ export class AIGameRoom extends Room<MyGameState> {
       this.state.ball.x = ballPosition.x;
       this.state.ball.y = ballPosition.y;
       this.state.ball.z = ballPosition.z;
+
+      // Sync velocity for client-side extrapolation
+      const velocity = this.serverBall.physicsBody.velocity;
+      this.state.ball.vx = velocity.x;
+      this.state.ball.vy = velocity.y;
+      this.state.ball.vz = velocity.z;
     }
 
     this.state.paddle.enabled = this.serverPaddle.isEnabled();

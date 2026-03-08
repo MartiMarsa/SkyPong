@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, Avatar, Chip, Badge } from '../base';
+import { Card, Avatar, Badge } from '../base';
 import { useTranslation } from '../../context/language-context';
 import Loader from '../loader/loader-ui';
+import Link from "next/link";
+import { isMe } from '../../lib/players/whois';
+import { useAuth } from '../../context/auth-context';
 
 interface PlayerGamesHistoryData {
   id: string;
@@ -53,10 +56,20 @@ function useGameHistory(userId: string) {
   return { games, loading, error };
 }
 
-function GameRow({ game, userId }: { game: GameHistoryItem; userId: string }) {
+function getPlayerLink(profileId : string, playerId : string, nickname : string)
+{
+    const {user} = useAuth();
+
+    if (playerId === profileId || (user && isMe(playerId, user.id)))
+        return <span className="player-name">{nickname}</span>;
+    else
+        return (<Link href={`/${playerId}`} className="player-name-link">{nickname}</Link>);
+}
+
+function GameRow({ game, profileId }: { game: GameHistoryItem; profileId: string }) {
   const { t } = useTranslation();
   
-  const isPlayer1 = game.player1.id === userId;
+  const isPlayer1 = game.player1.id === profileId;
   const me = isPlayer1 ? game.player1 : game.player2;
   const opponent = isPlayer1 ? game.player2 : game.player1;
   const myNumber = isPlayer1 ? 0 : 1;
@@ -64,39 +77,40 @@ function GameRow({ game, userId }: { game: GameHistoryItem; userId: string }) {
   const draw = game.player1.points === game.player2.points;
 
   const result = draw ? 'draw' : won ? 'win' : 'loss';
-  const resultVariant = { win: 'success', loss: 'error', draw: 'default' }[result] as 'success' | 'error' | 'default';
+  const resultVariant = { win: 'success', loss: 'danger', draw: 'neutral' }[result] as 'success' | 'danger' | 'neutral';
 
-  const date = new Date(game.gameDate.replace(' ', 'T') + 'Z');
+  const date = new Date(game.gameDate.replace(' ', 'T'));
   const dateStr = date.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
   const timeStr = date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className="game-row">
-      {/* Result chip */}
-      <Chip variant={resultVariant} className="min-w-[4rem] text-center">
+      {/* Result badge */}
+      <Badge variant={resultVariant} size="sm" shape="pill" className="min-w-[4rem] md:min-w-[5rem] text-center">
         {t.profile.gameHistory[result]}
-      </Chip>
+      </Badge>
 
       {/* Players */}
       <div className="game-players">
         <Avatar size="sm" src={me.avatar || '/avatar/default-avatar.webp'} fallbackText={me.nickname} />
-        <span className="font-semibold text-sm md:text-base">{me.nickname}</span>
+        {getPlayerLink(profileId, me.id, me.nickname)}
         <span className="text-muted text-sm">{me.points}</span>
         <span className="text-muted text-sm">vs</span>
         <Avatar size="sm" src={opponent.avatar || '/avatar/default-avatar.webp'} fallbackText={opponent.nickname} />
-        <span className="font-semibold text-sm md:text-base">{opponent.nickname}</span>
+        {getPlayerLink(profileId, opponent.id, opponent.nickname)}
         <span className="text-muted text-sm">{opponent.points}</span>
       </div>
 
       {/* Mode badge */}
-      <Badge size="sm" variant="neutral" className="min-w-[3.5rem] text-center">
+      <Badge size="sm" variant="neutral" className="min-w-[3.5rem] md:min-w-[4rem] text-center shrink-0">
         {game.gameMode === 'ai' ? t.profile.gameHistory.vsAI : t.profile.gameHistory.pvp}
       </Badge>
 
       {/* Date & time */}
-      <span className="text-xs text-muted text-right whitespace-nowrap">
-        {dateStr}<br />{timeStr}
-      </span>
+      <div className="text-xs text-muted text-right shrink-0 min-w-[5rem]">
+        <span className="md:hidden whitespace-nowrap">{dateStr} {timeStr}</span>
+        <span className="hidden md:block whitespace-nowrap">{dateStr}<br />{timeStr}</span>
+      </div>
     </div>
   );
 }
@@ -123,7 +137,7 @@ export default function GameHistory({ userId }: GameHistoryProps) {
         </p>
       )}
       {games.map(game => (
-        <GameRow key={game.gameId} game={game} userId={userId} />
+        <GameRow key={game.gameId} game={game} profileId={userId} />
       ))}
     </div>
   );

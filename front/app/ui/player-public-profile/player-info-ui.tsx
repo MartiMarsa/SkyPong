@@ -2,6 +2,8 @@
 
 import { Avatar, StatCard } from '../base';
 import { useTranslation } from '../../context/language-context';
+import AddFriendButton from './AddFriendButton'
+import { useAuth } from '../../context/auth-context';
 
 interface PlayerStats {
   wins: number;
@@ -20,11 +22,12 @@ interface PlayerProfile {
 
 interface PlayerInfoProps {
   profile: PlayerProfile;
+  csrfToken: string;
 }
 
-export default function PlayerInfo({ profile }: PlayerInfoProps) {
+export default function PlayerInfo({ profile, csrfToken }: PlayerInfoProps) {
   const { t } = useTranslation();
-
+  const { user } = useAuth();
   // Calculate stats
   const wins = profile?.stats?.wins || 0;
   const losses = profile?.stats?.losses || 0;
@@ -39,11 +42,16 @@ export default function PlayerInfo({ profile }: PlayerInfoProps) {
     <>
       {/* Profile Header */}
       <section className="profile-header">
-        <Avatar 
-          size="lg" 
-          src={profile?.avatarUrl || '/avatar/default-avatar.webp'} 
-          fallbackText={profile?.nickname || 'Player'}
-        />
+        <div className="flex flex-col items-center gap-3">
+          <Avatar 
+            size="lg" 
+            src={profile?.avatarUrl || '/avatar/default-avatar.webp'} 
+            fallbackText={profile?.nickname || 'Player'}
+          />
+          {user && user.id !== profile.id && (
+            <AddFriendButton currentUserId={user?.id} targetId={profile.id} csrfToken={csrfToken} />
+          )}
+        </div>
         <div className="profile-identity">
           <h2 className="text-2xl md:text-3xl font-bold font-display text-gray-900">
             {profile?.nickname || 'Player'}

@@ -110,27 +110,40 @@ export default function NavigationAppUI({
           // Guest users: Login/Sign Up buttons
           <>
             <Button href="/login" variant="secondary" size="md" font="display">
-              Login
+            {console.info("Navigation: ", t.navigation)}
+              {t?.navigation?.login}
             </Button>
             <Button href="/signup" variant="primary" size="md" font="display">
-              Sign up
+              {t?.navigation?.signUp || 'SignUp'}
             </Button>
           </>
         ) : (
           // Logged in users: Avatar with dropdown menu
           <div className="relative" ref={dropdownRef}>
-            <Avatar
-              src={user?.avatarUrl}
-              fallbackText={user?.nickname || "User"}
-              size="md"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            />
+            <div className="text-sm flex items-stretch justify-center p-2">
+
+                <span className="text-right mr-2 flex items-center" dangerouslySetInnerHTML={{ __html: t.user.hi({ name: user?.nickname || 'User', className: "rainbowtext ml-2", url: "/me" }) }}></span>
+                <Avatar
+                src={user?.avatarUrl}
+                fallbackText={user?.nickname || "User"}
+                size="md"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                />
+            </div>
 
             {/* Dropdown menu */}
             {isDropdownOpen && (
               <>
                 {/* Dropdown menu content */}
                 <div className="dropdown-menu-avatar">
+                  <Button
+                    variant="primary"
+                    size="md"
+                    font="body"
+                    onClick={() => handleNavigate('/play')}
+                  >
+                    {t.navigation.play}
+                  </Button>
                   <Button
                     variant="ghost"
                     size="md"
@@ -153,7 +166,7 @@ export default function NavigationAppUI({
                     font="body"
                     onClick={handleLogout}
                   >
-                    {t.navigation.logout}
+                    {t?.navigation?.logout || 'Logout'}
                   </Button>
                 </div>
               </>

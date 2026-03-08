@@ -22,7 +22,7 @@ export class InputController {
                     kbInfo.type == KeyboardEventTypes.KEYDOWN ? this.pressRight() : this.releaseRight();
                     break;
                 case 'j':
-                case 'k':
+                case 'l':
                     this.inputMap[key] = kbInfo.type === KeyboardEventTypes.KEYDOWN;
                     break;
             }
@@ -36,7 +36,7 @@ export class InputController {
     }
     public getPaddle2InputState() {
         return {
-            j: !!this.inputMap['j'], k: !!this.inputMap['k']
+            j: !!this.inputMap['j'], l: !!this.inputMap['l']
         };
     }
 

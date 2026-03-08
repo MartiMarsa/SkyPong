@@ -1,5 +1,5 @@
 import type { GameConfig } from './launch-config';
-
+import { useTranslation } from '../../hooks/use-translation';
 /**
  * Configuration payload expected by the Babylon game engine launcher.
  */
@@ -16,9 +16,11 @@ export interface EngineLaunchConfig {
  * Maps the front-end game setup configuration to the game engine launch contract.
  */
 export function toEngineLaunchConfig(config: GameConfig): EngineLaunchConfig {
+    const { t } = useTranslation();
+
   if (config.mode === 'AI') {
     return {
-      playerName: 'Player 1',
+      playerName: `${t?.game?.player(1) || 'Player 1'}`,
       playerColor: config.ballColor,
       gameMode: `ai-${config.difficulty.toLowerCase()}` as EngineLaunchConfig['gameMode'],
     };
@@ -26,16 +28,16 @@ export function toEngineLaunchConfig(config: GameConfig): EngineLaunchConfig {
 
   if (config.mode === 'LOCAL') {
     return {
-      playerName: 'Player 1',
+      playerName: `${t?.game.player(1) || 'Player 1'}`,
       playerColor: '#00A6ED',
       gameMode: 'local-2p',
-      player2Name: 'Player 2',
+      player2Name: `${t?.game.player(2) || 'Player 2'}`,
       player2Color: '#F6511D',
     };
   }
 
   return {
-    playerName: 'Player 1',
+    playerName:`${t?.game?.player(1) || 'Player 1'}`,
     playerColor: config.ballColor,
     gameMode: config.onlineRole === 'join' ? 'online-join' : 'online-create',
     roomId: config.roomId,

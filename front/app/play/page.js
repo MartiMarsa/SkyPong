@@ -6,6 +6,7 @@ import { encodeConfig } from '../lib/game/game-session-config';
 import { getAvailableRooms } from '../lib/game/room-service';
 import { useAuth } from '../context/auth-context';
 import { useTranslation } from '../hooks/use-translation';
+import { useStyles } from '../hooks/use-styles';
 import FooterTermsPolicy from '../ui/footer-terms-policy';
 import NavigationAppUI from '../ui/navigation-app-ui';
 import { Button, TextField } from '../ui/base';
@@ -115,11 +116,12 @@ export default function PlayPage() {
 
   const { user, hasCredentials } = useAuth();
   const { t, locale } = useTranslation();
+  const { styles: isDesktop } = useStyles(false, true);
   const error = useMemo(() => searchParams.get('error'), [searchParams]);
 
   useEffect(() => {
     if (user?.nickname) {
-      setConfig((prev) => ({ ...prev, playerName: user.nickname }));
+      setConfig((prev) => ({ ...prev, playerName: user?.nickname }));
     }
   }, [user]);
 
@@ -219,16 +221,18 @@ export default function PlayPage() {
 
             {state === STATES.SELECT_MODE && (
               <PlayPanel title="Pong" subtitle={t.play.chooseGameMode}>
-                <Button
-                  variant="primary"
-                  className="w-full"
-                  onClick={() => {
-                    setConfig((prev) => ({ ...prev, gameMode: 'local-2p' }));
-                    setState(STATES.LOCAL_P1_SETUP);
-                  }}
-                >
-                  {t.play.local}
-                </Button>
+                {isDesktop && (
+                  <Button
+                    variant="primary"
+                    className="w-full"
+                    onClick={() => {
+                      setConfig((prev) => ({ ...prev, gameMode: 'local-2p' }));
+                      setState(STATES.LOCAL_P1_SETUP);
+                    }}
+                  >
+                    {t.play.local}
+                  </Button>
+                )}
                 <Button
                   variant="primary"
                   className="w-full"
@@ -277,12 +281,14 @@ export default function PlayPage() {
                 <Button variant="primary" className="w-full" onClick={() => setState(STATES.ONLINE_LOBBY)}>
                   {t.play.onlinePvp}
                 </Button>
-                <Button variant="primary" className="w-full" onClick={() => {
-                  setConfig((prev) => ({ ...prev, gameMode: 'local-2p' }));
-                  setState(STATES.LOCAL_P1_SETUP);
-                }}>
-                  {t.play.localPvp}
-                </Button>
+                {isDesktop && (
+                  <Button variant="primary" className="w-full" onClick={() => {
+                    setConfig((prev) => ({ ...prev, gameMode: 'local-2p' }));
+                    setState(STATES.LOCAL_P1_SETUP);
+                  }}>
+                    {t.play.localPvp}
+                  </Button>
+                )}
                 <Button variant="secondary" className="w-full" onClick={() => setState(STATES.SELECT_MODE)}>{t.play.back}</Button>
               </PlayPanel>
             )}
@@ -349,7 +355,7 @@ export default function PlayPage() {
                 {user?.nickname ? (
                   <div className="flex flex-col gap-3">
                     <label className="text-sm font-semibold uppercase tracking-wide text-muted">{t.play.name}</label>
-                    <p className="text-lg font-display font-semibold text-primary">{user.nickname}</p>
+                    <p className="text-lg font-display font-semibold text-primary">{user?.nickname}</p>
                   </div>
                 ) : (
                   <TextField
