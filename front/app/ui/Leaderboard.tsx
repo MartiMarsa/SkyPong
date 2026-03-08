@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
-import { Badge } from './base';
+import { Avatar, Badge } from './base';
 import { useTranslation } from '../context/language-context';
 import { useRouter } from 'next/navigation';
 import { checkPlayerStatus, PLAYER_STATUS } from '@/lib/players/check-player-status';
@@ -12,6 +12,7 @@ import { useAuth } from '../context/auth-context';
 interface PlayerStat {
   user_id: string;
   nickname: string;
+  avatarUrl?: string;
   played: number;
   wins: number;
   losses: number;
@@ -95,18 +96,6 @@ function WinLossBar({ wins, losses }: { wins: number; losses: number }) {
   );
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  online: '#22c55e',
-  absent: '#ed9511',
-  idle: '#a3a3a3',
-};
-
-const ME_STYLES = {
-    backgroundColor: "#5a1919",
-    border: "4px solid red",
-}
-
-
 function LeaderboardRow({
   player,
   profileURL,
@@ -129,8 +118,7 @@ function LeaderboardRow({
 
   return (
     <div 
-      className="leaderboard-row cursor-pointer" 
-      style={isMe ? ME_STYLES : undefined}
+      className={`leaderboard-row cursor-pointer ${isMe ? 'leaderboard-row-highlighted' : ''}`}
       onClick={handleRowClick}
       role="button"
       tabIndex={0}
@@ -142,17 +130,28 @@ function LeaderboardRow({
       }}
     >
       <span className="leaderboard-rank">{rank}.</span>
+      <Avatar
+        src={player.avatarUrl}
+        fallbackText={player.nickname}
+        size="sm"
+      />
       <div className="leaderboard-info">
         <div className="leaderboard-name">
           <span className="font-semibold text-sm md:text-base">{player.nickname}</span>
           <Badge 
             size="sm" 
-            variant={playerStatus === PLAYER_STATUS.active ? "success" : "neutral"}
+            variant={
+              playerStatus === PLAYER_STATUS.active ? "success" :
+              playerStatus === PLAYER_STATUS.absent ? "warning" :
+              playerStatus === PLAYER_STATUS.blocked ? "danger" :
+              "neutral"
+            }
             shape="pill"
           >
             {playerStatus === PLAYER_STATUS.absent ? (t.player.absent || 'Absent') : ""}
             {playerStatus === PLAYER_STATUS.inactive ? (t.player.inactive || 'Inactive') : ""}
             {playerStatus === PLAYER_STATUS.active ? (t.player.active || 'Active') : ""}
+            {playerStatus === PLAYER_STATUS.blocked ? (t.player.blocked || 'Blocked') : ""}
           </Badge>
         </div>
         <span className="text-xs text-muted">
