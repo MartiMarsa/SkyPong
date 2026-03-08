@@ -14,8 +14,8 @@ import { hashPassword, verifyPassword } from './validation/password';
 import { signUpSchema, loginSchema, changePasswordSchema } from "./validation/checkInput";
 import * as AuthInterfaces from './types/auth.interfaces';
 
-
-const fastify = Fastify({ logger: true });
+// --- CONFIGURATION ---
+const fastify = Fastify({ logger: true, trustProxy: true });
 
 fastify.register(cookie, { secret: 'cookie-secret' });
 
@@ -27,7 +27,6 @@ if (!process.env.PROFILE_SERVICE_URL) {
 
 console.log("[auth] Profile service URL:", PROFILE_SERVICE_URL);
 
-
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN!;
 
 if (!process.env.SERVICE_TOKEN) {
@@ -36,22 +35,30 @@ if (!process.env.SERVICE_TOKEN) {
 
 console.log("[auth] Auth service token:", SERVICE_TOKEN);
 
-
+// --- COOKIES ---
 const cookieOpts = {
     httpOnly: true,
     secure: true,
-    sameSite: 'none' as const,
+    sameSite: 'lax' as const,
     path: '/',
 };
 
 const refreshOpts = {
     httpOnly: true,
     secure: true,
-    sameSite: 'none' as const,
+    sameSite: 'lax' as const,
     path: '/',
     maxAge: 7 * 24 * 3600,
 };
 
+const csrfOpts = {
+	httpOnly: false, 
+	secure: true, 
+	sameSite: 'lax' as const, 
+	path: '/'
+}
+
+// --- CSRF CONSTANTES ---
 const CSRF_IGNORED_METHODS = new Set([
     'GET', 
 	'HEAD', 
@@ -64,7 +71,7 @@ const CSRF_EXCLUDED_PATHS = new Set([
     '/auth/logout'
 ]);
 
-// --- CSRF protection ---
+// --- CSRF PROTECTION ---
 fastify.addHook('preHandler', async (req: any, reply) => {
 
     if (CSRF_IGNORED_METHODS.has(req.method)) return;
@@ -80,7 +87,6 @@ fastify.addHook('preHandler', async (req: any, reply) => {
         return reply.status(403).send(); //{ error: 'CSRF' }
     }
 });
-
 
 // --- AUTH MIDDLEWARE ---
 export async function authentificate(req: any, reply: any): Promise<any | null> {
@@ -155,7 +161,7 @@ export async function authentificate(req: any, reply: any): Promise<any | null> 
 
         if (!csrfToken) {
             const newCsrf = randomUUID();
-            reply.setCookie('csrf_token', newCsrf, { httpOnly: false, secure: true, sameSite: 'none', path: '/' });
+            reply.setCookie('csrf_token', newCsrf, csrfOpts);
         }
 
         return user;
@@ -169,11 +175,11 @@ async function requireAuth(req: any, reply: any) {
         
         const user = await authentificate(req, reply);
         if (!user) {
-            return reply.status(401).send(); // { error: 'Unauthorized' }
+            return reply.status(401).send();
         }
         
         if (user.needs_password) {
-            return reply.status(403).send(); // { error: 'SET_PASSWORD_REQUIRED' }
+            return reply.status(403).send();
         }
         
         req.user = user;
@@ -209,7 +215,7 @@ fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply)
 			req.log.error(err, 'Profile service unavailable');
         }
         
-        req.log.info({ user: req.user }, 'Resultado de usuario en verify');
+//        req.log.info({ user: req.user }, 'Resultado de usuario en verify');
         
         return reply.status(200).send({ id: user.id, email: user.email, username: profile?.nickname ?? 'Unknown', twofa_enabled: user.twofa_enabled });
     });
@@ -289,7 +295,7 @@ fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, repl
             reply
             .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
             .setCookie('refresh_token', refreshToken, refreshOpts)
-            .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'none', path: '/' })
+            .setCookie('csrf_token', csrfToken, csrfOpts)
             .status(201)
             .send({ 
 		user: { 
@@ -321,6 +327,7 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
     try {
         const user = await login(email, password);
 
+		// Checking if user is already logged to avoid double login
 		const hasActiveSession = await checkActiveSession(user.id);
         if (hasActiveSession) {
             return reply.status(403).send({
@@ -339,7 +346,7 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
         reply
         .setCookie('access_token', token, { ...cookieOpts, maxAge: 3600 })
         .setCookie('refresh_token', refreshToken, refreshOpts)
-        .setCookie('csrf_token', csrfToken, { httpOnly: false, secure: true, sameSite: 'none', path: '/' })
+        .setCookie('csrf_token', csrfToken, csrfOpts)
         .status(201)
         .send({ 
             user: { 
@@ -368,59 +375,58 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
 
 			const { old_password, new_password }: AuthInterfaces.ChangePassword = result.data;
 
-    console.log("Changing password...");
+			console.log("[auth Changing password] Changing password...");
 
-    const userId = req.user.id;
-    const db = getDB();
+			const userId = req.user.id;
+			const db = getDB();
 
-    // 2. Obtener hash actual
-    const user = await new Promise<AuthInterfaces.DBUser | null>((resolve, reject) => {
-        db.get(
-            `SELECT password_hashed FROM users WHERE id = ?`,
-            [userId],
-            (err, row) => (err ? reject(err) : resolve(row as AuthInterfaces.DBUser | null))
-        );
-    });
+			// Get hashed password from database
+			const user = await new Promise<AuthInterfaces.DBUser | null>((resolve, reject) => {
+				db.get(
+					   `SELECT password_hashed FROM users WHERE id = ?`,
+		   			   [userId],
+		   			   (err, row) => (err ? reject(err) : resolve(row as AuthInterfaces.DBUser | null))
+			  		  );
+				});
+		
+			if (!user) return reply.status(404).send();
+
+			// If user's password exist, check if it was correct: compare with hashed one
+			const valid = await verifyPassword(old_password, user.password_hashed);
     
-    console.info("Retrieve user:", user);
-    if (!user) return reply.status(404).send();
+			if (!valid) {
+				return reply.status(403).send({
+					error: { code: 'CURRENT_PASSWORD_INCORRECT', message: 'Current password is incorrect' },
+					});
+			}
 
-    // 3. ✅ VALIDACIÓN CORRECTA: Comparamos la ANTIGUA contra el Hash
-    const valid = await verifyPassword(old_password, user.password_hashed);
-    
-    if (!valid) {
-        return reply.status(403).send({
-            error: { code: 'CURRENT_PASSWORD_INCORRECT', message: 'Current password is incorrect' },
-        });
-    }
+			// Hash new user's password
+			const newHash = await hashPassword(new_password);
 
-    // 4. Hashear nueva contraseña
-    const newHash = await hashPassword(new_password);
+			// Add new password hash to database
+			await new Promise<void>((resolve, reject) => {
+									db.run(
+							   			   `UPDATE users
+							  			   SET password_hashed = ?, 
+						  				   password_version = password_version + 1, 
+						  				   token_version = token_version + 1
+							  			   WHERE id = ?`,
+							   			   [newHash, userId],
+							   			   err => (err ? reject(err) : resolve())
+								  		  );
+									});
 
-    // 5. ✅ UPDATE CORREGIDO: Sintaxis SQL limpia
-    await new Promise<void>((resolve, reject) => {
-        db.run(
-            `UPDATE users
-             SET password_hashed = ?, 
-                 password_version = password_version + 1, 
-                 token_version = token_version + 1
-             WHERE id = ?`,
-            [newHash, userId],
-            err => (err ? reject(err) : resolve())
-        );
-    });
+			// Revoke all tokens
+			await revokeRefreshTokenById(userId);
+			await deleteUserSession(userId);
 
-    // 6. Revocar sesión antigua
-    await revokeRefreshTokenById(userId);
+			console.error("Password changed...");
 
-	console.error("Password changed...");
-
-    return reply.status(204).send();
+			return reply.status(204).send();
 });
 
-//Logout less strinct accepts to logut even if token is not correct. 
+// --- LOGOUT --- 
 fastify.post('/auth/logout', { preHandler: requireAuth }, async (req: any, reply) => {
-    // Definimos las opciones exactas que usas en el login
 
 	const controller = new AbortController();
 	setTimeout(() => controller.abort(), 5000);
@@ -430,7 +436,7 @@ fastify.post('/auth/logout', { preHandler: requireAuth }, async (req: any, reply
     const cookieOptions = {
         path: '/',
         secure: true, 
-        sameSite: 'none' as const, // Ajusta esto según tu config de login
+        sameSite: 'none' as const,
         httpOnly: true
     };
 
@@ -445,17 +451,18 @@ fastify.post('/auth/logout', { preHandler: requireAuth }, async (req: any, reply
 
 		const res = await fetch(`${PROFILE_SERVICE_URL}/internal/profile/logout/${user.id}`, { headers: { Authorization: `Bearer ${SERVICE_TOKEN}`, }, signal: controller.signal, });
 
-    } catch (err) { /* ignore */ }
+    } catch (err) {
 
     return reply
-        // IMPORTANTE: El path del refresh_token suele ser diferente (/auth/refresh)
         .clearCookie('access_token', { ...cookieOptions, path: '/' })
-        .clearCookie('refresh_token', { ...cookieOptions, path: '/auth/refresh' })
+        .clearCookie('refresh_token', { ...cookieOptions, path: '/' })
         .clearCookie('csrf_token', { ...cookieOptions, path: '/', httpOnly: false })
-        .status(200) // Siempre devolvemos 200 para que el navegador procese el borrado
+        .status(200)
         .send({ status: 'logged_out' });
+	}
 });
 
+// --- DELETE USER (SOFT VERSION) ---
 fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, reply) => {
       	const userId = req.user.id;
       	const db = getDB();
@@ -467,12 +474,12 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
 
         console.info("DB Token: ", dbToken);
       	try {
-            // 1. Llamar al Profile Service para el borrado interno
+            // Request to Profile Service for soft delete of user info
             const profileRes = await fetch(`${PROFILE_SERVICE_URL}/internal/profile/delete`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${SERVICE_TOKEN.trim()}` // No sé que poner aquí
+                    'Authorization': `Bearer ${SERVICE_TOKEN.trim()}`
                 },
 				body: JSON.stringify({ userId })
             });
@@ -486,10 +493,8 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
             db.serialize(() => {
                 db.run('BEGIN TRANSACTION');
 
-                // 1. Revocar tokens de refresco (en la otra DB)
                 dbToken.run(`UPDATE refresh_tokens SET revoked = 1 WHERE user_id = ?`, [userId]);
 
-                // 2. Borrar directamente (si el usuario no existe, this.changes será 0)
                 db.run(`UPDATE users SET email = ?, password_version = password_version + 1, deleted_at = CURRENT_TIMESTAMP WHERE id = ?`, [mockEmail, userId], function (err) {
                    if (err) {
                         db.run('ROLLBACK');
@@ -511,7 +516,7 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
 		// 4. Clear cookies
 	    	reply
 	  	.clearCookie('access_token', { path: '/' })
-	  	.clearCookie('refresh_token', { path: '/auth/refresh' })
+	  	.clearCookie('refresh_token', { path: '/' })
 	  	.clearCookie('csrf_token', { path: '/' })
 	  	.send({ status: 'account_deleted' });
 
@@ -521,7 +526,7 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
 	}
 });
 
-// --- HEALTH ---
+// --- HEALTH CHECK ---
 fastify.get('/health', async () => ({ status: 'ok', service: 'auth-service' }));
 
 // --- START SERVER ---
