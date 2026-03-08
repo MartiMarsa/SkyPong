@@ -33,7 +33,7 @@ export default function PlayerInfo({ profile, csrfToken }: PlayerInfoProps) {
   const losses = profile?.stats?.losses || 0;
   const totalGames = profile?.stats?.played || wins + losses;
   const winRate = profile?.stats?.winrate 
-    ? Math.round(profile.stats.winrate)
+    ? Math.round(profile.stats.winrate * 100)
     : totalGames > 0 
       ? Math.round((wins / totalGames) * 100)
       : 0;
