@@ -106,7 +106,10 @@ function FriendRow({ friend, onRemove, onBlock, onUnblock, onProfile, busy, bloc
         size="md"
       />
       <div className="friend-info">
-        <div className="font-medium text-sm text-gray-900 truncate">
+        <div 
+          className="friend-name-link text-sm truncate"
+          onClick={() => onProfile(friend.user_id)}
+        >
           {friend.nickname}
         </div>
         {!connected ? (
@@ -173,16 +176,22 @@ interface IncomingRowProps {
   r: Friend;
   onAccept: (id: string) => void;
   onReject: (id: string) => void;
+  onProfile: (id: string) => void;
   busy: boolean;
 }
 
-function IncomingRow({ r, onAccept, onReject, busy }: IncomingRowProps) {
+function IncomingRow({ r, onAccept, onReject, onProfile, busy }: IncomingRowProps) {
   const { t } = useTranslation();
   return (
-    <div className="friend-row border-purple-200 bg-purple-50">
+    <div className="friend-row friend-row-incoming">
       <Avatar src={r.avatarUrl} fallbackText={r.nickname} size="md" />
       <div className="friend-info">
-        <div className="font-medium text-sm text-gray-900">{r.nickname}</div>
+        <div 
+          className="friend-name-link text-sm"
+          onClick={() => onProfile(r.user_id)}
+        >
+          {r.nickname}
+        </div>
         <div className="text-xs text-purple-600 mt-0.5">
           <span className="friend-status-dot !bg-purple-600"></span>
           {t.player.incomingRequest}
@@ -214,16 +223,22 @@ function IncomingRow({ r, onAccept, onReject, busy }: IncomingRowProps) {
 interface OutgoingRowProps {
   r: Friend;
   onCancel: (id: string) => void;
+  onProfile: (id: string) => void;
   busy: boolean;
 }
 
-function OutgoingRow({ r, onCancel, busy }: OutgoingRowProps) {
+function OutgoingRow({ r, onCancel, onProfile, busy }: OutgoingRowProps) {
   const { t } = useTranslation();
   return (
-    <div className="friend-row opacity-85">
+    <div className="friend-row friend-row-outgoing">
       <Avatar src={r.avatarUrl} fallbackText={r.nickname} size="md" />
       <div className="friend-info">
-        <div className="font-medium text-sm text-gray-900">{r.nickname}</div>
+        <div 
+          className="friend-name-link text-sm"
+          onClick={() => onProfile(r.user_id)}
+        >
+          {r.nickname}
+        </div>
         <div className="text-xs text-amber-600 mt-0.5">
           <span className="friend-status-dot !bg-amber-600"></span>
           {t.player.pendingResponse}
@@ -466,6 +481,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
                   r={r}
                   onAccept={handleAccept}
                   onReject={handleReject}
+                  onProfile={onNavigateProfile}
                   busy={busy}
                 />
               ))
@@ -482,6 +498,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
                   key={r.user_id}
                   r={r}
                   onCancel={handleCancel}
+                  onProfile={onNavigateProfile}
                   busy={busy}
                 />
               ))
