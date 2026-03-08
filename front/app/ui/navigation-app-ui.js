@@ -137,6 +137,14 @@ export default function NavigationAppUI({
                 {/* Dropdown menu content */}
                 <div className="dropdown-menu-avatar">
                   <Button
+                    variant="primary"
+                    size="md"
+                    font="body"
+                    onClick={() => handleNavigate('/play')}
+                  >
+                    {t.navigation.play}
+                  </Button>
+                  <Button
                     variant="ghost"
                     size="md"
                     font="body"

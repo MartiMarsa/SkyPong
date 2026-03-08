@@ -264,6 +264,7 @@ const es = {
         goBack: "Volver",
         login: "Entrar",
         signUp: "Registrarse",
+        play: "Jugar",
     },
     player: {
         wins: "Victorias",

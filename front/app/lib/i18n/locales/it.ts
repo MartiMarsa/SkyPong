@@ -253,6 +253,7 @@ const it = {
         goBack: "Indietro",
         login: "Entrar",
         signUp: "Registrarse",
+        play: "Gioca",
     },
     player: {
         wins: "Vittorie",
