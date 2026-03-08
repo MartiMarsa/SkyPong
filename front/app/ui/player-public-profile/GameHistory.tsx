@@ -5,7 +5,7 @@ import { Card, Avatar, Badge } from '../base';
 import { useTranslation } from '../../context/language-context';
 import Loader from '../loader/loader-ui';
 import Link from "next/link";
-import { isMe } from '../../lib/players/whois';
+import { isMe, isAI } from '../../lib/players/whois';
 import { useAuth } from '../../context/auth-context';
 
 interface PlayerGamesHistoryData {
@@ -60,7 +60,7 @@ function getPlayerLink(profileId : string, playerId : string, nickname : string)
 {
     const {user} = useAuth();
 
-    if (playerId === profileId || (user && isMe(playerId, user.id)))
+    if (playerId === profileId || (user && isMe(playerId, user.id)) || isAI(playerId))
         return <span className="player-name">{nickname}</span>;
     else
         return (<Link href={`/${playerId}`} className="player-name-link">{nickname}</Link>);
