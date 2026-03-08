@@ -674,8 +674,12 @@ fastify.get('/profile/avatars/:filename', async (req, reply) => {
 
 
 
-fastify.addHook('onRequest', async (request, reply) => {
-  console.log(`Recibida petición: ${request.method} ${request.url}`);
+const LOG_PROFILE_REQUESTS = process.env.LOG_PROFILE_REQUESTS === 'true';
+
+fastify.addHook('onRequest', async (request) => {
+  if (LOG_PROFILE_REQUESTS) {
+    fastify.log.info(`Recibida petición: ${request.method} ${request.url}`);
+  }
 });
 
 

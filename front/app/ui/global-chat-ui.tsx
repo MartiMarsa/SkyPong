@@ -29,7 +29,7 @@ export default function GlobalChatUI() {
   }, []);
 
   useEffect(() => {
-    if (authloading || !user || !wsUrl) return;
+    if (authloading || !user || !wsUrl || isMinimized) return;
 
     let active = true;
 
