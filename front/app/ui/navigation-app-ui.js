@@ -34,27 +34,21 @@ export default function NavigationAppUI({
 
   const showGuestActions = !user;
 
-  // Hide/show navigation on scroll (mobile only)
+  // Hide/show navigation on scroll (all breakpoints)
   useEffect(() => {
     const handleScroll = () => {
       if (!ticking.current) {
         window.requestAnimationFrame(() => {
           const currentScrollY = window.scrollY;
           
-          // Only hide on mobile (width < 768px)
-          if (window.innerWidth < 768) {
-            // Show nav when scrolling up or at top
-            if (currentScrollY < lastScrollY.current || currentScrollY < 10) {
-              setIsNavVisible(true);
-            } 
-            // Hide nav when scrolling down (after 50px to avoid jitter)
-            else if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
-              setIsNavVisible(false);
-              setIsDropdownOpen(false); // Close dropdown when hiding nav
-            }
-          } else {
-            // Always show on desktop
+          // Show nav when scrolling up or at top
+          if (currentScrollY < lastScrollY.current || currentScrollY < 10) {
             setIsNavVisible(true);
+          } 
+          // Hide nav when scrolling down (after 50px to avoid jitter)
+          else if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+            setIsNavVisible(false);
+            setIsDropdownOpen(false); // Close dropdown when hiding nav
           }
           
           lastScrollY.current = currentScrollY;
