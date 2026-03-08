@@ -56,7 +56,7 @@ export default function PlayerCredentialsUI({ userURL })
             });
 
             if (response.status === 204) {
-                alert("Contraseña actualizada. Por seguridad, vuelve a iniciar sesión.");
+                alert(t?.form?.passwordUpdatedLoginAgain);
                 logout();
                 router.push('/login');
                 return;
