@@ -5,13 +5,14 @@ import fetch from 'node-fetch';
 import chalk from 'chalk';
 import { randomUUID } from 'crypto';
 import { signup, login, generateEmail } from './auth';
-import { initDB, getDB } from './db';
-import { initTokenDB, getTokenDB } from './dbTokens';
+import { initDB, getDB } from './database/db';
+import { initTokenDB, getTokenDB } from './database/dbTokens';
 import { privateKey, publicKey } from './keys';
-import { generateToken, deleteUserSession, startSessionCleanup } from './token';
-import { createRefreshToken, verifyRefreshToken, revokeRefreshToken, revokeRefreshTokenById, isTokenRevoked, refreshTokenCleanup } from './refresh';
-import { hashPassword, verifyPassword } from './password';
+import { generateToken, deleteUserSession, startSessionCleanup } from './tokens/token';
+import { createRefreshToken, verifyRefreshToken, revokeRefreshToken, revokeRefreshTokenById, isTokenRevoked, refreshTokenCleanup } from './tokens/refresh';
+import { hashPassword, verifyPassword } from './validation/password';
 import { signUpSchema, loginSchema, changePasswordSchema } from "./validation/checkInput";
+import * as AuthInterfaces from './types/auth.interfaces';
 
 
 const fastify = Fastify({ logger: true });
@@ -50,22 +51,6 @@ const refreshOpts = {
     path: '/',
     maxAge: 7 * 24 * 3600,
 };
-
-
-interface AuthBody {
-	email: string;
-	password: string;
-}
-
-interface ChangePassword {
-	old_password: string;
-	new_password: string;
-}
-
-interface DBUser {
-    password_hashed: string;
-    password_version: number;
-}
 
 const CSRF_IGNORED_METHODS = new Set([
     'GET', 
@@ -240,10 +225,7 @@ async function requireServiceAuth(req: any, reply: any) {
 
         const token = auth.replace('Bearer ', '');
 
-    /* TODO uncomment process.env.SERVICE_OKEN in prod */
-
     if (token !== SERVICE_TOKEN) {
-//          if (token !== process.env.SERVICE_TOKEN) {
             return reply.status(403).send({ error: 'Forbidden' });
         }
 }
@@ -291,7 +273,7 @@ fastify.post('/auth/signup', { preHandler: requireGuest }, async (req: any, repl
 					  		});
 			 	 }
 
-			const { email, password }: AuthBody = result.data;
+			const { email, password }: AuthInterfaces.AuthBody = result.data;
 	 
         try {
             const user = await signup(email, password);
@@ -334,7 +316,7 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
 							});
 			  	}
 
-			const { email, password }: AuthBody = result.data;
+			const { email, password }: AuthInterfaces.AuthBody = result.data;
 
     try {
         const user = await login(email, password);
@@ -377,7 +359,7 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
 								});
 			   	 }
 
-			const { old_password, new_password }: ChangePassword = result.data;
+			const { old_password, new_password }: AuthInterfaces.ChangePassword = result.data;
 
     console.log("Changing password...");
 
@@ -385,11 +367,11 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
     const db = getDB();
 
     // 2. Obtener hash actual
-    const user = await new Promise<DBUser | null>((resolve, reject) => {
+    const user = await new Promise<AuthInterfaces.DBUser | null>((resolve, reject) => {
         db.get(
             `SELECT password_hashed FROM users WHERE id = ?`,
             [userId],
-            (err, row) => (err ? reject(err) : resolve(row as DBUser | null))
+            (err, row) => (err ? reject(err) : resolve(row as AuthInterfaces.DBUser | null))
         );
     });
     

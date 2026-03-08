@@ -1,13 +1,8 @@
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
-import { getTokenDB } from './dbTokens';
-import { privateKey, publicKey } from './keys';
-
-interface RefreshPayload {
-    	userId: string;
-    	tokenId: string;
-    	type: 'refresh';
-}
+import { getTokenDB } from '../database/dbTokens';
+import { privateKey, publicKey } from '../keys';
+import * as AuthInterfaces from '../types/auth.interfaces';
 
 export async function createRefreshToken(userId: string): Promise<string> {
     	const db = getTokenDB();
@@ -28,7 +23,7 @@ export async function createRefreshToken(userId: string): Promise<string> {
 	return token;
 }
 
-export async function verifyRefreshToken(token: string): Promise<RefreshPayload | null> {
+export async function verifyRefreshToken(token: string): Promise<AuthInterfaces.RefreshPayload | null> {
     	try {
 		const payload: any = jwt.verify(token, publicKey, { issuer: 'auth-service' });
 
@@ -76,9 +71,9 @@ export function refreshTokenCleanup() {
     setInterval(() => {
         db.run(`
             UPDATE refresh_tokens SET revoked = 1
-            WHERE expires_at < datetime('now','localtime')
+            WHERE expires_at < datetime('now', 'localtime')
         `);
     }, 15 * 60 * 1000);
 
-    console.log(`[auth] Refresh tokens cleanup done at ${new Date().toLocaleString()}`);
+    console.log(`[auth] Refresh tokens cleanup done at ${new Date().toISOString()}`);
 }
