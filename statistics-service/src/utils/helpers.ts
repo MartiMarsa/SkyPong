@@ -55,61 +55,52 @@ export function getDbHelpers(db: sqlite3.Database): DbHelpers {
 }
 
 export function sleep(ms: number, signal?: AbortSignal): Promise<void> {
-      	return new Promise((resolve, reject) => {
-	    	if (signal?.aborted) {
-		  	reject(new Error('aborted'));
-		  	return;
-	    	}
+	return new Promise((resolve, reject) => {
+		   			   if (signal?.aborted) {
+			   			   reject(new Error('aborted'));
+			   			   return;
+		   			   }
 
-	    	const timer = setTimeout(() => {
-		  	cleanup();
-		  	resolve();
-	    	}, ms);
+		   			   const timer = setTimeout(() => {
+												cleanup();
+												resolve();
+												}, ms);
 
-	    	function cleanup() {
-		  	clearTimeout(timer);
-		  	signal?.removeEventListener('abort', onAbort);
-	    	}
+		   			   function cleanup() {
+			   			   clearTimeout(timer);
+		   				   signal?.removeEventListener('abort', onAbort);
+		   			   }
 
-	    	function onAbort() {
-		  	cleanup();
-		  	reject(new Error('aborted'));
-	    	}
+		   			   function onAbort() {
+		   				   cleanup();
+		   				   reject(new Error('aborted'));
+		   			   }
 
-	    	signal?.addEventListener('abort', onAbort);
-      	});
+		   			   signal?.addEventListener('abort', onAbort);
+	});
 }
 
-export async function hasColumn(
-  db: sqlite3.Database,
-  table: string,
-  column: string
-): Promise<boolean> {
-  return new Promise((resolve, reject) => {
-    db.all(`PRAGMA table_info(${table})`, (err, rows: any[]) => {
-      if (err) return reject(err);
-      resolve(rows.some(r => r.name === column));
-    });
-  });
+export async function hasColumn(db: sqlite3.Database, table: string, column: string): Promise<boolean> {
+  	return new Promise((resolve, reject) => {
+				   	   db.all(`PRAGMA table_info(${table})`, (err, rows: any[]) => {
+							  if (err) return reject(err);
+							  resolve(rows.some(r => r.name === column));
+						  	  });
+					   });
 }
 
-export async function addColumnIfMissing(
-  db: sqlite3.Database,
-  table: string,
-  columnDef: string,
-  columnName: string
-): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const exists = await hasColumn(db, table, columnName);
-      if (exists) return resolve();
+export async function addColumnIfMissing(db: sqlite3.Database, table: string, columnDef: string, columnName: string): Promise<void> {
+  	return new Promise(async (resolve, reject) => {
+				   	   try {
+				 		   const exists = await hasColumn(db, table, columnName);
+				 		   if (exists) return resolve();
 
-      db.run(
-        `ALTER TABLE ${table} ADD COLUMN ${columnDef}`,
-        err => err ? reject(err) : resolve()
-      );
-    } catch (e) {
-      reject(e);
-    }
-  });
+					 	   db.run(
+						  		  `ALTER TABLE ${table} ADD COLUMN ${columnDef}`,
+						  		  err => err ? reject(err) : resolve()
+						   		 );
+					   	   } catch (e) {
+					 		   reject(e);
+						   	   }
+						});
 }

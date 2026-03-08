@@ -2,6 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../context/auth-context';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCommentDots } from "@fortawesome/free-solid-svg-icons";
+import { useTranslation } from '../hooks/use-translation';
 
 type ChatMessage = {
   sender: string;
@@ -17,6 +20,7 @@ export default function GlobalChatUI() {
   const [isMinimized, setIsMinimized] = useState(true);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<number | null>(null);
+  const { t } = useTranslation();
 
   const wsUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
@@ -90,37 +94,34 @@ export default function GlobalChatUI() {
   return (
     <section style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 30 }}>
       {isMinimized ? (
-        <button
+        <button className='chat-button'
           onClick={() => setIsMinimized(false)}
           type="button"
           style={{
             borderRadius: 999,
-            border: '1px solid #374151',
-            background: '#111827',
-            color: '#ffffff',
             fontWeight: 700,
             padding: '10px 16px',
-            boxShadow: '0 10px 20px rgba(0, 0, 0, 0.35)',
             cursor: 'pointer',
           }}
           aria-label="Open global chat"
         >
-          Chat
+        <FontAwesomeIcon icon={faCommentDots} />  Chat
         </button>
       ) : (
-        <div style={{ width: 'min(320px, calc(100vw - 32px))', background: '#111827', color: '#ffffff', borderRadius: 8, border: '1px solid #374151', padding: 12, boxShadow: '0 12px 24px rgba(0, 0, 0, 0.4)' }}>
+        <div className='chat-window' style={{ width: 'min(320px, calc(100vw - 32px))', borderRadius: 8, padding: 12, boxShadow: '0 12px 24px rgba(0, 0, 0, 0.4)' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700, marginBottom: 8 }}>
-            <span>Global chat {connected ? '●' : '○'}</span>
+            <span><FontAwesomeIcon icon={faCommentDots} /> Global chat {connected ? '●' : '○'}</span>
             <button
+            className='chat-minimize rounded-full'
               onClick={() => setIsMinimized(true)}
               type="button"
               aria-label="Minimize global chat"
-              style={{ borderRadius: 6, border: '1px solid #374151', background: '#1f2937', color: '#fff', padding: '2px 8px', cursor: 'pointer' }}
+              style={{ padding: '2px 8px', cursor: 'pointer' }}
             >
               −
             </button>
           </div>
-          <div style={{ height: 220, overflowY: 'auto', border: '1px solid #374151', borderRadius: 6, padding: 8, marginBottom: 8, background: '#0f172a' }}>
+          <div className='chat-box' style={{ height: 220, overflowY: 'auto', borderRadius: 6, padding: 8, marginBottom: 8}}>
             {messages.map((message, index) => (
               <div key={`${message.timestamp || 'no-ts'}-${index}`} style={{ marginBottom: 6, wordBreak: 'break-word' }}>
                 <strong>{message.sender}: </strong>
@@ -130,16 +131,17 @@ export default function GlobalChatUI() {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
+            className='chat-input'
               value={text}
               onChange={(event) => setText(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') sendMessage();
               }}
               placeholder="Type message"
-              style={{ flex: 1, borderRadius: 6, border: '1px solid #374151', background: '#111827', color: '#fff', padding: '8px 10px' }}
+              style={{ flex: 1, borderRadius: 6, padding: '8px 10px' }}
             />
-            <button onClick={sendMessage} type="button" style={{ borderRadius: 6, border: '1px solid #374151', background: '#2563eb', color: '#fff', padding: '8px 10px' }}>
-              Send
+            <button className='chat-sendbtn rounded-6' onClick={sendMessage} type="button" style={{ borderRadius: 6, padding: '8px 10px' }}>
+              {t?.form?.submit || 'Send'}
             </button>
           </div>
         </div>

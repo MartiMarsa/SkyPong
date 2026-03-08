@@ -5,7 +5,7 @@ import { Card, Avatar, Badge } from '../base';
 import { useTranslation } from '../../context/language-context';
 import Loader from '../loader/loader-ui';
 import Link from "next/link";
-import { isMe } from '../../lib/players/whois';
+import { isMe, isAI } from '../../lib/players/whois';
 import { useAuth } from '../../context/auth-context';
 
 interface PlayerGamesHistoryData {
@@ -60,7 +60,7 @@ function getPlayerLink(profileId : string, playerId : string, nickname : string)
 {
     const {user} = useAuth();
 
-    if (playerId === profileId || (user && isMe(playerId, user.id)))
+    if (playerId === profileId || (user && isMe(playerId, user.id)) || isAI(playerId))
         return <span className="player-name">{nickname}</span>;
     else
         return (<Link href={`/${playerId}`} className="player-name-link">{nickname}</Link>);
@@ -92,13 +92,17 @@ function GameRow({ game, profileId }: { game: GameHistoryItem; profileId: string
 
       {/* Players */}
       <div className="game-players">
-        <Avatar size="sm" src={me.avatar || '/avatar/default-avatar.webp'} fallbackText={me.nickname} />
-        {getPlayerLink(profileId, me.id, me.nickname)}
-        <span className="text-muted text-sm">{me.points}</span>
-        <span className="text-muted text-sm">vs</span>
-        <Avatar size="sm" src={opponent.avatar || '/avatar/default-avatar.webp'} fallbackText={opponent.nickname} />
-        {getPlayerLink(profileId, opponent.id, opponent.nickname)}
-        <span className="text-muted text-sm">{opponent.points}</span>
+        <div className='game-player-info'>
+            <Avatar size="sm" src={me.avatar || '/avatar/default-avatar.webp'} fallbackText={me.nickname} />
+            {getPlayerLink(profileId, me.id, me.nickname)}
+            <span className="text-muted text-sm">{me.points}</span>
+        </div>
+        <span className="game-vs-text text-muted text-sm">vs</span>
+        <div className='game-player-info'>
+            <Avatar size="sm" src={opponent.avatar || '/avatar/default-avatar.webp'} fallbackText={opponent.nickname} />
+            {getPlayerLink(profileId, opponent.id, opponent.nickname)}
+            <span className="text-muted text-sm">{opponent.points}</span>
+        </div>
       </div>
 
       {/* Mode badge */}

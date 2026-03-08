@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+// --- CHECKING USERS INPUTS: EMAIL AND PASSWORD ---
 export const emailSchema = z.string()
   .min(1, { message: "Email is required" })
   .min(8, { message: "Email must be at least 8 characters" })

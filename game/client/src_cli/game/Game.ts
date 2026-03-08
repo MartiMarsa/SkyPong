@@ -334,7 +334,7 @@ export class Game {
           bottomScore = player2Score;
           topScore = player1Score;
         }
-        gui.hud.updateScores(bottomScore, topScore, this._winningScore);
+        gui.hud.updateScores(bottomScore, topScore, room.state.winningScore?.toString() || this._winningScore);
       },
 
       onGameOver: ({ winner, player1Name, player2Name, player1Score, player2Score }) => {

@@ -1,6 +1,6 @@
-const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "secret"; // INFO temporary
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN // || "secret"; // INFO temporary
 const STATS_SERVICE_URL =
-  process.env.STATS_SERVICE_URL ?? "http://statistics-service:6000"; // INFO temporary
+  process.env.STATS_SERVICE_URL // ?? "http://statistics-service:6000"; // INFO temporary
 
 import axios from "axios";
 

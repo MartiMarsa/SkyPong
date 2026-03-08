@@ -7,7 +7,7 @@ import { initStatisticsDB, getStatisticsDB, closeStatisticsDB } from './database
 import { initLeaderboardDB, getLeaderboardDB, closeLeaderboardDB } from './database/dbLeaderboard';
 import * as StatsTypes from './types/stats.types';
 
-// --- ENV ---
+// --- CONFIGURATION ---
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN!;
 
 if (!process.env.SERVICE_TOKEN) {
@@ -15,29 +15,13 @@ if (!process.env.SERVICE_TOKEN) {
 }
 
 console.log("[stats] Auth service token:", SERVICE_TOKEN);
+
 const fastify = Fastify({logger: true});
 
 let server: typeof fastify;
 
 fastify.register(require("fastify-metrics"), { endpoint: "/metrics" });
 
-fastify.get("/healthz", async () => ({ ok: true, service: "statistics-service" }));
-
-// --- STATISTICS INTERNAL MIDDLEWARE ---
-async function requireServiceAuth(req: any, reply: any) {
-
-	const auth = req.headers.authorization;
-
-	if (!auth) {
-	    	return reply.status(401).send({ error: 'Missing auth' });
-      	}
-
-      	const token = auth.replace('Bearer ', '');
-
-	if (token !== SERVICE_TOKEN) {
-	    	return reply.status(403).send({ error: 'Forbidden' });
-      	}
-}
 // --- SCHEMAS ---
 const gameResultSchema = {
       	body: {
@@ -70,6 +54,21 @@ const gameResultSchema = {
       	}
 };
 
+// --- STATISTICS INTERNAL MIDDLEWARE ---
+async function requireServiceAuth(req: any, reply: any) {
+
+    const auth = req.headers.authorization;
+
+    if (!auth) {
+            return reply.status(401).send({ error: 'Missing auth' });
+        }
+
+        const token = auth.replace('Bearer ', '');
+
+    if (token !== SERVICE_TOKEN) {
+            return reply.status(403).send({ error: 'Forbidden' });
+        }
+}
 
 // --- ADD GAME STATISTICS ---
 fastify.post<{ Body: StatsTypes.GameResult; }>('/internal/statistics/gameresult/update', { preHandler: requireServiceAuth, schema: gameResultSchema }, async (req: any, reply) => {
@@ -176,6 +175,9 @@ fastify.get('/internal/statistics/games/history/:id', { preHandler: requireServi
   }
 );
 
+// --- HEALTH CHECK ---
+fastify.get("/healthz", async () => ({ ok: true, service: "statistics-service" }));
+
 // --- START SERVER ---
 async function start() {
       	console.log('[Main] starting service');
@@ -216,12 +218,10 @@ async function start() {
 
 	    	// --- START WORKERS ---
 		const statsWorker = statisticsLoop(signal, err => {
-//		  	console.error('[StatsWorker] error', err);
 			console.error('[StatsWorker] error');
 	    	});
 
 	    	const leaderboardWorker = leaderboardLoop(signal, err => {
-//		  	console.error('[LeaderboardWorker] error', err);
 			console.error('[LeaderboardWorker] error');
 	    	});
 

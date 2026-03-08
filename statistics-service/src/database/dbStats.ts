@@ -14,18 +14,17 @@ const db = new sqlite3.Database(statsDbPath, sqlite3.OPEN_READWRITE | sqlite3.OP
 		console.error('Failed to connect to SQLite', err);
 	} else {
 		console.log('Connected to SQLite', statsDbPath);
-		console.log('Connected to SQLite', statsDbPath);
 	}
 });
 
 export function getStatisticsDB() {
-      	return db;
+	return db;
 }
 
 export function closeStatisticsDB(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    db.close(err => (err ? reject(err) : resolve()));
-  });
+  	return new Promise((resolve, reject) => {
+				   	   db.close(err => (err ? reject(err) : resolve()));
+					   });
 }
 
 export async function initStatisticsDB(): Promise<void> {
@@ -69,8 +68,8 @@ export async function initStatisticsDB(): Promise<void> {
 }
 
 function run(sql: string, params: any[] = []) {
-      	return new Promise<void>((resolve, reject) => {
-	    	db.run(sql, params, err => (err ? reject(err) : resolve()));
-      	});
+	return new Promise<void>((resolve, reject) => {
+				 			 db.run(sql, params, err => (err ? reject(err) : resolve()));
+					 		 });
 }
 

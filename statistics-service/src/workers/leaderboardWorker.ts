@@ -5,6 +5,9 @@ import * as StatsTypes from '../types/stats.types';
 import * as StatsConst from '../types/stats.const';
 
 // --- CONFIG ---
+let interval = 2000;
+const MAX_FAILURES = 5;
+
 const PROFILE_API = process.env.PROFILE_SERVICE_URL!;
 
 if (!process.env.PROFILE_SERVICE_URL) {
@@ -20,9 +23,6 @@ if (!process.env.SERVICE_TOKEN) {
 }
 
 console.log("[stats: leaderboardWorker] Auth service token:", SERVICE_TOKEN);
-
-let interval = 2000;
-const MAX_FAILURES = 5;
 
 // --- DB ---
 const db = getDbHelpers(getLeaderboardDB());
@@ -49,7 +49,7 @@ async function syncOnce(): Promise<{ players: StatsTypes.PlayerStat[]; last: str
       	return res.data;
 }
 
-// --- UPSERT OF NEW DATA --- 
+// --- UPSERT OF NEW DATA O LEADERBOARD --- 
 async function upsert(p: StatsTypes.PlayerStat) {
 
       	await db.run(`INSERT INTO leaderboard_cache (
@@ -94,7 +94,7 @@ async function upsert(p: StatsTypes.PlayerStat) {
 	      	]);
 }
 
-// --- LOOP ---
+// --- MAIN WORKER LOOP ---
 export async function leaderboardLoop(abortSignal: AbortSignal, onError: (err: unknown) => void) {
       
 	console.log('[LeaderboardWorker] started');
@@ -115,7 +115,6 @@ export async function leaderboardLoop(abortSignal: AbortSignal, onError: (err: u
 		  	interval = data.players.length ? 1000 : 4000;
 
 	    	} catch (err) {
-//		  	console.error('[LeaderboardWorker] error:', err);
 			console.error('[LeaderboardWorker] error:');
 
 		  	onError(err);
@@ -133,18 +132,12 @@ export async function leaderboardLoop(abortSignal: AbortSignal, onError: (err: u
 
 		await sleep(interval, abortSignal);
 
-
-	}
-
-      	console.log('[LeaderboardWorker] stopped');
+		}
+		console.log('[LeaderboardWorker] stopped');
 }
 
 // --- GET LEADERBOARD ---
-export async function getLeaderboardByIndex(
-    index: StatsConst.LeaderboardIndex,
-    limit = 50,
-    offset = 0
-): Promise<StatsTypes.LeaderboardRow[]> {
+export async function getLeaderboardByIndex(index: StatsConst.LeaderboardIndex, limit = 50, offset = 0): Promise<StatsTypes.LeaderboardRow[]> {
 
     const cfg = StatsConst.LEADERBOARD_INDEXES[index];
 
@@ -174,16 +167,9 @@ export async function getLeaderboardByIndex(
 // --- GET USER DATA FOR LEADERBOARD ---
 async function getProfiles(userIds: string[]) {
 
-  const res = await axios.post(
-    `${PROFILE_API}/internal/profile/batch`,
-    { userIds },
-    {
-      headers: {
-        Authorization: `Bearer ${SERVICE_TOKEN}`
-      }
-    }
-  );
-
+  const res = await axios.post(`${PROFILE_API}/internal/profile/batch`,
+						   	   { userIds },
+						   	   { headers: { Authorization: `Bearer ${SERVICE_TOKEN}` } });
   return res.data.profiles;
 }
 
