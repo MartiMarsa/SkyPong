@@ -8,15 +8,12 @@ import * as ProfileTypes from './types/profile.types';
 import * as ProfileInterfaces from './types/profile.interfaces';
 import * as ProfileEnums from './types/profile.enums';
 
-// --- CONFIG ---
+// --- CONFIGURATION ---
 const MAX_RETRIES = 5;
 
 const AVATARS_DIR = path.join('/app/uploads', 'avatars');
 const DEFAULT_AVATAR_PATH = path.join('/app/static', 'default-avatar.webp');
 const DEFAULT_AVATAR = '/static/default-avatar.webp';
-
-// --- DB ---
-const db = getDbHelpers(getProfileDB());
 
 const AUTH_API = process.env.AUTH_SERVICE_URL!;
 
@@ -34,7 +31,6 @@ if (!process.env.STATS_SERVICE_URL) {
 
 console.log("[profile] Statistics service URL:", STATS_API);
 
-
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN!;
 
 if (!process.env.SERVICE_TOKEN) {
@@ -43,9 +39,10 @@ if (!process.env.SERVICE_TOKEN) {
 
 console.log("[profile] Auth service token:", SERVICE_TOKEN);
 
+// --- DB ---
+const db = getDbHelpers(getProfileDB());
 
 // --- TYPES ---
-
 const AI_USER_IDS = new Set<string>(Object.values(ProfileEnums.AIUserType));
 
 const AI_RATES: Record<ProfileEnums.AIUserType, number> = {
@@ -54,8 +51,33 @@ const AI_RATES: Record<ProfileEnums.AIUserType, number> = {
 	[ProfileEnums.AIUserType.HARD]: 1600,
 };
 
-// --- UTILS ---
+// --- UTILS FOR DB ---
+const PROFILE_QUERY = `
+  SELECT
+    p.user_id,
+    p.nickname,
+    p.avatarUrl,
+    p.winPhrase,
+    p.localization,
+    p.created_at,
+    p.last_access_at,
+    p.logged,
+    p.access_expires_at,
 
+    s.played,
+    s.wins,
+    s.losses,
+    s.winrate,
+    s.rate,
+    s.updated_at AS stats_updated_at
+  FROM players p
+  LEFT JOIN player_stats s ON s.user_id = p.user_id
+  WHERE p.user_id = ?
+    AND p.deleted = 0
+  LIMIT 1
+`;
+
+// --- UTILS ---
 function generateNickname(isDeleted: boolean): string {
   const ts = Date.now().toString(36);
   const rand = crypto.randomBytes(4).toString('base64url');
@@ -65,30 +87,23 @@ function generateNickname(isDeleted: boolean): string {
   return isDeleted ? `deleted_${tail}` : `u_${tail}`;
 }
 
-function calculateRate(
-  userRate: number,
-  opponentRate: number,
-  result: 'win' | 'loss'
-): number {
-  const K = 42;
+// --- CALCULATION OF RATE FOR PVP AND AI ---
 
-  const expected =
-    1 / (1 + Math.pow(10, (opponentRate - userRate) / 400));
+function calculateRate(userRate: number, opponentRate: number, result: 'win' | 'loss'): number {
+  	const K = 42;
 
-  const score = result === 'win' ? 1 : 0;
+  	const expected = 1 / (1 + Math.pow(10, (opponentRate - userRate) / 400));
 
-  const final = Math.round(userRate + K * (score - expected));
+  	const score = result === 'win' ? 1 : 0;
 
-  return Math.max(final, 0);
+  	const final = Math.round(userRate + K * (score - expected));
+
+  	return Math.max(final, 0);
 }
 
-function calculateHumanAiRate(
-  humanRate: number,
-  aiUserId: string,
-  result: 'win' | 'loss'
-): number {
-  const aiRate = AI_RATES[aiUserId as ProfileEnums.AIUserType];
-  return calculateRate(humanRate, aiRate, result);
+function calculateHumanAiRate(humanRate: number, aiUserId: string, result: 'win' | 'loss'): number {
+  	const aiRate = AI_RATES[aiUserId as ProfileEnums.AIUserType];
+  	return calculateRate(humanRate, aiRate, result);
 }
 
 async function apply(
@@ -147,6 +162,7 @@ async function applyAi(
       );
 }
 
+// --- CHECKER IF AVATAR EXISTS ---
 export async function ensureAvatarIsAlive(userId: string, avatarUrl: string | null) {
   	if (!avatarUrl) {
 		await updatePlayerAvatar(userId, DEFAULT_AVATAR);
@@ -168,36 +184,7 @@ export async function ensureAvatarIsAlive(userId: string, avatarUrl: string | nu
   	}
 }
 
-// --- UTILS FOR DB ---
-const PROFILE_QUERY = `
-  SELECT
-    p.user_id,
-    p.nickname,
-    p.avatarUrl,
-    p.winPhrase,
-    p.localization,
-    p.created_at,
-	p.last_access_at,
-    p.logged,
-    p.access_expires_at,
-
-    s.played,
-    s.wins,
-    s.losses,
-    s.winrate,
-    s.rate,
-    s.updated_at AS stats_updated_at
-  FROM players p
-  LEFT JOIN player_stats s ON s.user_id = p.user_id
-  WHERE p.user_id = ?
-    AND p.deleted = 0
-  LIMIT 1
-`;
-
-// --------------------------------------------------
 // GET PLAYER
-// --------------------------------------------------
-
 export async function getPlayerById(userId: string): Promise<ProfileInterfaces.PlayerInfo | null> {
 
 	const row = await db.get<any>(PROFILE_QUERY, [userId]);
@@ -226,10 +213,7 @@ export async function getPlayerById(userId: string): Promise<ProfileInterfaces.P
   	};
 }
 
-// --------------------------------------------------
 // CREATE PLAYER
-// --------------------------------------------------
-
 export async function createPlayer(userId: string) {
 
   for (let i = 1; i <= MAX_RETRIES; i++) {
@@ -294,10 +278,7 @@ export async function createPlayer(userId: string) {
   throw new Error('createPlayer failed');
 }
 
-// --------------------------------------------------
 // UPDATE TEXT INFO
-// --------------------------------------------------
-
 export async function updatePlayerInfo(
   userId: string,
   data: ProfileInterfaces.UpdatePlayerInfo
@@ -315,12 +296,12 @@ export async function updatePlayerInfo(
     fields.push('winPhrase = ?');
     values.push(data.winPhrase);
   }
-/*
+
   if (data.localization !== undefined) {
     fields.push('localization = ?');
     values.push(data.localization);
   }
-*/
+
   if (!fields.length) return;
 
   values.push(userId);
@@ -334,10 +315,7 @@ export async function updatePlayerInfo(
   await db.run(sql, values);
 }
 
-// --------------------------------------------------
 // UPDATE AVATAR
-// --------------------------------------------------
-
 export async function updatePlayerAvatar(
   userId: string,
   avatarUrl: string
@@ -354,10 +332,7 @@ export async function updatePlayerAvatar(
   );
 }
 
-// --------------------------------------------------
 // UPDATE PLAYER'S ONLINE STATUS
-// --------------------------------------------------
-
 export async function getUserSessionExpire(userId: string): Promise<string | null> {
   try {
     const url = `${AUTH_API}/internal/auth/session_state/${userId}`;
@@ -378,11 +353,10 @@ export async function updatePlayerOnlineStatus(userId: string, logged: boolean) 
 
 	const repoDate = '2025-12-01';
 
-	console.info("Updating player state...");
+	console.info("[profile: Player updayePlayerOnlineStatus] Updating player state...");
 
     try {
         const exp = await getUserSessionExpire(userId);
-        console.log("-----------> EXP DATE: ", exp);
 
         if (logged) {
             if (exp) {
@@ -420,10 +394,7 @@ export async function updatePlayerOnlineStatus(userId: string, logged: boolean) 
     }
 }
 
-// --------------------------------------------------
 // SOFT DELETE
-// --------------------------------------------------
-
 export async function softdeletePlayer(userId: string) {
 
   const nickname = generateNickname(true);
@@ -459,10 +430,7 @@ export async function softdeletePlayer(userId: string) {
   }
 }
 
-// --------------------------------------------------
 // UPDATE STATS (TRANSACTION)
-// --------------------------------------------------
-
 export async function updatePlayerStats(
   gameId: string,
   p1: ProfileTypes.PlayerResult,
@@ -473,7 +441,7 @@ export async function updatePlayerStats(
 
   try {
 
-    // reserve game
+	// Do reserve game
     const reserve = await db.run(
       `
       INSERT OR IGNORE INTO processed_games(game_id, processed_at)
@@ -527,7 +495,7 @@ export async function updatePlayerStats(
 
 	} else {
 
-    // load players
+    // Load players
     const players = await db.all<{
       user_id: string;
       wins: number;
@@ -572,10 +540,7 @@ export async function updatePlayerStats(
   }
 }
 
-// --------------------------------------------------
 // LEADERBOARD
-// --------------------------------------------------
-
 export async function getLeaderboard(lastSync: string) {
 
   const rows = await db.all<ProfileTypes.LeaderboardRow>(
@@ -608,10 +573,7 @@ export async function getLeaderboard(lastSync: string) {
   };
 }
 
-// --------------------------------------------------
 // GET BATCH OF PROFILES
-// --------------------------------------------------
-
 export async function getBatchProfiles(userIds: string[]) {
    
 	if (!Array.isArray(userIds)) {
@@ -653,10 +615,7 @@ async function getProfilesByIds(userIds: string[]) {
 							  });
 }
 
-// --------------------------------------------------
 // PUBLIC PROFILE
-// --------------------------------------------------
-
 export async function getUserPublicProfile(userId: string): Promise<ProfileInterfaces.PlayerInfo | null> {
 
 	const row = await db.get<any>(PROFILE_QUERY, [userId]);
@@ -686,10 +645,7 @@ export async function getUserPublicProfile(userId: string): Promise<ProfileInter
 
 }
 
-// --------------------------------------------------
 // HISTORY OF USER'S GAMES
-// --------------------------------------------------
-
 export async function getUserGameHistory(userId: string): Promise<ProfileInterfaces.GameHistoryItem[]> {
   try {
     const url = `${STATS_API}/internal/statistics/games/history/${userId}`;

@@ -2,7 +2,7 @@ import { writeFileSync, existsSync, mkdirSync } from 'fs';
 import { generateKeyPairSync } from 'crypto';
 import path from 'path';
 
-const outDir = path.resolve(__dirname, '../');
+const outDir = process.cwd();
 
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 

@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { privateKey } from '../keys';
 import { getDB } from '../database/db';
 
+// --- CREATE ACCESS TOKEN ---
 export async function generateToken(user: {
     id: string;
     password_version: number;
@@ -58,7 +59,7 @@ export async function generateToken(user: {
     return token;
 }
 
-
+// --- DELETE SESSION INFO IF USER IS LOGGED OUT OR DELETED ---
 export async function deleteUserSession(userId: string): Promise<void> {
   const db = getDB();
 
@@ -68,6 +69,7 @@ export async function deleteUserSession(userId: string): Promise<void> {
   );
 }
 
+// --- CLEANUP SESSION GARBAGE ---
 export function startSessionCleanup() {
     const db = getDB();
 

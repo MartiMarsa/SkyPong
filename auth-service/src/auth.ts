@@ -29,7 +29,7 @@ function toAuthUser(row: AuthInterfaces.UserRow): AuthInterfaces.AuthUser {
   };
 }
 
-// --- MAIN FUNCTIONS ---
+// --- SIGN UP ---
 export async function signup(email: string, password: string): Promise<AuthInterfaces.AuthUser> {
 	const hash = await hashPassword(password);
 
@@ -53,6 +53,7 @@ export async function signup(email: string, password: string): Promise<AuthInter
 	});
 }
 
+// --- LOGIN ---
 export async function login(email: string, password: string): Promise<AuthInterfaces.AuthUser> {
 	const db = getDB();
 
@@ -78,6 +79,7 @@ export async function login(email: string, password: string): Promise<AuthInterf
 	});
 }
 
+// --- CHECKER FOR AVOID DOUBLE LOGIN ---
 export async function checkActiveSession(userId: string): Promise<boolean> {
     const db = getDB();
 
