@@ -86,7 +86,7 @@ function GameOverlay({ gameUrl, onExit }) {
         src={gameUrl}
         title="Game"
         className="h-full w-full border-0"
-        allow="cross-origin-isolated"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       />
     </div>
   );

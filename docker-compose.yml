@@ -151,9 +151,9 @@ services:
       - AUTH_SERVICE_URL=${AUTH_SERVICE_URL}
       - PROFILE_SERVICE_URL=${PROFILE_SERVICE_URL}
       - STATS_SERVICE_URL=${STATS_SERVICE_URL}
-      # Optional: point to mounted JWT keys
-      # - JWT_PRIVATE_KEY_PATH=/run/secrets/jwt-private.pem
-      # - JWT_PUBLIC_KEY_PATH=/run/secrets/jwt-public.pem
+      # Point to shared JWT keys in mounted volume
+      - JWT_PRIVATE_KEY_PATH=/app/keys/jwt-private.pem
+      - JWT_PUBLIC_KEY_PATH=/app/keys/jwt-public.pem
       # añade aquí secretos vía .env (no hardcode)
       # - JWT_SECRET=${JWT_SECRET}
       # - TWOFA_ENCRYPTION_KEY=${TWOFA_ENCRYPTION_KEY}
@@ -168,8 +168,8 @@ services:
     build:
       context: ./game
       dockerfile: Dockerfile.server
-    ports:
-      - "2567:2567"
+    # ports:  # Commented out - all traffic goes through nginx gateway
+    #   - "2567:2567"
     networks:
       - backend
       - internal
@@ -193,7 +193,7 @@ services:
       context: ./game
       dockerfile: Dockerfile.client
       args:
-        VITE_SERVER_HOST: localhost
+        VITE_SERVER_HOST: 10.19.225.101
         VITE_SERVER_PORT: "8443"
         VITE_WS_PROTOCOL: wss
         VITE_SERVER_PATH: /ws
