@@ -40,7 +40,6 @@ export default function SignInPage() {
             setIsLoading(true);
             setServerError(''); 
             
-            console.log("Datos validados:", data);
             // Call API here
             const apiURL = '/api/auth/login'; 
             const response = await fetch(apiURL, {
@@ -62,10 +61,6 @@ export default function SignInPage() {
             
             
             const result = await response.json();
-            console.log("📦 Response status:", response.status);
-            console.log("📦 Response completa:", result);
-            console.log("📦 result.user:", result.user);
-            console.log("📦 Estructura:", JSON.stringify(result, null, 2));
             
             if (!response.ok) {
                 if (response.status === 404) {
