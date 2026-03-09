@@ -674,7 +674,7 @@ fastify.get('/profile/avatars/:filename', async (req, reply) => {
 
 
 
-fastify.addHook('onRequest', async (request, reply) => {
+  fastify.addHook('onRequest', async (request, reply) => {
   console.log(`Recibida petición: ${request.method} ${request.url}`);
 });
 
