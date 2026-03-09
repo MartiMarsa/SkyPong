@@ -55,7 +55,7 @@ export default function PlayerCredentialsUI({ userURL })
             });
 
             if (response.status === 204) {
-                alert(t?.form?.passwordUpdatedLoginAgain);
+                alert(t?.form?.passwordUpdateLoginAgain);
                 logout();
                 router.push('/login');
                 return;

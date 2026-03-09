@@ -3,7 +3,7 @@ const en = {
         title: "SkyPong",
         welcome: "Welcome to the sky of Pong",
         description: "A celestial Pong experience",
-        lable: "Go to Home",
+        label: "Go to Home",
     },
     user: {
         hi: ({name, className, url}) =>(`Hi, <a href="${url}" class="${className}"> ${name}</a>!`),
@@ -45,9 +45,10 @@ const en = {
         back: "Back",
     },
     serverError: {
-        conectionError: "Server conection error",
-        notFound: "Ruta no encontrada",
+        connectionError: "Server connection error",
+        notFound: "Page not found",
         unknownError: "Unknown Server Error",
+        apiRouteError: (route: string) => `Server error. The route ${route} does not exist or is misconfigured.`,
     },
     gameMode: {
         title: "Game Mode",
@@ -87,11 +88,11 @@ const en = {
         playButton: "Play",
         player: (num : number) => {return (`Player ${num}`)},
         roomNameField: 'Room Name',
-        erros: {
+        errors: {
             difficultyRequired: 'AI Mode requires difficulty configuration.',
-            diffultyOnlyAIMode: 'Unicamente el Modo AI puede incluir difficultad.',
-            onlineRoleOnlyForOlineMode: 'Only ONLINE mode can include onlineRole.',
-            invalidCOnfiguration: 'Configuración de juego inválida.'
+            difficultyOnlyAIMode: 'Only AI Mode can include difficulty.',
+            onlineRoleOnlyForOnlineMode: 'Only ONLINE mode can include onlineRole.',
+            invalidConfiguration: 'Invalid game configuration.'
         }
     },
     play: {

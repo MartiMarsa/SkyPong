@@ -69,7 +69,7 @@ export class Game {
     };
 
     const onRetryCallback = () => {
-      console.log('[Game] Retry requested - restarting game with same config');
+      // console.log('[Game] Retry requested - restarting game with same config');
       // Dispose current game
       this._cleanup();
       gameInstanceLock = false;

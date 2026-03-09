@@ -191,7 +191,13 @@ const Grainient = ({
 
     const ro = new ResizeObserver(setSize);
     ro.observe(container);
-    setSize();
+    
+    // Defer initial size calculation to avoid forcing layout during page load
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setSize();
+      });
+    });
 
     let raf = 0;
     const t0 = performance.now();

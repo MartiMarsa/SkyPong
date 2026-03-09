@@ -7,7 +7,7 @@ function clickHandler(event)
     event.preventDefault();
     const formData = new FormData(event.target);
     const selectedMode = formData.get('mode');
-    console.log("Selected mode:", selectedMode);
+    // console.log("Selected mode:", selectedMode);
     // Aquí puedes manejar la selección del modo de juego
 }
 

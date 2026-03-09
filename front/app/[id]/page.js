@@ -13,6 +13,9 @@ import Leaderboard from '../ui/Leaderboard';
 import FooterTermsPolicy from '../ui/footer-terms-policy';
 import { Tabs } from '../ui/base';
 import { useParams } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faScroll, faUsers, faTrophy, faChartBar } from '@fortawesome/free-solid-svg-icons';
+import api from '../api/api';
 
 export default function ProfilePagePublic() {
     const { id } = useParams();
@@ -77,11 +80,9 @@ export default function ProfilePagePublic() {
     const [friendsCount, setFriendsCount] = useState(0);
     useEffect(() => {
         if (!profile?.id || !csrfToken) return;
-        fetch('/api/profile/friends', {
+        api('/api/profile/friends', {
             headers: { 'x-csrf-token': csrfToken },
-            credentials: 'include',
         })
-            .then(res => res.json())
             .then(data => setFriendsCount(Array.isArray(data) ? data.length : 0))
             .catch(() => setFriendsCount(0));
     }, [profile?.id, csrfToken]);
@@ -90,25 +91,25 @@ export default function ProfilePagePublic() {
         {
             key: 'history',
             label: t.profile.tabs.history,
-            icon: '📜',
+            icon: <FontAwesomeIcon icon={faScroll} className="text-primary" />,
             badge: profile?.stats?.total_games || undefined,
         },
         {
             key: 'friends',
             label: t.profile.tabs.friends,
-            icon: '👥',
+            icon: <FontAwesomeIcon icon={faUsers} className="text-primary" />,
             badge: friendsCount > 0 ? friendsCount : undefined,
         },
         {
             key: 'achievements',
             label: t.profile.tabs.achievements,
-            icon: '🏆',
+            icon: <FontAwesomeIcon icon={faTrophy} className="text-primary" />,
             badge: achievementCount > 0 ? achievementCount : undefined,
         },
         {
             key: 'leaderboard',
             label: t.profile.tabs.leaderboard,
-            icon: '📊',
+            icon: <FontAwesomeIcon icon={faChartBar} className="text-primary" />,
         },
     ];
 

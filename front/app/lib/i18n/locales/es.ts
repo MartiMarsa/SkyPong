@@ -1,12 +1,9 @@
-import { create } from "node:domain";
-import { title } from "node:process";
-
 const es = {
     homePage: {
-    title: "SkyPong",
-    welcome: "Bienvenido al cielo del Pong",
-    description: "Una experiencia celestial de Pong",
-    lable: "Ir a la Home",
+        title: "SkyPong",
+        welcome: "Bienvenido al cielo del Pong",
+        description: "Una experiencia celestial de Pong",
+        label: "Ir a la Home",
     },
     user: {
         hi: ({name, className, url}) =>(`¡Hola, <a href="${url}" class="${className}"> ${name}</a>!`),
@@ -48,9 +45,10 @@ const es = {
         back: "Volver",
     },
     serverError: {
-        conectionError: "Server conection error",
+        connectionError: "Error de conexión del servidor",
         notFound: "Ruta no encontrada",
-        unknownError: "Unknown Server Error",
+        unknownError: "Error desconocido del servidor",
+        apiRouteError: (route: string) => `Error del servidor. La ruta ${route} no existe o está mal configurada.`,
     },
     gameMode: {
         title: "Modo de Juego",
@@ -90,11 +88,11 @@ const es = {
         playButton: "Jugar",
         player: (num : number) => {return (`Jugador ${num}`)},
         roomNameField: 'Nombre Sala',
-        erros: {
+        errors: {
             difficultyRequired: 'Modo AI requiere una configuración de dificultad',
-            diffultyOnlyAIMode: 'Unicamente el Modo AI puede incluir difficultad.',
-            onlineRoleOnlyForOlineMode: 'Only ONLINE mode can include onlineRole.',
-            invalidCOnfiguration: 'Configuración de juego inválida.'
+            difficultyOnlyAIMode: 'Únicamente el Modo AI puede incluir dificultad.',
+            onlineRoleOnlyForOnlineMode: 'Solo el modo ONLINE puede incluir onlineRole.',
+            invalidConfiguration: 'Configuración de juego inválida.'
         }
     },
     play: {
@@ -434,6 +432,9 @@ const es = {
             rank: "Rango",
             totalGames: "Juegos totales:",
             noPlayers: "Aún no hay jugadores.",
+            loading: "Cargando...",
+            online: "En línea",
+            idle: "Inactivo",
         },
     },
     chat: {
