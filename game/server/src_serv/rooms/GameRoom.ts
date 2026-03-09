@@ -1,13 +1,12 @@
 import { Room, Client } from "colyseus";
 import { NullEngine, Scene, Vector3, UniversalCamera } from "@babylonjs/core";
 import { MyGameState } from "@skypong/common/GameState";
-import { GMCN, SCORING } from "@skypong/common/constants";
 import { ServerBall } from "../entities/ServerBall";
 import { ServerPaddle } from "../entities/ServerPaddle";
 import { ServerTable } from "../entities/ServerTable";
 import { InputManager } from "../input/InputManager";
 import { PhysicsEngine } from "../physics";
-import { SERVER_CONFIG, ROOM_CONFIG, SERVER_TIMING, Logger } from "../config";
+import { SERVER_CONFIG, ROOM_CONFIG, Logger } from "../config";
 
 export class GameRoom extends Room<MyGameState> {
     public engine!: NullEngine;
@@ -304,27 +303,6 @@ export class GameRoom extends Room<MyGameState> {
             this.serverBall.setEnabled(false);
             Logger.gameOver(`Winner: ${this.state.player2Name} (${this.state.player1Score}-${this.state.player2Score})`);
         }
-    }
-
-    /**
-     * Reset ball position for the next round after a goal
-     */
-    private resetBallForNextRound(): void {
-        // Don't reset ball if game is over
-        if (this.state.gameOver) {
-            return;
-        }
-
-        // Stop the ball temporarily
-        this.physicsEngine.respawnBallAtCenter(this.serverBall.physicsBody);
-
-        // Wait a moment before launching again
-        setTimeout(() => {
-            if (!this.state.gameOver) {
-                // Launch with random direction
-                this.physicsEngine.launchBall(this.serverBall.physicsBody);
-            }
-        }, SERVER_TIMING.RESPAWN.POST_GOAL_DELAY_MS);
     }
 
     onJoin(client: Client, options: any): void | Promise<any> {

@@ -1,7 +1,6 @@
 import { Room, Client } from "colyseus";
 import { NullEngine, Scene, Vector3, UniversalCamera } from "@babylonjs/core";
 import { MyGameState } from "@skypong/common/GameState";
-import { GMCN, SCORING } from "@skypong/common/constants";
 import { ServerBall } from "../entities/ServerBall";
 import { ServerPaddle } from "../entities/ServerPaddle";
 import { ServerTable } from "../entities/ServerTable";
