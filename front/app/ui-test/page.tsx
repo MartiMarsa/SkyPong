@@ -16,6 +16,18 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faTrophy, 
+  faScroll, 
+  faUsers, 
+  faGamepad, 
+  faChartBar, 
+  faStar, 
+  faFire, 
+  faMedal,
+  faBan
+} from '@fortawesome/free-solid-svg-icons';
 
 export default function UITestPage() {
   const { t } = useTranslation();
@@ -281,7 +293,7 @@ export default function UITestPage() {
               padding="md"
               title="Achievements"
               subtitle="15/20 unlocked"
-              icon="🏆"
+              icon={<FontAwesomeIcon icon={faTrophy} className="text-primary" />}
             >
               <p className="text-sm text-gray-700">Card with icon, title, and subtitle</p>
             </Card>
@@ -398,19 +410,19 @@ export default function UITestPage() {
             <StatCard 
               label="Games Played"
               value="156"
-              icon="🎮"
+              icon={<FontAwesomeIcon icon={faGamepad} className="text-primary" />}
               variant="primary"
             />
             <StatCard 
               label="Trophies"
               value="23"
-              icon="🏆"
+              icon={<FontAwesomeIcon icon={faTrophy} className="text-primary" />}
               variant="success"
             />
             <StatCard 
               label="Level"
               value="42"
-              icon="⭐"
+              icon={<FontAwesomeIcon icon={faStar} className="text-primary" />}
               variant="warning"
             />
           </div>
@@ -446,13 +458,13 @@ export default function UITestPage() {
               <StatCard 
                 label="Total Games"
                 value="156"
-                icon="🎮"
+                icon={<FontAwesomeIcon icon={faGamepad} className="text-primary" />}
                 variant="default"
               />
               <StatCard 
                 label="Win Rate"
                 value="68%"
-                icon="📊"
+                icon={<FontAwesomeIcon icon={faChartBar} className="text-primary" />}
                 variant="success"
                 trend="up"
                 trendValue="+5%"
@@ -460,13 +472,13 @@ export default function UITestPage() {
               <StatCard 
                 label="Best Streak"
                 value="12"
-                icon="🔥"
+                icon={<FontAwesomeIcon icon={faFire} className="text-primary" />}
                 variant="warning"
               />
               <StatCard 
                 label="Rank"
                 value="#12"
-                icon="🏅"
+                icon={<FontAwesomeIcon icon={faMedal} className="text-primary" />}
                 variant="primary"
                 trend="up"
                 trendValue="+2"
@@ -592,9 +604,9 @@ export default function UITestPage() {
             <Tabs
               variant="underline"
               tabs={[
-                { key: 'tab1', label: 'History', icon: '📜' },
-                { key: 'tab2', label: 'Friends', icon: '👥' },
-                { key: 'tab3', label: 'Achievements', icon: '🏆' },
+                { key: 'tab1', label: 'History', icon: <FontAwesomeIcon icon={faScroll} className="text-primary" /> },
+                { key: 'tab2', label: 'Friends', icon: <FontAwesomeIcon icon={faUsers} className="text-primary" /> },
+                { key: 'tab3', label: 'Achievements', icon: <FontAwesomeIcon icon={faTrophy} className="text-primary" /> },
               ]}
               activeTab="tab1"
               // onChange={(key) => console.log('Tab changed:', key)}
@@ -645,9 +657,9 @@ export default function UITestPage() {
                 <Tabs
                   variant="underline"
                   tabs={[
-                    { key: 'history', label: 'History', icon: '📜' },
-                    { key: 'friends', label: 'Friends', icon: '👥', badge: '15' },
-                    { key: 'achievements', label: 'Achievements', icon: '🏆', badge: '8' },
+                    { key: 'history', label: 'History', icon: <FontAwesomeIcon icon={faScroll} className="text-primary" /> },
+                    { key: 'friends', label: 'Friends', icon: <FontAwesomeIcon icon={faUsers} className="text-primary" />, badge: '15' },
+                    { key: 'achievements', label: 'Achievements', icon: <FontAwesomeIcon icon={faTrophy} className="text-primary" />, badge: '8' },
                   ]}
                   activeTab={activeTab}
                   onChange={setActiveTab}
@@ -771,7 +783,7 @@ export default function UITestPage() {
                 <button
                   className="inline-flex items-center justify-center btn-sm font-display font-bold uppercase tracking-wider rounded-l-full transition-all duration-200 bg-chip-error hover:bg-red-200 text-chip-error-text"
                 >
-                  🚫 BLOCKED
+                  <FontAwesomeIcon icon={faBan} className="mr-1" /> BLOCKED
                 </button>
                 <button
                   className="inline-flex items-center justify-center px-2.5 py-2 font-display text-[10px] rounded-r-full -ml-1 transition-all duration-200 bg-chip-error hover:bg-red-200 text-chip-error-text"

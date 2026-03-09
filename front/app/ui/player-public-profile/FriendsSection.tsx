@@ -27,6 +27,18 @@ import api from "../../api/api";
 import Toast from "../messaging/toast";
 import Loader from "../loader/loader-ui";
 import { Avatar, Badge, Button, Tabs } from "../base";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faUser, 
+  faBan, 
+  faCheck, 
+  faUsers, 
+  faInbox, 
+  faPaperPlane, 
+  faTriangleExclamation,
+  faGhost,
+  faRotateRight
+} from '@fortawesome/free-solid-svg-icons';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Friend {
@@ -73,7 +85,7 @@ function isBlocked(status?: string): boolean {
 }
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
-function Empty({ icon, text }: { icon: string; text: string }) {
+function Empty({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
     <div className="text-center py-12 px-5 text-muted text-xs tracking-wider">
       <div className="text-3xl mb-4 opacity-35">{icon}</div>
@@ -135,7 +147,7 @@ function FriendRow({ friend, onRemove, onBlock, onUnblock, onProfile, busy, bloc
           size="sm"
           onClick={() => onProfile(friend.user_id)}
         >
-          👤 {t.navigation.profile}
+          <FontAwesomeIcon icon={faUser} className="text-primary" /> {t.navigation.profile}
         </Button>
         {!blocked ? (
           <>
@@ -153,7 +165,7 @@ function FriendRow({ friend, onRemove, onBlock, onUnblock, onProfile, busy, bloc
               onClick={() => onBlock(friend.user_id)}
               disabled={busy}
             >
-              🚫
+              <FontAwesomeIcon icon={faBan} className="text-primary" />
             </Button>
           </>
         ) : (
@@ -163,7 +175,7 @@ function FriendRow({ friend, onRemove, onBlock, onUnblock, onProfile, busy, bloc
             onClick={() => onUnblock(friend.user_id)}
             disabled={busy}
           >
-            ✅
+            <FontAwesomeIcon icon={faCheck} className="text-primary" />
           </Button>
         )}
       </div>
@@ -354,19 +366,19 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
     {
       key: "friends",
       label: t.player.friends,
-      icon: "👥",
+      icon: <FontAwesomeIcon icon={faUsers} className="text-primary" />,
       badge: friends.length > 0 ? friends.length : undefined,
     },
     {
       key: "incoming",
       label: t.player.incoming,
-      icon: "📥",
+      icon: <FontAwesomeIcon icon={faInbox} className="text-primary" />,
       badge: incoming.length > 0 ? incoming.length : undefined,
     },
     {
       key: "outgoing",
       label: t.player.outgoing,
-      icon: "📤",
+      icon: <FontAwesomeIcon icon={faPaperPlane} className="text-primary" />,
       badge: outgoing.length > 0 ? outgoing.length : undefined,
     },
   ];
@@ -376,7 +388,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-base md:text-lg font-bold text-gray-900 tracking-wide uppercase">
-          👥 {t.player.friends}
+          <FontAwesomeIcon icon={faUsers} className="text-primary" /> {t.player.friends}
         </h2>
         <Button
           variant="ghost"
@@ -384,7 +396,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
           onClick={fetchAll}
           disabled={loading}
         >
-          ↻ {t.game.refresh}
+          <FontAwesomeIcon icon={faRotateRight} className="text-primary" /> {t.game.refresh}
         </Button>
       </div>
 
@@ -396,14 +408,14 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
         <Loader classes="" message={t.form.loading} />
       ) : fetchError ? (
         <div className="text-center py-8 text-sm text-red-600">
-          ⚠ {fetchError}
+          <FontAwesomeIcon icon={faTriangleExclamation} className="text-primary" /> {fetchError}
         </div>
       ) : (
         <div className="profile-tab-content">
           {/* Friends tab */}
           {activeTab === "friends" && (
             friends.length === 0 ? (
-              <Empty icon="👾" text={t.player.younofriends} />
+              <Empty icon={<FontAwesomeIcon icon={faGhost} className="text-primary" />} text={t.player.younofriends} />
             ) : (
               <>
                 {activeFriends.length > 0 && (
@@ -473,7 +485,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
           {/* Incoming tab */}
           {activeTab === "incoming" && (
             incoming.length === 0 ? (
-              <Empty icon="📭" text={t.player.noincomingRequests} />
+              <Empty icon={<FontAwesomeIcon icon={faInbox} className="text-primary" />} text={t.player.noincomingRequests} />
             ) : (
               incoming.map(r => (
                 <IncomingRow
@@ -491,7 +503,7 @@ export default function FriendsSection({ currentUserId, csrfToken, onNavigatePro
           {/* Outgoing tab */}
           {activeTab === "outgoing" && (
             outgoing.length === 0 ? (
-              <Empty icon="📤" text={t.player.nooutgoingRequests} />
+              <Empty icon={<FontAwesomeIcon icon={faPaperPlane} className="text-primary" />} text={t.player.nooutgoingRequests} />
             ) : (
               outgoing.map(r => (
                 <OutgoingRow

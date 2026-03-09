@@ -32,6 +32,8 @@ import api from "../../api/api";
 import Toast from "../messaging/toast";
 import { useTranslation } from "../../context/language-context";
 import { cn } from "@/lib/utils";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBan } from '@fortawesome/free-solid-svg-icons';
 
 // ─── Relation states ──────────────────────────────────────────────────────────
 // null          → no relation
@@ -105,7 +107,7 @@ export default function AddFriendButton({ currentUserId, targetId, csrfToken }) 
       classes: "bg-chip-warning hover:bg-yellow-200 text-chip-warning-text"
     },
     blocked: {
-      label: "🚫 " + t.player.blocked.toUpperCase(),
+      label: <><FontAwesomeIcon icon={faBan} /> {t.player.blocked.toUpperCase()}</>,
       classes: "bg-chip-error hover:bg-red-200 text-chip-error-text"
     },
     blocked_by: {
