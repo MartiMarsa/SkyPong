@@ -95,7 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const isSignRoute = signRoutes.includes(pathname);
       const isPrivateRoute = privateRoutes.includes(pathname);
 
-      console.info('Pathname: ', pathname);
       if (loggedIn && isSignRoute) {
         router.replace('/me');
       } else if (!loggedIn && isPrivateRoute) {

@@ -13,7 +13,7 @@ export const SERVER_CONNECTION = {
   get WS_URL() {
     const explicitServerUrl = process.env.NEXT_PUBLIC_GAME_SERVER_URL;
     if (explicitServerUrl) {
-      console.log("[ServerConfig] Using explicit server URL:", explicitServerUrl);
+    //   console.log("[ServerConfig] Using explicit server URL:", explicitServerUrl);
       return explicitServerUrl;
     }
 
@@ -22,7 +22,7 @@ export const SERVER_CONNECTION = {
     if (useNginxProxy && typeof window !== "undefined") {
       // Prefer same-origin WS proxy by default for cross-machine compatibility.
       const url = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws/`;
-      console.log("[ServerConfig] Using nginx proxy (same-origin):", url);
+    //   console.log("[ServerConfig] Using nginx proxy (same-origin):", url);
       return url;
     }
 

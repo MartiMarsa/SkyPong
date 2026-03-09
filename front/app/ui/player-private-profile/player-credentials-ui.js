@@ -33,7 +33,6 @@ export default function PlayerCredentialsUI({ userURL })
         try {
             setIsLoading(true);
             setServerError('');
-            console.info("Submitting updated profile password info...\n", formData)
 
 			const csrfToken = getCookie('csrf_token');
 
