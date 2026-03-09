@@ -95,7 +95,6 @@ export default function NavigationAppUI({
           // Guest users: Login/Sign Up buttons
           <>
             <Button href="/login" variant="secondary" size="md" font="display">
-            {console.info("Navigation: ", t.navigation)}
               {t?.navigation?.login}
             </Button>
             <Button href="/signup" variant="primary" size="md" font="display">

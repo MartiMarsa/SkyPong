@@ -59,7 +59,6 @@ export default function PlayerUI({ userURL })
             setPlayer(data.user); 
             if (data.user) {
                 setValue('nickname', data.user.nickname || '');
-                console.info("Winphrase data: ", data.user.winPhrase);
                 setValue('winPhrase', data.user.winPhrase || '');
             }
 
