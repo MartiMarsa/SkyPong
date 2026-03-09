@@ -126,23 +126,19 @@ export const GUI_STYLES = {
       verticalAlignment: Control.VERTICAL_ALIGNMENT_CENTER,
     } as ITextStyle,
     GAME_OVER_TITLE: {
-      color: "#FFD700",
+      color: "#FFFBFC90",
       fontSize: 64,
       fontWeight: "bold",
-      outlineWidth: 4,
-      outlineColor: "black",
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
     } as ITextStyle,
     GAME_OVER_WINNER: {
-      color: "#FFFFFF",
+      color: "#FFFBFC90",
       fontSize: 48,
       fontWeight: "bold",
-      outlineWidth: 3,
-      outlineColor: "black",
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
     } as ITextStyle,
     GAME_OVER_SCORE: {
-      color: "#AAAAAA",
+      color: "#FFFBFC90",
       fontSize: 36,
       fontWeight: "bold",
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
@@ -165,12 +161,12 @@ export const GUI_STYLES = {
 
   BUTTON: {
     DEFAULT: {
-      width: "200px",
+      width: "280px",
       height: "60px",
       color: "#FFFFFF",
-      background: "#4CAF50",
+      background: "#9333ea",
       fontSize: 24,
-      cornerRadius: 10,
+      cornerRadius: 30,
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
       thickness: 0,
     } as IButtonStyle,
@@ -281,30 +277,10 @@ export const GUI_STYLES = {
     verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
   },
 
-  // HUD_POSITIONS: {
-  //   PLAYER1_NAME: {
-  //     top: "-100px",
-  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
-  //   },
-  //   PLAYER1_SCORE: {
-  //     top: "-50px",
-  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
-  //   },
-  //   PLAYER2_NAME: {
-  //     top: "60px",
-  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
-  //   },
-  //   PLAYER2_SCORE: {
-  //     top: "110px",
-  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
-  //   },
-  // },
-
   GAME_OVER_POSITIONS: {
     TITLE: { top: "-200px" },
     WINNER: { top: "-80px" },
     SCORE: { top: "20px" },
-    BUTTON: { top: "150px" },
   },
 
   PAUSE_TITLE: {

@@ -42,7 +42,7 @@ export declare const PHYSICS: {
         /** Maximum angle from Z axis (degrees) */
         readonly MAX_ANGLE_DEG: 45;
         /** Base speed magnitude */
-        readonly BASE_SPEED: 0.05;
+        readonly BASE_SPEED: 0.07;
     };
 };
 export declare const INTERPOLATION: {

@@ -391,7 +391,11 @@ export default function PlayPage() {
                   variant="primary"
                   className="w-full"
                   onClick={() => {
-                    const finalConfig = { ...config, playerName: config.playerName || 'Player 1' };
+                    const finalConfig = { 
+                      ...config, 
+                      playerName: config.playerName || 'Player 1',
+                      player2Name: config.gameMode.startsWith('ai-') ? 'AI' : config.player2Name
+                    };
                     if (finalConfig.gameMode === 'online-create') {
                       setConfig(finalConfig);
                       setState(STATES.ONLINE_WAITING);
