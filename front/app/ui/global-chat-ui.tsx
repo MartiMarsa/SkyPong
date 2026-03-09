@@ -100,13 +100,21 @@ export default function GlobalChatUI() {
       if (reconnectRef.current) {
         window.clearTimeout(reconnectRef.current);
       }
-      // Close with proper code for normal closure
       if (socketRef.current) {
-        if (socketRef.current.readyState === WebSocket.OPEN || 
-            socketRef.current.readyState === WebSocket.CONNECTING) {
-          socketRef.current.close(1000, 'Component unmounting');
-        }
+        const socket = socketRef.current;
         socketRef.current = null;
+
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.close(1000, 'Component unmounting');
+        } else if (socket.readyState === WebSocket.CONNECTING) {
+          // Replace handlers with no-ops to prevent state updates and reconnection,
+          // then close cleanly once the handshake completes. This avoids the browser
+          // warning "WebSocket is closed before the connection is established."
+          socket.onopen = () => socket.close(1000, 'Component unmounting');
+          socket.onerror = () => {};
+          socket.onclose = () => {};
+          socket.onmessage = () => {};
+        }
       }
       setMessages([]);
     };

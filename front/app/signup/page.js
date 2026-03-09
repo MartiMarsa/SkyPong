@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signUpSchema } from "../lib/form-validation/auth";
@@ -23,18 +23,6 @@ export default function SignUpPage() {
         resolver: zodResolver(signUpSchema(t)),
         mode: 'onBlur', // Valida cuando el usuario sale del campo
     });
-
-    const redirectHome = async () => {
-        const hasCredentials = await checkAuth();
-        // console.log("User already loggedin: ", user);
-        if (hasCredentials)
-            router.push('/');
-    };
-
-    useEffect(() => {
-        redirectHome();
-    }, []);
-
 
     const onSubmit = async (data) => {
         try {
