@@ -4,6 +4,8 @@ import { Avatar, StatCard } from '../base';
 import { useTranslation } from '../../context/language-context';
 import AddFriendButton from './AddFriendButton'
 import { useAuth } from '../../context/auth-context';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faGamepad, faChartBar, faTrophy, faHeartBroken } from '@fortawesome/free-solid-svg-icons';
 
 interface PlayerStats {
   wins: number;
@@ -69,13 +71,13 @@ export default function PlayerInfo({ profile, csrfToken }: PlayerInfoProps) {
         <StatCard 
           label={t.profile.stats.totalGames}
           value={totalGames.toString()}
-          icon="🎮"
+          icon={<FontAwesomeIcon icon={faGamepad} className="text-primary" />}
           variant="default"
         />
         <StatCard 
           label={t.profile.stats.winRate}
           value={`${winRate}%`}
-          icon="📊"
+          icon={<FontAwesomeIcon icon={faChartBar} className="text-primary" />}
           variant={winRate >= 50 ? "success" : "default"}
           trend={winRate >= 50 ? "up" : winRate > 0 ? "down" : "neutral"}
           trendValue={`${winRate}%`}
@@ -83,13 +85,13 @@ export default function PlayerInfo({ profile, csrfToken }: PlayerInfoProps) {
         <StatCard 
           label={t.player.wins}
           value={wins.toString()}
-          icon="🏆"
+          icon={<FontAwesomeIcon icon={faTrophy} className="text-primary" />}
           variant="success"
         />
         <StatCard 
           label={t.player.losses}
           value={losses.toString()}
-          icon="💔"
+          icon={<FontAwesomeIcon icon={faHeartBroken} className="text-primary" />}
           variant="danger"
         />
       </div>
