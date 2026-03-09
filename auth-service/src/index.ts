@@ -75,7 +75,8 @@ const CSRF_IGNORED_METHODS = new Set([
 const CSRF_EXCLUDED_PATHS = new Set([
     '/auth/signup',
     '/auth/login',
-    '/auth/logout'
+    '/auth/logout',
+    '/auth/refresh'
 ]);
 
 // --- CSRF PROTECTION ---

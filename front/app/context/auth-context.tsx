@@ -1,7 +1,7 @@
 // app/context/AuthContext.tsx
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 const AuthContext = createContext({
@@ -22,69 +22,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signRoutes = ['/login', '/signup'];
   const privateRoutes = ['/updateme', '/me'];
 
+  // Mutex: if checkAuth is already in-flight, reuse the same promise
+  const inflightRef = useRef<Promise<boolean> | null>(null);
+
   const checkAuth = useCallback(async () => {
-  setAuthloading(true);
+    if (inflightRef.current) {
+      return inflightRef.current;
+    }
 
-  try {
-      const getCSRF = () => document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrf_token='))
-        ?.split('=')[1];
+    const run = async (): Promise<boolean> => {
+      setAuthloading(true);
 
-	  let csrfToken = getCSRF();
+      try {
+        const getCSRF = () => document.cookie
+          .split('; ')
+          .find(row => row.startsWith('csrf_token='))
+          ?.split('=')[1];
 
-      if (!csrfToken) {
-        setUser(null);
-        return false;
-      }
+        let csrfToken = getCSRF();
 
-      let res = await fetch('/api/profile/me', {
+        if (!csrfToken) {
+          setUser(null);
+          return false;
+        }
+
+        let res = await fetch('/api/profile/me', {
           credentials: 'include',
           headers: { 'x-csrf-token': csrfToken || '' },
         });
 
-	  if (res.status === 401) {
+        if (res.status === 401) {
+          console.log("Access expired → trying refresh");
 
-		  console.log("Access expired → trying refresh");
+          const refresh = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'x-csrf-token': csrfToken || '' },
+          });
 
-		  const refresh = await fetch('/api/auth/refresh', {
-					method: 'POST',
-					credentials: 'include',
-					headers: { 'x-csrf-token': csrfToken || '' },
-			  		});
+          if (!refresh.ok) {
+            setUser(null);
+            return false;
+          }
 
-		  if (!refresh.ok) {
-			  setUser(null);
-			  return false;
-		  }
+          csrfToken = getCSRF();
+          await new Promise(r => setTimeout(r, 100));
 
-		  csrfToken = getCSRF();
+          res = await fetch('/api/profile/me', {
+            credentials: 'include',
+            headers: { 'x-csrf-token': csrfToken }
+          });
+        }
 
-		  await new Promise(r => setTimeout(r, 100));
+        if (res.status === 401 || !res.ok) {
+          setUser(null);
+          return false;
+        }
 
-		  // Repeat fetch to /me
-		  res = await fetch('/api/profile/me', {
-					credentials: 'include',
-					headers: { 'x-csrf-token': csrfToken }
-			  		});
-  	  }
+        const userData = await res.json();
+        setUser(userData);
+        setHasCredentials(true);
+        return true;
+      } catch {
+        setUser(null);
+        setHasCredentials(false);
+        return false;
+      } finally {
+        setAuthloading(false);
+      }
+    };
 
-	  if (res.status === 401 || !res.ok) { 
-		  setUser(null); 
-		  return false; 
-	  }    
-
-      const userData = await res.json();
-      setUser(userData);
-      setHasCredentials(true);
-      return true;
-    } catch {
-      setUser(null);
-      setHasCredentials(false);
-      return false;
+    inflightRef.current = run();
+    try {
+      return await inflightRef.current;
     } finally {
-      setAuthloading(false);
-//      router.refresh();
+      inflightRef.current = null;
     }
   }, []);
 
