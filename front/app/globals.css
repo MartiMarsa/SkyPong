@@ -221,13 +221,8 @@
 
 /* Page content wrapper with navigation - prevents overlap on mobile */
 .page-wrapper-with-nav {
-  padding-top: 5rem;           /* Mobile: 80px - accounts for nav height + spacing */
-  padding-bottom: 2rem;        /* Mobile: 32px */
-  
-  @media (min-width: 768px) {
-    padding-top: 2rem;         /* Desktop: 32px - nav doesn't hide on desktop */
-    padding-bottom: 2rem;
-  }
+  padding-top: 7rem;           /* 112px - clears navbar (max 88px) with comfortable buffer (24px) */
+  padding-bottom: 2rem;        /* 32px */
 }
 
 /* Footer Terms & Policy - Centralized vertical layout with responsive sizing */
@@ -850,38 +845,21 @@
   padding: 0.875rem 1rem;
   border: 1.5px solid transparent;      /* transparent border by default */
   border-radius: 0.75rem;
-  outline: 0px solid rgba(147, 51, 234, 0.32) ;
-  transition: all 0.2s ease-in-out;
-  background-color: #faf9fa;
+  background-color: #ffffff;            /* white background */
+  transition: all 0.2s ease;
 }
 
 .game-row:hover {
-  border-color: rgba(147, 51, 234, 0.52);                /* primary color on hover only */
+  border-color: #9333ea;                /* primary color on hover only */
+  box-shadow: 0 2px 8px rgba(147, 51, 234, 0.12);  /* single subtle shadow */
 }
-
-.game-row:hover .game-player-info {
-    box-shadow: 0px 0px 5px 1px #5b0d597a;
-}
-
 
 @media (min-width: 768px) {
     .game-row {
         flex-direction: row;
         align-items: center;
-        gap: 0.75rem;                       /* reduced gap to prevent overflow */
-    }
-    .game-row:hover {
-        border-color: rgba(147, 51, 234, 0.52);                /* primary color on hover only */
-        box-shadow: 0 0px 15px 2px  rgba(147, 51, 234, 0.12),
-        0 0px 10px 2px  rgba(94, 51, 234, 0.12);
-        outline: 4px solid rgba(147, 51, 234, 0.32) ;
-        background-image: linear-gradient(to right, rgba(128, 0, 128, 0.064), rgba(0, 0, 255, 0.042));
-        }
-}
-
-@media (min-width: 1024px) {
-    .game-row {
-        gap: 0rem;                       /* larger gap on wider screens */
+        justify-content: space-between;     /* distribute items evenly */
+        gap: 1rem;
     }
 }
 
@@ -898,7 +876,6 @@
     align-items: center;
     justify-content: center;              /* center player names */
     gap: 1.5rem;
-    flex: 1;
     font-size: 0.875rem;                  /* 14px base */
     font-family: var(--font-body);        /* Funnel Sans for body text */
     flex-wrap: wrap;
@@ -910,14 +887,11 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: #eee9f2;
-    border-radius: 35px;
+    background-color: #faf5ff;            /* purple-50 */
+    border-radius: 0.75rem;
     padding: 10px;
     min-width: 10rem;
-    border: 1px solid #e5ddeb;
-    outline: 1px solid #eee9f2;
-    -webkit-backdrop-filter: blur(25px);
-    backdrop-filter: blur(25px);
+    border: 1px solid rgba(147, 51, 234, 0.15);  /* subtle purple border */
 }
 
 @media (min-width: 768px) {
@@ -1298,71 +1272,6 @@
 }
 
 /* ============================================================================
-   CHAT
+   CHAT - Now using design system components (Button, TextField, Card, Badge)
    ============================================================================ */
-
-   .chat-button
-   {
-        background-image: radial-gradient(#ad53ff, #9333ea);
-        color: #eee9f2;
-        box-shadow: 0px 0px 4px 4px #ad53ff;
-        outline: 3px solid #9333ea; 
-        transition: all 0.3s ease-in-out;
-   }
-
-   .chat-button:hover
-   {
-        box-shadow: 0px 0px 4px 8px #af5afe;
-   }
-
-   .chat-window
-   {
-        background-image: radial-gradient(#ad53ff8c, #d9b1fc);
-        backdrop-filter: blur(25px);
-         -webkit-backdrop-filter: blur(25px);
-         color: #7e22ce;
-   }
-
-   .chat-box 
-   {
-        background-image: linear-gradient(45deg, #9333eaa6, #8e24ee80);
-        border: 1px solid #9333ea;
-        color: #f1ebf6;
-   }
-   .chat-box > div
-   {
-        border-bottom: 1px solid #f1ebf6 ;
-   }
-
-   .chat-minimize 
-   {
-        background-image: radial-gradient(#7e22ce, #7e22ce);
-        color: wheat;
-        padding: 0.2rem;
-        aspect-ratio: 1 / 1;
-        width: 2rem;
-        font-weight: 900;
-   }
-
-   .chat-input
-   {
-        background-image: linear-gradient(60deg, #9233ea98, #9233eabb);
-        color: aliceblue;
-   }
-
-   .chat-input::placeholder
-   {
-        color: #ba8ee1b3;
-   }
-
-   .chat-input:focus
-   {
-        border:1px solid #7e22ce;
-        outline: 3px solid #921ef7;
-   }
-
-   .chat-sendbtn
-   {
-        color: #ede6f4;
-        background-image: radial-gradient(#9333ea, #7e22ce);
-   }
+   /* Custom chat styles removed - using base components from /ui/base/ */
