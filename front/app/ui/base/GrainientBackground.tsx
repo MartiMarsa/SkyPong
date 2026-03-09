@@ -201,7 +201,12 @@ export function GrainientBackground({
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-    setCanvasSize();
+    
+    // Defer initial canvas sizing to avoid forcing layout during page load
+    requestAnimationFrame(() => {
+      setCanvasSize();
+    });
+    
     window.addEventListener('resize', setCanvasSize);
     
     // Get colors from CSS variables or use props
