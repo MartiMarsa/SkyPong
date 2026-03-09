@@ -1,6 +1,5 @@
 "use client";
 
-import { useStyles } from "./hooks/use-styles";
 import { Button } from "./ui/base/Button";
 import { useTranslation } from "./hooks/use-translation";
 import FooterTermsPolicy from "./ui/footer-terms-policy";
@@ -8,20 +7,11 @@ import HeroUI from "./ui/hero-ui";
 import NavigationAppUI from "./ui/navigation-app-ui";
 import NavigationLanguageUI from "./ui/navigation-language-ui";
 
-const mobileStyles = {
-  main: "h-dvh bg-page-bg text-slate-900",
-};
-
-const desktopStyles = {
-  main: "h-dvh overflow-hidden bg-page-bg px-6 text-slate-900 lg:px-10",
-};
-
 export default function HomePage() {
   const { t } = useTranslation();
-  const { styles } = useStyles(mobileStyles, desktopStyles);
 
   return (
-    <main className={`${styles.main} flex flex-col`}>
+    <main className={`h-dvh bg-page-bg text-slate-900 lg:px-10 flex flex-col`}>
       <NavigationAppUI />
       <div className="flex flex-1 items-center justify-center">
         <div className="page-content-container">

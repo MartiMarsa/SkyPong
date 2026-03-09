@@ -10,6 +10,7 @@ import { useAuth } from '../context/auth-context';
 import Link from 'next/link';
 import { TextField, Button } from '../ui/base';
 import FooterTermsPolicy from '../ui/footer-terms-policy';
+import Loader from '../ui/loader/loader-ui';
 
 export default function SignUpPage() {
     const router = useRouter();
@@ -57,7 +58,6 @@ export default function SignUpPage() {
                 setServerError(`Error del servidor. La ruta ${apiURL} no existe o está mal configurada.`);
                 return;
             }
-            console.log("Response ",  response );
             if (!response.ok) {
                     if (response.status === 400) {
                         const result = await response.json();
@@ -75,12 +75,8 @@ export default function SignUpPage() {
 
             const result = await response.json();
             const hasCredentials = await checkAuth();
-            console.log("Check: ", hasCredentials);
             if (hasCredentials)
-            {
-                console.log('Signup successful:', result);
                 router.push('/updateme');
-            }
             else
                 setServerError("Error validating credentials");
         } catch (error) {
@@ -92,7 +88,7 @@ export default function SignUpPage() {
 
     return (
         <>
-        { isLoading ? (<div className=''>Loading...</div>) : (
+        { isLoading ? (<Loader classes='' message={t?.loading?.loading || 'Loading...'}/>) : (
             <main className="h-dvh bg-page-bg flex flex-col">
                 <div className="back-button-position">
                     <Link href="/" className="skypong-logo">
