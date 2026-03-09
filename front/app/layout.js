@@ -7,6 +7,7 @@ import { LanguageProvider } from "./context/language-context";
 import { AuthProvider } from "./context/auth-context";
 import { getCurrentLocale } from "./lib/i18n/locale-manager";
 import GlobalChatUI from "./ui/global-chat-ui";
+import GrainientBackground from "./ui/GrainientBackground";
 
 const spaceGrotesk = Space_Grotesk({ weight: ["400", "700"], subsets: ["latin"], variable: "--font-space-grotesk" });
 const funnelSans = Funnel_Sans({
@@ -34,6 +35,7 @@ export default function RootLayout({ children }) {
       <LanguageProvider>
         <html lang={getCurrentLocale()}>
           <body className={`${funnelSans.variable} ${spaceGrotesk.variable} font-sans`}>
+            <GrainientBackground />
             {children}
             <GlobalChatUI />
           </body>
