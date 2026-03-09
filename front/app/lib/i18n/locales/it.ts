@@ -3,7 +3,7 @@ const it = {
         title: "SkyPong",
         welcome: "Benvenuto nel cielo del Pong",
         description: "Un'esperienza celestiale di Pong",
-        lable: "Vai alla Home",
+        label: "Vai alla Home",
     },
     user: {
         hi: ({name, className, url}) =>(`Ciao, <a href="${url}" class="${className}"> ${name}</a>!`),
@@ -45,9 +45,10 @@ const it = {
         back: "Indietro",
     },
     serverError: {
-        conectionError: "Server conection error",
-        notFound: "Ruta no encontrada",
-        unknownError: "Unknown Server Error",
+        connectionError: "Errore di connessione al server",
+        notFound: "Pagina non trovata",
+        unknownError: "Errore sconosciuto del server",
+        apiRouteError: (route: string) => `Errore del server. Il percorso ${route} non esiste o è mal configurato.`,
     },
     gameMode: {
         title: "Modalità di gioco",
@@ -69,11 +70,11 @@ const it = {
     language: {
         selectLanguage: "Seleziona lingua",
         english: "Inglese",
-        locen: "en",
+        en: "en",
         spanish: "Spagnolo",
-        loces: "es",
+        es: "es",
         italian: "Italiano",
-        locit: "it",
+        it: "it",
     },
     footer: {
         terms: "Termini di servizio",
@@ -85,6 +86,14 @@ const it = {
         resume: "Riprendi",
         quit: "Esci",
         playButton: "Gioca",
+        player: (num : number) => {return (`Giocatore ${num}`)},
+        roomNameField: 'Nome Stanza',
+        errors: {
+            difficultyRequired: 'La modalità AI richiede la configurazione della difficoltà.',
+            difficultyOnlyAIMode: 'Solo la modalità AI può includere la difficoltà.',
+            onlineRoleOnlyForOnlineMode: 'Solo la modalità ONLINE può includere onlineRole.',
+            invalidConfiguration: 'Configurazione di gioco non valida.'
+        }
     },
     play: {
         chooseGameMode: "Scegli la modalità di gioco",
@@ -122,6 +131,9 @@ const it = {
         error: "Errore:",
         failedLoadRooms: "Impossibile caricare le stanze. Riprova.",
         room: "'s stanza",
+        noRoomAvailable: "Nessuna stanza disponibile",
+        joinRoomBtn: 'Unisciti alla stanza',
+        roomListTitle: 'Elenco Stanze',
     },
     legal: {
         terms: "Termini di servizio",
@@ -164,10 +176,7 @@ const it = {
         privacyPage: {
             title: "Privacy (O quel che ne resta)",
             content: `<p>In questo progetto prendiamo la tua privacy sul serio quanto prendiamo i <em>memory leak</em> nel progetto <code>cub3d</code>: ci spaventano, ma a volte li ignoriamo finché qualcuno non ci valuta.</p>
-    navigation: {
 
-        logout: "Logout",
-    },
 <hr>
 
 <h2>1. Quali dati raccogliamo?</h2>
@@ -225,10 +234,10 @@ const it = {
     signInPage: {
         title: "Accedi",
         noAccountText: "Non hai un account?",
-        
         submitButton: "Accedi",
         passwordForgottenLinkText: "Password dimenticata?",
-        loading: "Caricando...",
+        loading: "Caricamento...",
+        refresh: "Aggiorna",
     },
     signUpPage: {
         title: "Registrati",
@@ -252,15 +261,15 @@ const it = {
         settings: "Impostazioni",
         logout: "Disconnetti",
         goBack: "Indietro",
-        login: "Entrar",
-        signUp: "Registrarse",
+        login: "Accedi",
+        signUp: "Registrati",
         play: "Gioca",
     },
     player: {
         wins: "Vittorie",
         losses: "Sconfitte",
         winRate: "Percentuale di vittorie",
-        playerData: "Dati del giocatore",
+        userData: "Dati del giocatore",
         nofriends: "Questo giocatore non ha ancora amici",
         younofriends: "Non hai ancora amici",
         friend: "Amico",
@@ -352,9 +361,8 @@ const it = {
         submitting: "Invio...",
         cancel: "Annulla",
         loading: "Caricamento...",
-        passwordUpdateLoginAgain: "Contraseña actualizada. Entra de nuevo por motivos de seguridad.",
-        submit: "Enviar",
-
+        passwordUpdateLoginAgain: "Password aggiornata. Accedi nuovamente per motivi di sicurezza.",
+        submit: "Invia",
     },
     leaderboard: {
         title: "Classifica",
@@ -384,14 +392,14 @@ const it = {
         },
         playGamesAchievements: {
             title: "Obiettivi di Partite Vinte",
-            firsgame: "Novizio",
-            firsgameDesc: "Vinci la tua prima partita.",
+            firstgame: "Novizio",
+            firstgameDesc: "Vinci la tua prima partita.",
             play5Games: "Principiante",
             play5GamesDesc: "Gioca 5 partite.",
             play50Games: "Intermedio",
             play50GamesDesc: "Gioca 50 partite.",
             play500Games: "Esperto",
-            play500GamesDesc: "Gioga 500 partite.",
+            play500GamesDesc: "Gioca 500 partite.",
         },
     },
     profile: {
@@ -420,7 +428,7 @@ const it = {
         },
         leaderboard: {
             title: "Classifica",
-            rank: "Rango",
+            rank: "Posizione",
             player: "Giocatore",
             totalGames: "Partite totali:",
             noPlayers: "Nessun giocatore ancora.",

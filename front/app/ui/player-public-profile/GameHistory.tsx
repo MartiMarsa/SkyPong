@@ -7,6 +7,7 @@ import Loader from '../loader/loader-ui';
 import Link from "next/link";
 import { isMe, isAI } from '../../lib/players/whois';
 import { useAuth } from '../../context/auth-context';
+import api from '../../api/api';
 
 interface PlayerGamesHistoryData {
   id: string;
@@ -43,11 +44,7 @@ function useGameHistory(userId: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/profile/game-history/${userId}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to fetch game history');
-        return res.json();
-      })
+    api(`/api/profile/game-history/${userId}`)
       .then(setGames)
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));

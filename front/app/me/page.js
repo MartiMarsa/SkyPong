@@ -14,6 +14,7 @@ import FooterTermsPolicy from '../ui/footer-terms-policy';
 import { Tabs } from '../ui/base';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faScroll, faUsers, faTrophy, faChartBar } from '@fortawesome/free-solid-svg-icons';
+import api from '../api/api';
 
 export default function ProfilePageMe() {
     const { t } = useTranslation();
@@ -63,12 +64,10 @@ export default function ProfilePageMe() {
     const [friendsCount, setFriendsCount] = useState(0);
     useEffect(() => {
         if (!profile?.id) return;
-        const csrf = getCookie('csrftoken');
-        fetch('/api/profile/friends', {
+        const csrf = getCookie('csrf_token');
+        api('/api/profile/friends', {
             headers: { 'x-csrf-token': csrf || '' },
-            credentials: 'include',
         })
-            .then(res => res.json())
             .then(data => setFriendsCount(Array.isArray(data) ? data.length : 0))
             .catch(() => setFriendsCount(0));
     }, [profile?.id]);
@@ -122,7 +121,7 @@ export default function ProfilePageMe() {
                                     {activeTab === 'friends' && (
                                         <FriendsSection
                                             currentUserId={profile.id}
-                                            csrfToken={getCookie('csrftoken') || ''}
+                                            csrfToken={getCookie('csrf_token') || ''}
                                             onNavigateProfile={(id) => router.push(`/${id}`)}
                                         />
                                     )}

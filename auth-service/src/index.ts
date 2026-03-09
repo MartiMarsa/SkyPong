@@ -25,6 +25,7 @@ fastify.register(require('@fastify/cors'), {
   credentials: true
 });
 
+
 const PROFILE_SERVICE_URL = process.env.PROFILE_SERVICE_URL!;
 
 if (!process.env.PROFILE_SERVICE_URL) {
@@ -74,7 +75,8 @@ const CSRF_IGNORED_METHODS = new Set([
 const CSRF_EXCLUDED_PATHS = new Set([
     '/auth/signup',
     '/auth/login',
-    '/auth/logout'
+    '/auth/logout',
+    '/auth/refresh'
 ]);
 
 // --- CSRF PROTECTION ---
@@ -102,7 +104,6 @@ export async function authentificate(req: any, reply: any): Promise<any | null> 
     const refreshToken = req.cookies?.refresh_token;
     const csrfToken = req.cookies?.csrf_token;
 
-    // Do checking of access_token
     if (accessToken) {
         try {
             const payload: any = jwt.verify(accessToken, publicKey, {
@@ -130,61 +131,12 @@ export async function authentificate(req: any, reply: any): Promise<any | null> 
 
         } catch (err) {
             console.log("[auth] Access token expired or invalid");
-        }
-    }
-
-    // --- Do checking refresh_token if access_token not valid
-    if (!refreshToken) {
-		console.log("[auth] No refresh token");
-		return null;
-	}
-
-	console.log("[auth] Refresh token: ", refreshToken);
-
-    try {
-        const refreshPayload: any = await verifyRefreshToken(refreshToken);
-
-		if (!refreshPayload) {
-            console.log("[auth] Refresh token invalid or expired");
-            return null;
-        }
-
-		if (await isTokenRevoked(refreshPayload.tokenId)) {
-			console.log("[auth] Refresh token is revoked");
 			return null;
-		}
-
-        const user = await new Promise<any>((res, rej) => {
-            db.get(
-                `SELECT id, email, password_version, twofa_enabled, token_version, deleted_at 
-                 FROM users WHERE id = ?`,
-                [refreshPayload.userId],
-                (err, row) => (err ? rej(err) : res(row))
-            );
-        });
-
-        if (!user || user.deleted_at) return null;
-
-		console.log("[auth] Refresh token is valid. Issue of new access token." );
-
-        const newAccess = await generateToken({
-            id: user.id,
-            password_version: user.password_version,
-            token_version: user.token_version,
-        });
-
-        reply.setCookie('access_token', newAccess, { ...cookieOpts, maxAge: 3600 });
-
-        if (!csrfToken) {
-            const newCsrf = randomUUID();
-            reply.setCookie('csrf_token', newCsrf, csrfOpts);
         }
-
-        return user;
-    } catch (err) {
-        console.log('Refresh token invalid:');
-        return null;
-    }
+    } else { 
+		console.log("[auth] Access token expired or invalid");
+		return null; 
+	}
 }
 
 async function requireAuth(req: any, reply: any) {
@@ -230,7 +182,7 @@ fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply)
 //        req.log.info({ user: req.user }, 'Resultado de usuario en verify');
         
         return reply.status(200).send({ id: user.id, email: user.email, username: profile?.nickname ?? 'Unknown', twofa_enabled: user.twofa_enabled });
-    });
+});
 
 // --- AUTH INTERNAL MIDDLEWARE ---
 async function requireServiceAuth(req: any, reply: any) {
@@ -382,6 +334,68 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
     }
 });
 
+// --- REFRESH TOKEN CHECK ---
+fastify.post('/auth/refresh', async (req: any, reply) => {
+  const refreshToken = req.cookies?.refresh_token;
+  let csrfToken = req.cookies?.csrf_token;
+
+  if (!refreshToken) {
+    console.log('[auth] No refresh token');
+    return reply.status(401).send({ error: 'No refresh token' });
+  }
+
+  try {
+    const refreshPayload: any = await verifyRefreshToken(refreshToken);
+
+    if (!refreshPayload) {
+      return reply.status(401).send({ error: 'Invalid refresh token' });
+    }
+
+    if (await isTokenRevoked(refreshPayload.tokenId)) {
+      return reply.status(401).send({ error: 'Revoked refresh token' });
+    }
+
+    const db = getDB();
+
+   const user = await new Promise<any>((res, rej) => {
+      db.get(
+        `SELECT id, email, password_version, twofa_enabled, token_version, deleted_at 
+         FROM users WHERE id = ?`,
+        [refreshPayload.userId],
+        (err, row) => (err ? rej(err) : res(row))
+      );
+    });
+
+    if (!user || user.deleted_at) {
+      return reply.status(401).send({ error: 'User invalid' });
+    }
+
+    const newAccess = await generateToken({
+      id: user.id,
+      password_version: user.password_version,
+      token_version: user.token_version,
+    });
+
+    if (!csrfToken) {
+      csrfToken = randomUUID();
+    }
+
+    reply
+      .setCookie('access_token', newAccess, { ...cookieOpts, maxAge: 3600 })
+      .setCookie('csrf_token', csrfToken, csrfOpts);
+
+    return reply.status(200).send({
+      id: user.id,
+      email: user.email,
+      twofa_enabled: user.twofa_enabled
+    });
+
+  } catch (err) {
+    console.error('[auth] Refresh error:', err);
+    return reply.status(401).send({ error: 'Invalid credentials' });
+  }
+});
+
 // --- CHANGE USER PASSWORD ---
 fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, reply) => {
 
@@ -445,23 +459,20 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
 
 			console.error("Password changed...");
 
-			return reply.status(204).send();
+			return reply
+			.clearCookie('access_token', cookieOpts)
+			.clearCookie('refresh_token', cookieOpts)
+			.clearCookie('csrf_token', csrfOpts)
+			.status(204).send();
 });
 
 // --- LOGOUT --- 
-fastify.post('/auth/logout', { preHandler: requireAuth }, async (req: any, reply) => {
+fastify.post('/auth/logout', async (req: any, reply) => {
 
 	const controller = new AbortController();
 	setTimeout(() => controller.abort(), 5000);
 
 	const user = req.user;
-
-    const cookieOptions = {
-        path: '/',
-        secure: true, 
-        sameSite: 'none' as const,
-        httpOnly: true
-    };
 
     try {
         const refreshToken = req.cookies?.refresh_token;
@@ -478,9 +489,9 @@ fastify.post('/auth/logout', { preHandler: requireAuth }, async (req: any, reply
     }
 
     return reply
-        .clearCookie('access_token', cookieOptions)
-        .clearCookie('refresh_token', cookieOptions)
-        .clearCookie('csrf_token', { ...cookieOptions, httpOnly: false })
+        .clearCookie('access_token', cookieOpts)
+        .clearCookie('refresh_token', cookieOpts)
+        .clearCookie('csrf_token', csrfOpts)
         .status(200)
         .send({ status: 'logged_out' });
 });
@@ -538,10 +549,10 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
 		const res = await fetch(`${PROFILE_SERVICE_URL}/internal/profile/logout/${userId}`, { headers: { Authorization: `Bearer ${SERVICE_TOKEN}`, }, signal: controller.signal, });
 		// 4. Clear cookies
 	    	reply
-	  	.clearCookie('access_token', { path: '/' })
-	  	.clearCookie('refresh_token', { path: '/' })
-	  	.clearCookie('csrf_token', { path: '/' })
-	  	.send({ status: 'account_deleted' });
+			.clearCookie('access_token', cookieOpts)
+			.clearCookie('refresh_token', cookieOpts)
+			.clearCookie('csrf_token', csrfOpts)
+			.send({ status: 'account_deleted' });
 
       	} catch (err) {
 	    	req.log.error(err);

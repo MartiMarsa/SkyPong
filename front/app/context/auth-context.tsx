@@ -1,7 +1,7 @@
 // app/context/AuthContext.tsx
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 const AuthContext = createContext({
@@ -22,41 +22,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signRoutes = ['/login', '/signup'];
   const privateRoutes = ['/updateme', '/me'];
 
+  // Mutex: if checkAuth is already in-flight, reuse the same promise
+  const inflightRef = useRef<Promise<boolean> | null>(null);
+
   const checkAuth = useCallback(async () => {
-  setAuthloading(true);
+    if (inflightRef.current) {
+      return inflightRef.current;
+    }
 
-  try {
-      const csrfToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrf_token='))
-        ?.split('=')[1];
+    const run = async (): Promise<boolean> => {
+      setAuthloading(true);
 
-      if (!csrfToken) {
-        setUser(null);
-        return false;
-      }
+      try {
+        const getCSRF = () => document.cookie
+          .split('; ')
+          .find(row => row.startsWith('csrf_token='))
+          ?.split('=')[1];
 
-      const res = await fetch('/api/profile/me', {
+        let csrfToken = getCSRF();
+
+        if (!csrfToken) {
+          setUser(null);
+          return false;
+        }
+
+		const refresh = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include', headers: { 'x-csrf-token': csrfToken || '' } }); if (refresh.ok) { csrfToken = getCSRF(); }
+
+        const res = await fetch('/api/profile/me', {
           credentials: 'include',
           headers: { 'x-csrf-token': csrfToken || '' },
         });
-        
-      if (res.status === 401 || !res.ok) {
-        setUser(null);
-        return false;
-      }
 
-      const userData = await res.json();
-      setUser(userData);
-      setHasCredentials(true);
-      return true;
-    } catch {
-      setUser(null);
-      setHasCredentials(false);
-      return false;
+        if (res.status === 401 || !res.ok) {
+          setUser(null);
+          return false;
+        }
+
+        const userData = await res.json();
+        setUser(userData);
+        setHasCredentials(true);
+        return true;
+      } catch {
+        setUser(null);
+        setHasCredentials(false);
+        return false;
+      } finally {
+        setAuthloading(false);
+      }
+    };
+
+    inflightRef.current = run();
+    try {
+      return await inflightRef.current;
     } finally {
-      setAuthloading(false);
-      router.refresh();
+      inflightRef.current = null;
     }
   }, []);
 
@@ -77,20 +96,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-		const csrfToken = document.cookie
+/*		const csrfToken = document.cookie
         .split('; ')
         .find(row => row.startsWith('csrf_token='))
-        ?.split('=')[1];
+        ?.split('=')[1];*/
+
+		const getCSRF = () => document.cookie
+          .split('; ')
+          .find(row => row.startsWith('csrf_token='))
+          ?.split('=')[1];
+
+		let csrfToken = getCSRF();
+
 
       // 1. Obtener el CSRF token de las cookies (document.cookie)
       // Tu backend Fastify lo guarda en una cookie no httpOnly llamada 'csrf_token'
-    
+
       await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'x-csrf-token': csrfToken || '', // Requerido por tu middleware preHandler
-        },
         // body: JSON.stringify({ user: { id: user.id }}),
       });
     } catch (err) {

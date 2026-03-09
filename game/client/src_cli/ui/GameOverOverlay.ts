@@ -69,7 +69,7 @@ export class GameOverOverlay {
                 this._texts.playAgain,
                 retryButtonStyle,
                 () => {
-                    console.log('[GameOverOverlay] Retry button clicked');
+                    // console.log('[GameOverOverlay] Retry button clicked');
                     if (this._onRetry) {
                         this._onRetry();
                     }
@@ -88,7 +88,7 @@ export class GameOverOverlay {
             this._texts.backToMenu,
             buttonStyle,
             () => {
-                console.log('[GameOverOverlay] Back button clicked');
+                // console.log('[GameOverOverlay] Back button clicked');
                 this._onBackClick();
             }
         );

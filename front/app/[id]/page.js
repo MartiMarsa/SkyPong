@@ -15,6 +15,7 @@ import { Tabs } from '../ui/base';
 import { useParams } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faScroll, faUsers, faTrophy, faChartBar } from '@fortawesome/free-solid-svg-icons';
+import api from '../api/api';
 
 export default function ProfilePagePublic() {
     const { id } = useParams();
@@ -79,11 +80,9 @@ export default function ProfilePagePublic() {
     const [friendsCount, setFriendsCount] = useState(0);
     useEffect(() => {
         if (!profile?.id || !csrfToken) return;
-        fetch('/api/profile/friends', {
+        api('/api/profile/friends', {
             headers: { 'x-csrf-token': csrfToken },
-            credentials: 'include',
         })
-            .then(res => res.json())
             .then(data => setFriendsCount(Array.isArray(data) ? data.length : 0))
             .catch(() => setFriendsCount(0));
     }, [profile?.id, csrfToken]);
