@@ -254,23 +254,6 @@ export class Game {
     this._winningScore = undefined;
   }
 
-  private _signalGameReady(isPvP: boolean, isOnline: boolean, gameStarted: boolean): void {
-    if (isOnline) {
-      this._roomManager?.signalClientReady();
-    }
-
-    const isWaitingForOpponent = isPvP && !gameStarted;
-    const launchCallback = () => this._countdownManager?.start();
-
-    if (this._onGameReady) {
-      const cb = this._onGameReady;
-      this._onGameReady = null;
-      cb(launchCallback, isWaitingForOpponent);
-    } else {
-      launchCallback();
-    }
-  }
-
   private _createRoomManagerCallbacks(
     clientEngine: ClientEngine,
     table: any,
