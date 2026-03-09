@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { useRouter } from 'next/navigation';
 import { playerDataSchema } from '../../lib/form-validation/player-data';
 import { TextField, Button } from '../base';
+import Toast from '../messaging/toast';
 
 export default function PlayerUI({ userURL })
 {
@@ -38,7 +39,6 @@ export default function PlayerUI({ userURL })
         if (player)
             return;
         try {
-            console.log("Solicitando perfil para ID:", user?.id);
             
             const response = await fetch(`/api/profile/${user?.id}`, {
                 method: 'GET',
@@ -54,13 +54,11 @@ export default function PlayerUI({ userURL })
             }
 
             const data = await response.json();
-            console.log("Datos recibidos:", data);
             
             // Seteamos el player con los datos de la API
             setPlayer(data.user); 
             if (data.user) {
                 setValue('nickname', data.user.nickname || '');
-                console.info("Winphrase data: ", data.user.winPhrase);
                 setValue('winPhrase', data.user.winPhrase || '');
             }
 
@@ -78,7 +76,6 @@ export default function PlayerUI({ userURL })
     fetchMyProfile();
 }, [authloading, user, router]); 
 
-    // ✅ Handler para actualizar datos
     const onSubmit = async (data) => {
         try {
             const csrfToken = document.cookie
@@ -87,7 +84,6 @@ export default function PlayerUI({ userURL })
                 ?.split('=')[1];
                 setIsLoading(true);
                 setServerError('');
-            console.log("Submitting updated profile data info...")
             const response = await fetch(`/api/profile/updateme`, {
                 method: 'PATCH',
                 credentials: 'include',
@@ -105,11 +101,9 @@ export default function PlayerUI({ userURL })
             }
 
             const result = await response.json();
-            console.log('Perfil actualizado:', result);
             
             // Actualiza el player local
             setPlayer(result.user);
-            console.info("Updated player: ", player);
             
         } catch (error) {
             console.error('Error actualizando perfil:', error);
@@ -148,7 +142,7 @@ export default function PlayerUI({ userURL })
             <img src={`/api/profile/avatars/${user?.id}.webp`} />
             ) :
             (
-                <form id="playerDataForm" onSubmit={handleSubmit(onSubmit, (errors) => console.log("Validation errors:", errors))} className="form-wrapper">
+                <form id="playerDataForm" onSubmit={handleSubmit(onSubmit)} className="form-wrapper">
                     <h2 className="form-title">{t.user.userData}</h2>
                      {/* Nickname Field */}
                     <TextField

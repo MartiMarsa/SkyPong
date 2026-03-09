@@ -41,10 +41,10 @@ export default function ProfilePageMe() {
     const games = (stats) => { return stats.wins + stats.losses}
     const achievementCount = profile?.stats ? (() => {
         const stats = profile.stats;
-        console.info("Player stats:", profile.stats);
+        // console.info("Player stats:", profile.stats);
         let count = 1;
         const totalGames = games(stats);
-        console.info("Player Total Games: ", totalGames);
+        // console.info("Player Total Games: ", totalGames);
         if (totalGames >= 1) count++;
         if (totalGames >= 10) count++;
         if (totalGames >= 50) count++;
@@ -53,7 +53,7 @@ export default function ProfilePageMe() {
         if (stats.wins >= 10) count++;
         if (stats.wins >= 50) count++;
         if (stats.total_games > 0 && (stats.wins / stats.total_games) >= 0.7) count++;
-        console.log("Total achievements: ". count);
+        // console.log("Total achievements: ". count);
         return count;
     })() : 0;
 

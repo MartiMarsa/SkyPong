@@ -8,7 +8,6 @@ export function isMe(playerId: string, userId: string): boolean {
 
 export function isAI(playerId: string)
 {
-    console.info("IsAI: ", playerId);
     if(playerId === 'ai-easy' || playerId === 'ai-medium' || playerId === 'ai-hard')
         return (true);
     return (false);

@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/auth-context';
 import { TextField, Button } from '../ui/base';
 import FooterTermsPolicy from '../ui/footer-terms-policy';
+import Loader from '../ui/loader/loader-ui';
 
 export default function SignInPage() {
     const router = useRouter();
@@ -25,7 +26,7 @@ export default function SignInPage() {
     
     const redirectHome = async () => {
         const hasCredentials = await checkAuth();
-        console.log("User already loggedin: ", user);
+        // console.log("User already loggedin: ", user);
         if (hasCredentials)
             router.push('/');
     };
@@ -37,11 +38,10 @@ export default function SignInPage() {
     const onSubmit = async (data) => {
         try {
             setIsLoading(true);
-            setServerError(''); // Limpia errores anteriores
+            setServerError(''); 
             
-            console.log("Datos validados:", data);
             // Call API here
-            const apiURL = '/api/auth/login'; // Asegúrate de que esta ruta sea correcta
+            const apiURL = '/api/auth/login'; 
             const response = await fetch(apiURL, {
                 method: 'POST',
                 headers: {
@@ -61,13 +61,8 @@ export default function SignInPage() {
             
             
             const result = await response.json();
-            console.log("📦 Response status:", response.status);
-            console.log("📦 Response completa:", result);
-            console.log("📦 result.user:", result.user);
-            console.log("📦 Estructura:", JSON.stringify(result, null, 2));
             
             if (!response.ok) {
-                // ✅ Maneja diferentes tipos de errores
                 if (response.status === 404) {
                     setServerError(t.form.userNotRegistered);
                 } else if (response.status === 401) {
@@ -81,9 +76,9 @@ export default function SignInPage() {
                 return;
             }
             
-            console.log("Login exitoso:", result);
+            // console.log("Login exitoso:", result);
             const hasCredentials = await checkAuth();
-            console.log("Has Credentials: ", hasCredentials);
+            // console.log("Has Credentials: ", hasCredentials);
             if (hasCredentials)
                 router.push('/')
             else
@@ -98,7 +93,7 @@ export default function SignInPage() {
 
     return (
         <>
-        { isLoading ? (<div className=''>Loading...</div>) : 
+        { isLoading ? (<Loader classes='' message={t?.loading?.loading || "Loading..."}/>) : 
         (
         <main className="h-dvh bg-page-bg flex flex-col">
             <div className="back-button-position">
