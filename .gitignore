@@ -42,6 +42,5 @@ game/common/tsconfig.tsbuildinfo
 
 # Documentation
 .opencode
-UIMETHOD.md
-BOUNCEFIX.md
-INTERPOLATION_FIX_PLAN.md
+docker-compose.yml
+
