@@ -42,6 +42,7 @@ const en = {
         cancel: "Cancel",
         backHome: "Back to Home",
         save: "Save",
+        back: "Back",
     },
     serverError: {
         conectionError: "Server conection error",
@@ -84,6 +85,14 @@ const en = {
         resume: "Resume",
         quit: "Quit",
         playButton: "Play",
+        player: (num : number) => {return (`Player ${num}`)},
+        roomNameField: 'Room Name',
+        erros: {
+            difficultyRequired: 'AI Mode requires difficulty configuration.',
+            diffultyOnlyAIMode: 'Unicamente el Modo AI puede incluir difficultad.',
+            onlineRoleOnlyForOlineMode: 'Only ONLINE mode can include onlineRole.',
+            invalidCOnfiguration: 'Configuración de juego inválida.'
+        }
     },
     play: {
         chooseGameMode: "Choose game mode",
@@ -362,6 +371,7 @@ const en = {
     },
     achievements: {
         title: "Achievements",
+        commingSoon: "Coming Soon",
         winAchievements: {
             title: "Win Achievements",
             firstWin: "First Win",

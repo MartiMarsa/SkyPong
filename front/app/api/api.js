@@ -1,7 +1,5 @@
 
 export default async function api(url, { method = "GET", body, headers } = {}) {
-    console.info("==> Appi body: ", body);
-    console.info("==> Appi headers: ", headers);
   const res = await fetch(url, {
     method,
     credentials: "include",

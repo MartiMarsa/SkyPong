@@ -46,13 +46,13 @@ function describeError(error: unknown) {
 
 export async function getAvailableRooms(): Promise<RoomInfo[]> {
   const client = getClient();
-  console.log('[RoomService] Connecting to:', SERVER_CONNECTION.WS_URL);
-  console.log('[RoomService] Room type:', SERVER_CONNECTION.ROOMS.PVP_ROOM);
+//   console.log('[RoomService] Connecting to:', SERVER_CONNECTION.WS_URL);
+//   console.log('[RoomService] Room type:', SERVER_CONNECTION.ROOMS.PVP_ROOM);
 
   try {
     const rooms = await client.getAvailableRooms(SERVER_CONNECTION.ROOMS.PVP_ROOM);
 
-    console.log('[RoomService] Received rooms:', rooms);
+    // console.log('[RoomService] Received rooms:', rooms);
 
     return rooms
       .filter((room) => room.clients < room.maxClients)
@@ -82,8 +82,8 @@ export async function createRoom(options: {
 }): Promise<{ roomId: string }> {
   const client = getClient();
 
-  console.log('[RoomService] Creating room with options:', options);
-  console.log('[RoomService] Server URL:', SERVER_CONNECTION.WS_URL);
+//   console.log('[RoomService] Creating room with options:', options);
+//   console.log('[RoomService] Server URL:', SERVER_CONNECTION.WS_URL);
 
   try {
     const room = await client.create(SERVER_CONNECTION.ROOMS.PVP_ROOM, {

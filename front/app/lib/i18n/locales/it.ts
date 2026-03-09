@@ -6,7 +6,7 @@ const it = {
         lable: "Vai alla Home",
     },
     user: {
-        hi: (name) =>(`Ciao, ${name}!`),
+        hi: ({name, className, url}) =>(`Ciao, <a href="${url}" class="${className}"> ${name}</a>!`),
         nickname: "Nickname",
         winphrase: "Win Phrase",
         userData: "Dati Utente",
@@ -42,6 +42,7 @@ const it = {
         cancel: "Annulla",
         backHome: "Torna alla Home",
         save: "Salva",
+        back: "Indietro",
     },
     serverError: {
         conectionError: "Server conection error",
@@ -362,6 +363,7 @@ const it = {
     },
     achievements: {
         title: "Obiettivi",
+        commingSoon: "Prossimamente",
         winAchievements: {
             title: "Obiettivi di Vittoria",
             firstWin: "Prima Vittoria",

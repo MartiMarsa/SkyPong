@@ -48,7 +48,6 @@ const { t } = useTranslation();
         try {
             
              const csrfToken = getCsrfToken();
-            console.log("Solicitando perfil para ID:", user?.id);
             
             const response = await fetch(`/api/profile/me`, {
                 method: 'GET',
@@ -58,7 +57,6 @@ const { t } = useTranslation();
                 },
             });
 
-            console.info("Response: ", response);
             if (!response.ok) {
                 if (response.status === 404)
                     setServerError(t.serverError.notFound);
@@ -68,7 +66,6 @@ const { t } = useTranslation();
             }
 
             const data = await response.json();
-            console.log("Datos recibidos:", data);
             
             // Seteamos el player con los datos de la API
             setPlayer(data); 
@@ -114,7 +111,6 @@ const { t } = useTranslation();
                 <div className="page-content-container-scrollable">
                     <div className="content-container-md">
                         <h1>{t?.profilePage?.title}</h1>
-                        {console.info("Player in component: ", player)}
                         <AvatarUpload />
                         <PlayerUI />
                         <PlayerCredentialsUI />
