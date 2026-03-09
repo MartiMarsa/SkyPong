@@ -459,7 +459,11 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
 
 			console.error("Password changed...");
 
-			return reply.status(204).send();
+			return reply
+			.clearCookie('access_token', cookieOpts)
+			.clearCookie('refresh_token', cookieOpts)
+			.clearCookie('csrf_token', csrfOpts)
+			.status(204).send();
 });
 
 // --- LOGOUT --- 
@@ -469,13 +473,6 @@ fastify.post('/auth/logout', { preHandler: requireAuth }, async (req: any, reply
 	setTimeout(() => controller.abort(), 5000);
 
 	const user = req.user;
-
-    const cookieOptions = {
-        path: '/',
-        secure: true, 
-        sameSite: 'none' as const,
-        httpOnly: true
-    };
 
     try {
         const refreshToken = req.cookies?.refresh_token;
@@ -492,9 +489,9 @@ fastify.post('/auth/logout', { preHandler: requireAuth }, async (req: any, reply
     }
 
     return reply
-        .clearCookie('access_token', cookieOptions)
-        .clearCookie('refresh_token', cookieOptions)
-        .clearCookie('csrf_token', { ...cookieOptions, httpOnly: false })
+        .clearCookie('access_token', cookieOpts)
+        .clearCookie('refresh_token', cookieOpts)
+        .clearCookie('csrf_token', csrfOpts)
         .status(200)
         .send({ status: 'logged_out' });
 });
@@ -552,10 +549,10 @@ fastify.delete('/auth/deleteme', { preHandler: requireAuth }, async (req: any, r
 		const res = await fetch(`${PROFILE_SERVICE_URL}/internal/profile/logout/${userId}`, { headers: { Authorization: `Bearer ${SERVICE_TOKEN}`, }, signal: controller.signal, });
 		// 4. Clear cookies
 	    	reply
-	  	.clearCookie('access_token', { path: '/' })
-	  	.clearCookie('refresh_token', { path: '/' })
-	  	.clearCookie('csrf_token', { path: '/' })
-	  	.send({ status: 'account_deleted' });
+			.clearCookie('access_token', cookieOpts)
+			.clearCookie('refresh_token', cookieOpts)
+			.clearCookie('csrf_token', csrfOpts)
+			.send({ status: 'account_deleted' });
 
       	} catch (err) {
 	    	req.log.error(err);
