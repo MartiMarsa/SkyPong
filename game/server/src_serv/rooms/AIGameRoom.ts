@@ -1,7 +1,6 @@
 import { Room, Client } from "colyseus";
 import { NullEngine, Scene, Vector3, UniversalCamera } from "@babylonjs/core";
 import { MyGameState } from "@skypong/common/GameState";
-import { GMCN, SCORING } from "@skypong/common/constants";
 import { ServerBall } from "../entities/ServerBall";
 import { ServerPaddle } from "../entities/ServerPaddle";
 import { ServerTable } from "../entities/ServerTable";
@@ -9,7 +8,7 @@ import { InputManager } from "../input/InputManager";
 import { PhysicsEngine } from "../physics";
 import { AIPaddleController, Difficulty } from "../ai/AIPaddleController";
 import { GameStats } from "../data/GameStats";
-import { SERVER_CONFIG, ROOM_CONFIG, SERVER_TIMING, Logger } from "../config";
+import { SERVER_CONFIG, ROOM_CONFIG, Logger } from "../config";
 
 /**
  * Game room for single-player mode with AI opponent
@@ -355,22 +354,6 @@ export class AIGameRoom extends Room<MyGameState> {
         }
       }
     }
-  }
-
-  private resetBallForNextRound(): void {
-    // Don't reset ball if game is over
-    if (this.state.gameOver) {
-      return;
-    }
-
-    this.physicsEngine.respawnBallAtCenter(this.serverBall.physicsBody);
-
-    setTimeout(() => {
-      if (!this.state.gameOver) {
-        // Launch with random direction
-        this.physicsEngine.launchBall(this.serverBall.physicsBody);
-      }
-    }, SERVER_TIMING.RESPAWN.POST_GOAL_DELAY_MS);
   }
 
   onJoin(client: Client, options: any): void | Promise<any> {

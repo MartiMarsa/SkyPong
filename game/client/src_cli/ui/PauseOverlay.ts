@@ -1,4 +1,4 @@
-import { AdvancedDynamicTexture, Button, Control } from "@babylonjs/gui";
+import { AdvancedDynamicTexture, Button } from "@babylonjs/gui";
 import { GUI_STYLES } from "../config/GUIStyles";
 import { UITexts, Language, PauseTexts } from "../config/UITexts";
 import { GUIElements } from "./GUIElements";
