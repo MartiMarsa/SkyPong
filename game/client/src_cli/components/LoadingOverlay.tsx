@@ -30,23 +30,24 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ state, visible }) => {
         }}>
             <div style={{ textAlign: 'center' }}>
                 <div style={{
-                    fontSize: 32,
+                    fontSize: 36,
                     fontWeight: 700,
-                    letterSpacing: 1.1,
-                    color: '#222',
-                    marginBottom: 24
+                    letterSpacing: 3,
+                    color: '#9333ea',
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    marginBottom: 24,
+                    textTransform: 'uppercase' as const,
                 }}>
-                    SkyPong <span style={{ fontWeight: 400, fontSize: 20, color: '#666' }}>– 3D Multiplayer Pong</span>
+                    SkyPong
                 </div>
-                {state.error ? (
-                    <div style={{ fontSize: 20, color: '#b00', marginTop: 8, fontWeight: 500 }}>
-                        {displayMessage}
-                    </div>
-                ) : (
-                    <div style={{ fontSize: 19, color: '#444' }}>
-                        {displayMessage}
-                    </div>
-                )}
+                <div style={{
+                    fontSize: 18,
+                    color: '#9333ea',
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontWeight: 400,
+                }}>
+                    {displayMessage}
+                </div>
             </div>
         </div>
     );
