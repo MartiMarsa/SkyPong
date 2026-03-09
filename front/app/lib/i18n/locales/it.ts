@@ -351,6 +351,9 @@ const it = {
         submitting: "Invio...",
         cancel: "Annulla",
         loading: "Caricamento...",
+        passwordUpdateLoginAgain: "Contraseña actualizada. Entra de nuevo por motivos de seguridad.",
+        submit: "Enviar",
+
     },
     leaderboard: {
         title: "Classifica",
@@ -423,6 +426,13 @@ const it = {
             online: "Online",
             idle: "Inattivo",
         },
+    },
+    chat: {
+        title: "Chat Globale",
+        noMessages: "Nessun messaggio ancora. Inizia la conversazione!",
+        placeholder: "Scrivi un messaggio...",
+        disconnected: "Disconnesso. Riconnessione...",
+        send: "Invia",
     },
     uiTest: {
         title: "Pagina di Test Componenti UI",

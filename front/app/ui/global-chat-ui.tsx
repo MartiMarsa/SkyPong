@@ -2,6 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../context/auth-context';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCommentDots } from "@fortawesome/free-solid-svg-icons";
+import { useTranslation } from '../hooks/use-translation';
+import { Button } from './base/Button';
+import { TextField } from './base/TextField';
+import { Badge } from './base/Badge';
+import { Card } from './base/Card';
+import { cn } from '../lib/utils';
 
 type ChatMessage = {
   sender: string;
@@ -15,8 +23,11 @@ export default function GlobalChatUI() {
   const [text, setText] = useState('');
   const [connected, setConnected] = useState(false);
   const [isMinimized, setIsMinimized] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<number | null>(null);
+  const intentionalCloseRef = useRef<boolean>(false);
+  const { t } = useTranslation();
 
   const wsUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
@@ -24,12 +35,18 @@ export default function GlobalChatUI() {
     return `${protocol}//${window.location.host}/api/chat/ws`;
   }, []);
 
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   useEffect(() => {
     if (authloading || !user || !wsUrl) return;
 
     let active = true;
 
     const connect = () => {
+      intentionalCloseRef.current = false;
       const socket = new WebSocket(wsUrl);
       socketRef.current = socket;
 
@@ -38,14 +55,29 @@ export default function GlobalChatUI() {
         setConnected(true);
       };
 
-      socket.onclose = () => {
+      socket.onclose = (event) => {
         if (!active) return;
         setConnected(false);
-        reconnectRef.current = window.setTimeout(connect, 2000);
+        
+        // Only reconnect if close wasn't intentional and code indicates we should retry
+        const shouldReconnect = !intentionalCloseRef.current && 
+                                event.code !== 1000 && 
+                                event.code !== 1001;
+        
+        if (shouldReconnect) {
+          reconnectRef.current = window.setTimeout(connect, 2000);
+        }
       };
 
       socket.onerror = () => {
-        socket.close();
+        // Mark as intentional close to prevent reconnection
+        if (!active) {
+          intentionalCloseRef.current = true;
+        }
+        // Close with proper code to avoid browser error messages
+        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+          socket.close(1000, 'Connection error');
+        }
       };
 
       socket.onmessage = (event) => {
@@ -63,12 +95,19 @@ export default function GlobalChatUI() {
 
     return () => {
       active = false;
+      intentionalCloseRef.current = true;
       setConnected(false);
       if (reconnectRef.current) {
         window.clearTimeout(reconnectRef.current);
       }
-      socketRef.current?.close();
-      socketRef.current = null;
+      // Close with proper code for normal closure
+      if (socketRef.current) {
+        if (socketRef.current.readyState === WebSocket.OPEN || 
+            socketRef.current.readyState === WebSocket.CONNECTING) {
+          socketRef.current.close(1000, 'Component unmounting');
+        }
+        socketRef.current = null;
+      }
       setMessages([]);
     };
   }, [authloading, user, wsUrl]);
@@ -88,61 +127,119 @@ export default function GlobalChatUI() {
   };
 
   return (
-    <section style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 30 }}>
+    <section className="fixed right-4 bottom-4 z-30">
       {isMinimized ? (
-        <button
+        <Button 
+          variant="primary"
+          size="md"
+          font="display"
           onClick={() => setIsMinimized(false)}
-          type="button"
-          style={{
-            borderRadius: 999,
-            border: '1px solid #374151',
-            background: '#111827',
-            color: '#ffffff',
-            fontWeight: 700,
-            padding: '10px 16px',
-            boxShadow: '0 10px 20px rgba(0, 0, 0, 0.35)',
-            cursor: 'pointer',
-          }}
+          className={cn(
+            "shadow-lg hover:shadow-xl transition-all duration-300",
+            "gap-2"
+          )}
           aria-label="Open global chat"
         >
-          Chat
-        </button>
+          <FontAwesomeIcon icon={faCommentDots} />
+          <span>Chat</span>
+        </Button>
       ) : (
-        <div style={{ width: 'min(320px, calc(100vw - 32px))', background: '#111827', color: '#ffffff', borderRadius: 8, border: '1px solid #374151', padding: 12, boxShadow: '0 12px 24px rgba(0, 0, 0, 0.4)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700, marginBottom: 8 }}>
-            <span>Global chat {connected ? '●' : '○'}</span>
-            <button
+        <Card 
+          variant="elevated" 
+          padding="sm"
+          className="w-[min(320px,calc(100vw-2rem))] shadow-2xl animate-fade-in"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faCommentDots} className="text-primary" />
+              <span className="font-display font-bold text-gray-900">
+                {t?.chat?.title || 'Global Chat'}
+              </span>
+              <Badge 
+                variant={connected ? 'success' : 'neutral'} 
+                size="sm" 
+                shape="pill"
+                className="animate-pulse"
+              >
+                {connected ? '●' : '○'}
+              </Badge>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setIsMinimized(true)}
-              type="button"
+              className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full"
               aria-label="Minimize global chat"
-              style={{ borderRadius: 6, border: '1px solid #374151', background: '#1f2937', color: '#fff', padding: '2px 8px', cursor: 'pointer' }}
             >
-              −
-            </button>
+              <span className="text-xl leading-none">−</span>
+            </Button>
           </div>
-          <div style={{ height: 220, overflowY: 'auto', border: '1px solid #374151', borderRadius: 6, padding: 8, marginBottom: 8, background: '#0f172a' }}>
-            {messages.map((message, index) => (
-              <div key={`${message.timestamp || 'no-ts'}-${index}`} style={{ marginBottom: 6, wordBreak: 'break-word' }}>
-                <strong>{message.sender}: </strong>
-                <span>{message.text}</span>
+
+          {/* Messages Container */}
+          <div className="h-[220px] overflow-y-auto rounded-lg bg-gray-50 border border-gray-200 p-3 mb-3 scroll-smooth">
+            {messages.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">
+                {t?.chat?.noMessages || 'No messages yet. Start the conversation!'}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {messages.map((message, index) => (
+                  <div 
+                    key={`${message.timestamp || 'no-ts'}-${index}`} 
+                    className={cn(
+                      "pb-2 border-b border-gray-200 last:border-0",
+                      "break-words text-sm"
+                    )}
+                  >
+                    <span className="font-semibold text-primary">
+                      {message.sender}:
+                    </span>{' '}
+                    <span className="text-gray-700">
+                      {message.text}
+                    </span>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
               </div>
-            ))}
+            )}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
+
+          {/* Input Form */}
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              sendMessage();
+            }}
+            className="flex gap-2"
+          >
+            <TextField
               value={text}
-              onChange={(event) => setText(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') sendMessage();
-              }}
-              placeholder="Type message"
-              style={{ flex: 1, borderRadius: 6, border: '1px solid #374151', background: '#111827', color: '#fff', padding: '8px 10px' }}
+              onChange={setText}
+              placeholder={t?.chat?.placeholder || 'Type message...'}
+              variant="outlined"
+              size="sm"
+              className="flex-1"
+              disabled={!connected}
             />
-            <button onClick={sendMessage} type="button" style={{ borderRadius: 6, border: '1px solid #374151', background: '#2563eb', color: '#fff', padding: '8px 10px' }}>
-              Send
-            </button>
-          </div>
-        </div>
+            <Button 
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={!connected || !text.trim()}
+              className="shrink-0"
+            >
+              {t?.chat?.send || 'Send'}
+            </Button>
+          </form>
+
+          {/* Connection Status */}
+          {!connected && (
+            <p className="text-xs text-danger mt-2 text-center">
+              {t?.chat?.disconnected || 'Disconnected. Reconnecting...'}
+            </p>
+          )}
+        </Card>
       )}
     </section>
   );

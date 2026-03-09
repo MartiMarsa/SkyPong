@@ -352,6 +352,8 @@ const en = {
     submitting: "Submitting...",
     cancel: "Cancel",
     loading: "Loading...",
+    passwordUpdateLoginAgain: "Password Updated. Please, login again for security reasons.",
+    submit: "Send",
     },
     leaderboard: {
         title: "Leaderboard",
@@ -424,6 +426,13 @@ const en = {
             online: "Online",
             idle: "Idle",
         },
+    },
+    chat: {
+        title: "Global Chat",
+        noMessages: "No messages yet. Start the conversation!",
+        placeholder: "Type message...",
+        disconnected: "Disconnected. Reconnecting...",
+        send: "Send",
     },
     uiTest: {
         title: "UI Components Test Page",

@@ -28,13 +28,6 @@ interface LeaderboardResponse {
 
 const POLL_INTERVAL = 30_000; // 30s
 
-function formatWinratePercentage(winrate: number | null | undefined): string {
-  if (winrate == null) return '—';
-
-  const normalizedRate = winrate <= 1 ? winrate * 100 : winrate;
-  return `${Math.round(normalizedRate)}%`;
-}
-
 function useLeaderboard() {
   const [players, setPlayers] = useState<PlayerStat[]>([]);
   const [lastSync, setLastSync] = useState<string>('2025-12-01');
@@ -159,7 +152,7 @@ function LeaderboardRow({
         </span>
         <span className="text-xs text-muted">
           {t.player.winRate}:{' '}
-          {formatWinratePercentage(player.winrate)}
+          {Math.round(player.winrate * 100) + '%'}
         </span>
       </div>
       <WinLossBar wins={player.wins} losses={player.losses} />

@@ -97,7 +97,7 @@ function GameRow({ game, profileId }: { game: GameHistoryItem; profileId: string
             {getPlayerLink(profileId, me.id, me.nickname)}
             <span className="text-muted text-sm">{me.points}</span>
         </div>
-        <span className="text-muted text-sm">vs</span>
+        <span className="game-vs-text text-muted text-sm">vs</span>
         <div className='game-player-info'>
             <Avatar size="sm" src={opponent.avatar || '/avatar/default-avatar.webp'} fallbackText={opponent.nickname} />
             {getPlayerLink(profileId, opponent.id, opponent.nickname)}

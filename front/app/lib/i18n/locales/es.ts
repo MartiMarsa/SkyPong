@@ -363,6 +363,8 @@ const es = {
         submitting: "Enviando...",
         cancel: "Cancelar",
         loading: "Cargando...",
+        passwordUpdateLoginAgain: "Contraseña actualizada. Entra de nuevo por motivos de seguridad.",
+        submit: "Enviar",
     },
     leaderboard: {
         title: "Tabla de clasificación",
@@ -431,6 +433,13 @@ const es = {
             totalGames: "Juegos totales:",
             noPlayers: "Aún no hay jugadores.",
         },
+    },
+    chat: {
+        title: "Chat Global",
+        noMessages: "Aún no hay mensajes. ¡Inicia la conversación!",
+        placeholder: "Escribe un mensaje...",
+        disconnected: "Desconectado. Reconectando...",
+        send: "Enviar",
     },
     uiTest: {
         title: "Página de Prueba de Componentes UI",
