@@ -46,7 +46,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return false;
         }
 
-		const refresh = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include', headers: { 'x-csrf-token': csrfToken || '' } }); if (refresh.ok) { csrfToken = getCSRF(); }
+		const refresh = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include', headers: { 'x-csrf-token': csrfToken || '' } });
+		if (!refresh.ok) {
+		  setUser(null);
+		  return false;
+		}
+		csrfToken = getCSRF();
 
         const res = await fetch('/api/profile/me', {
           credentials: 'include',
