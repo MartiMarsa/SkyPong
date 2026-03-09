@@ -129,6 +129,7 @@ function computeAchievements(stats: any, t: any) {
 function AchievementCard({ achievement }: { achievement: any }) {
   const { icon, title, description, unlocked, comingSoon, progress, goal } = achievement;
   const hasProgress = progress !== undefined && goal !== undefined;
+  const { t } = useTranslation();
 
   return (
     <div
@@ -170,7 +171,7 @@ function AchievementCard({ achievement }: { achievement: any }) {
         {comingSoon && (
           <div className="mt-2">
             <Badge size="sm" variant="info">
-              Coming Soon
+              {t?.achievements?.commingSoon}
             </Badge>
           </div>
         )}

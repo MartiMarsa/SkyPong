@@ -45,6 +45,7 @@ const es = {
         cancel: "Cancelar",
         backHome: "Volver al Inicio",
         save: "Guardar",
+        back: "Volver",
     },
     serverError: {
         conectionError: "Server conection error",
@@ -93,7 +94,7 @@ const es = {
             difficultyRequired: 'Modo AI requiere una configuración de dificultad',
             diffultyOnlyAIMode: 'Unicamente el Modo AI puede incluir difficultad.',
             onlineRoleOnlyForOlineMode: 'Only ONLINE mode can include onlineRole.',
-
+            invalidCOnfiguration: 'Configuración de juego inválida.'
         }
     },
     play: {
@@ -373,6 +374,7 @@ const es = {
     },
     achievements: {
         title: "Logros",
+        commingSoon: "Próximamente",
         winAchievements: {
             title: "Logros de Victoria",
             firstWin: "Primera Victoria",
