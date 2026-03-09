@@ -36,7 +36,7 @@ export const SERVER_CONNECTION = {
     } else {
       url = `${protocol}://${host}:${port}/`;
     }
-    console.log("[ServerConfig] Using direct connection:", url);
+    // console.log("[ServerConfig] Using direct connection:", url);
     return url;
   },
 

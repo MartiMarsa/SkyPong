@@ -23,12 +23,12 @@ export default function PlayerAchievementsPublicUI( { achievements })
     return (
         <article className="player-achievements-public-ui">
             <h3>{ t.achievements.title}</h3>
-            {console.log(achievements)}
+            {/* {console.log(achievements)}*/}
             <div className="achievments-wrapper">
 
             {
                 achievements.map(element => {
-                    console.log("Achievement:", element);
+                    // console.log("Achievement:", element);
                     return( <div className='achievement' key={element.id ?? element.nameKey}>
                         <h4 className='achievement-title'>{t[element.nameKey]}</h4>
                         <p className='achievement-description'>{t[element.descriptionKey]}</p>
