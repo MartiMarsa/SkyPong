@@ -12,122 +12,112 @@ import PlayerCredentialsUI from '../ui/player-private-profile/player-credentials
 import PlayerDeleteUI from '../ui/player-private-profile/player-delete-account-ui';
 import FooterTermsPolicy from '../ui/footer-terms-policy';
 
-const getCsrfToken = () => {
-    return document.cookie
-        .split('; ')
-        .find(row => row.startsWith('csrf_token='))
-        ?.split('=')[1];
-};
+const getCsrfToken = () =>
+  document.cookie
+    .split('; ')
+    .find(row => row.startsWith('csrf_token='))
+    ?.split('=')[1];
 
-export default function ProfilePagePrivate()
-{
-const { t } = useTranslation();
-    const router = useRouter();
-    const [isLoading, setIsLoading] = useState(true);
-    const { user, authloading, checkAuth } = useAuth();
-    const [player, setPlayer] = useState(null);
-    const [serverError, setServerError ] = useState('');
-    
-    // const searchParams = useSearchParams()
-    // const id = searchParams.get('id') // Obtiene "123"
+export default function ProfilePagePrivate() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const { user, authloading } = useAuth();
+  const [player, setPlayer] = useState(null);
+  const [serverError, setServerError] = useState('');
+
   useEffect(() => {
-    // 1. Si el AuthContext aún está verificando la cookie, esperamos.
     if (authloading) return;
-
-    // 2. Si ya terminó de cargar y NO hay usuario, mandamos a home.
     if (!user) {
-        router.push('/');
-        return;
+      router.push('/');
+      return;
     }
 
     const fetchMyProfile = async () => {
-        // Iniciamos carga local para el perfil
-        setIsLoading(true); 
-        setServerError('');
+      setIsLoading(true);
+      setServerError('');
 
-        try {
-            
-             const csrfToken = getCsrfToken();
-            
-            const response = await fetch(`/api/profile/me`, {
-                method: 'GET',
-                credentials: 'include',
-                headers: {
-                    'x-csrf-token': csrfToken || '',
-                },
-            });
+      try {
+        // Берём CSRF токен
+        let csrfToken = getCsrfToken();
 
-            if (!response.ok) {
-                if (response.status === 404)
-                    setServerError(t.serverError.notFound);
-                else 
-                    setServerError(t.serverError.unknownError);
-                return;
-            }
+        // Пробуем обновить access token заранее
+        const refreshRes = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'x-csrf-token': csrfToken || '' }
+        });
 
-            const data = await response.json();
-            
-            // Seteamos el player con los datos de la API
-            setPlayer(data); 
-
-        } catch (error)
-        {
-            console.error('Error en fetchMyProfile:', error);
-            setServerError("Error de conexión");
-        } finally
-        {
-            // Solo dejamos de cargar cuando la petición termina (éxito o error)
-            setIsLoading(false);
+        if (refreshRes.ok) {
+          // после refresh читаем новый csrf token
+          csrfToken = getCsrfToken();
         }
+
+        // Теперь запросим профиль
+        const profileRes = await fetch('/api/profile/me', {
+          method: 'GET',
+          credentials: 'include',
+          headers: { 'x-csrf-token': csrfToken || '' }
+        });
+
+        if (!profileRes.ok) {
+          if (profileRes.status === 404) setServerError(t.serverError.notFound);
+          else setServerError(t.serverError.unknownError);
+          return;
+        }
+
+        const data = await profileRes.json();
+        setPlayer(data);
+
+      } catch (err) {
+        console.error('Error en fetchMyProfile:', err);
+        setServerError("Error de conexión");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    // 3. Solo disparamos el fetch si tenemos el ID del usuario
-    if (user?.id) {
-        fetchMyProfile();
-    }
-    else
-    {
-        setIsLoading(false);
-    }
+    if (user?.id) fetchMyProfile();
+    else setIsLoading(false);
 
-}, [authloading, user, router]); 
+  }, [authloading, user, router, t]);
 
-    if (isLoading) return (
+  if (isLoading) return (
+    <main className="h-dvh bg-page-bg flex flex-col items-center justify-center">
+      <p className="text-muted">{t?.common?.loading || "Loading..."}</p>
+    </main>
+  );
+
+  return (
+    <>
+      {serverError ? (
         <main className="h-dvh bg-page-bg flex flex-col items-center justify-center">
-            <p className="text-muted">{t?.common?.loading || "Loading..."}</p>
+          <p className="error-message">{serverError}</p>
         </main>
-    );
-
-    return (
-        <>
-        { serverError ? (
-            <main className="h-dvh bg-page-bg flex flex-col items-center justify-center">
-                <p className="error-message">{serverError}</p>
-            </main>
-        ) : (
+      ) : (
         <main className="min-h-dvh bg-page-bg flex flex-col">
-            <NavigationAppUI  />
-            <div className="flex flex-1 items-start justify-center page-wrapper-with-nav">
-                <div className="page-content-container-scrollable">
-                    <div className="content-container-md">
-                        <h1>{t?.profilePage?.title}</h1>
-                        <AvatarUpload />
-                        <PlayerUI />
-                        <PlayerCredentialsUI />
-                        <div className="flex-row justify-center">
-                            <Link href="/me" className="link-primary">
-                                {t?.profilePage?.viewProfile || "View My Profile"}
-                            </Link>
-                        </div>
-                        <PlayerDeleteUI />
-                    </div>
+          <NavigationAppUI />
+          <div className="flex flex-1 items-start justify-center page-wrapper-with-nav">
+            <div className="page-content-container-scrollable">
+              <div className="content-container-md">
+                <h1>{t?.profilePage?.title}</h1>
+                <AvatarUpload />
+                <PlayerUI />
+                <PlayerCredentialsUI />
+                <div className="flex-row justify-center">
+                  <Link href="/me" className="link-primary">
+                    {t?.profilePage?.viewProfile || "View My Profile"}
+                  </Link>
                 </div>
+                <PlayerDeleteUI />
+              </div>
             </div>
-            <div className="pb-4">
-                <FooterTermsPolicy />
-            </div>
+          </div>
+          <div className="pb-4">
+            <FooterTermsPolicy />
+          </div>
         </main>
-        )}
-        </>
-    );
+      )}
+    </>
+  );
 }

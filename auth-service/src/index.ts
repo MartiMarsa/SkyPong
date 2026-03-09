@@ -357,7 +357,7 @@ fastify.post('/auth/refresh', async (req: any, reply) => {
 
     const db = getDB();
 
-    const user = await new Promise<any>((res, rej) => {
+   const user = await new Promise<any>((res, rej) => {
       db.get(
         `SELECT id, email, password_version, twofa_enabled, token_version, deleted_at 
          FROM users WHERE id = ?`,

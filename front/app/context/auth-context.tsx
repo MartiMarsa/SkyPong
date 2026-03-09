@@ -46,33 +46,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return false;
         }
 
-        let res = await fetch('/api/profile/me', {
+		const refresh = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include', headers: { 'x-csrf-token': csrfToken || '' } }); if (refresh.ok) { csrfToken = getCSRF(); }
+
+        const res = await fetch('/api/profile/me', {
           credentials: 'include',
           headers: { 'x-csrf-token': csrfToken || '' },
         });
-
-        if (res.status === 401) {
-          console.log("Access expired → trying refresh");
-
-          const refresh = await fetch('/api/auth/refresh', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'x-csrf-token': csrfToken || '' },
-          });
-
-          if (!refresh.ok) {
-            setUser(null);
-            return false;
-          }
-
-          csrfToken = getCSRF();
-          await new Promise(r => setTimeout(r, 100));
-
-          res = await fetch('/api/profile/me', {
-            credentials: 'include',
-            headers: { 'x-csrf-token': csrfToken }
-          });
-        }
 
         if (res.status === 401 || !res.ok) {
           setUser(null);
