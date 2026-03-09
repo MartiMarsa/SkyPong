@@ -15,6 +15,7 @@ import { Tabs } from '../ui/base';
 import { useParams } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faScroll, faUsers, faTrophy, faChartBar } from '@fortawesome/free-solid-svg-icons';
+import api from '../api/api';
 
 export default function ProfilePagePublic() {
     const { id } = useParams();
