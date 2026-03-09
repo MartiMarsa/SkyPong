@@ -67,16 +67,21 @@ export interface IContainerStyle {
   left?: string;
 }
 
+const FONT_FAMILY = "'Space Grotesk', sans-serif";
+
 export const GUI_STYLES = {
+  FONT_FAMILY,
   TEXT: {
     DEFAULT: {
       color: "#FFFFFF",
       fontSize: 24,
+      fontFamily: FONT_FAMILY,
       outlineWidth: 0,
     } as ITextStyle,
     HUD_NAME: {
       color: "#FFFFFF",
       fontSize: 42,
+      fontFamily: FONT_FAMILY,
       fontWeight: "bold",
       shadowColor: "#01040080",
       shadowOffsetX: 1,
@@ -87,6 +92,7 @@ export const GUI_STYLES = {
     HUD_NAME_MOBILE: {
       color: "#FFFFFF",
       fontSize: 28,
+      fontFamily: FONT_FAMILY,
       fontWeight: "bold",
       shadowColor: "#01040080",
       shadowOffsetX: 1,
@@ -97,6 +103,7 @@ export const GUI_STYLES = {
     HUD_SCORE: {
       color: "#FFFBFC90",
       fontSize: 32,
+      fontFamily: FONT_FAMILY,
       fontWeight: "bold",
       shadowColor: "#01040080",
       shadowOffsetX: 1,
@@ -107,6 +114,7 @@ export const GUI_STYLES = {
     HUD_SCORE_MOBILE: {
       color: "#FFFBFC90",
       fontSize: 22,
+      fontFamily: FONT_FAMILY,
       fontWeight: "bold",
       shadowColor: "#01040080",
       shadowOffsetX: 1,
@@ -117,6 +125,7 @@ export const GUI_STYLES = {
     COUNTDOWN: {
       color: "#FFFBFC90",
       fontSize: 120,
+      fontFamily: FONT_FAMILY,
       fontWeight: "bold",
       shadowColor: "#01040080",
       shadowOffsetX: 1,
@@ -126,30 +135,30 @@ export const GUI_STYLES = {
       verticalAlignment: Control.VERTICAL_ALIGNMENT_CENTER,
     } as ITextStyle,
     GAME_OVER_TITLE: {
-      color: "#FFD700",
+      color: "#FFFBFC90",
       fontSize: 64,
+      fontFamily: FONT_FAMILY,
       fontWeight: "bold",
-      outlineWidth: 4,
-      outlineColor: "black",
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
     } as ITextStyle,
     GAME_OVER_WINNER: {
-      color: "#FFFFFF",
+      color: "#FFFBFC90",
       fontSize: 48,
+      fontFamily: FONT_FAMILY,
       fontWeight: "bold",
-      outlineWidth: 3,
-      outlineColor: "black",
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
     } as ITextStyle,
     GAME_OVER_SCORE: {
-      color: "#AAAAAA",
+      color: "#FFFBFC90",
       fontSize: 36,
+      fontFamily: FONT_FAMILY,
       fontWeight: "bold",
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
     } as ITextStyle,
     CONTROL_HINT: {
       color: "#FFFBFC90",
       fontSize: 16,
+      fontFamily: FONT_FAMILY,
       fontWeight: "normal",
       shadowColor: "#01040080",
       shadowOffsetX: 1,
@@ -165,12 +174,12 @@ export const GUI_STYLES = {
 
   BUTTON: {
     DEFAULT: {
-      width: "200px",
+      width: "280px",
       height: "60px",
       color: "#FFFFFF",
-      background: "#4CAF50",
+      background: "#9333ea",
       fontSize: 24,
-      cornerRadius: 10,
+      cornerRadius: 30,
       horizontalAlignment: Control.HORIZONTAL_ALIGNMENT_CENTER,
       thickness: 0,
     } as IButtonStyle,
@@ -281,35 +290,16 @@ export const GUI_STYLES = {
     verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
   },
 
-  // HUD_POSITIONS: {
-  //   PLAYER1_NAME: {
-  //     top: "-100px",
-  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
-  //   },
-  //   PLAYER1_SCORE: {
-  //     top: "-50px",
-  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_BOTTOM,
-  //   },
-  //   PLAYER2_NAME: {
-  //     top: "60px",
-  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
-  //   },
-  //   PLAYER2_SCORE: {
-  //     top: "110px",
-  //     verticalAlignment: Control.VERTICAL_ALIGNMENT_TOP,
-  //   },
-  // },
-
   GAME_OVER_POSITIONS: {
     TITLE: { top: "-200px" },
     WINNER: { top: "-80px" },
     SCORE: { top: "20px" },
-    BUTTON: { top: "150px" },
   },
 
   PAUSE_TITLE: {
     color: "#FFFBFC90",
     fontSize: 32,
+    fontFamily: FONT_FAMILY,
     fontWeight: "bold",
     shadowColor: "#01040080",
     shadowOffsetX: 1,

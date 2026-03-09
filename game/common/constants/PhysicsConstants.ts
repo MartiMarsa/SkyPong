@@ -48,7 +48,7 @@ export const PHYSICS = {
         /** Maximum angle from Z axis (degrees) */
         MAX_ANGLE_DEG: 45,
         /** Base speed magnitude */
-        BASE_SPEED: 0.05,
+        BASE_SPEED: 0.07,
     },
 } as const;
 

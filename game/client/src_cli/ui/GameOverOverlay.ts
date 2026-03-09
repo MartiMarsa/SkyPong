@@ -63,8 +63,6 @@ export class GameOverOverlay {
                 ...GUI_STYLES.BUTTON.DEFAULT,
                 top: '100px',
                 zIndex: 101,
-                background: '#235789',
-                width: '280px',
             };
             this._retryButton = GUIElements.CreateTextButton(
                 'retryButton',
@@ -84,7 +82,6 @@ export class GameOverOverlay {
             ...GUI_STYLES.BUTTON.DEFAULT,
             top: '180px',
             zIndex: 101,
-            width: '280px',
         };
         this._backButton = GUIElements.CreateTextButton(
             'backButton',
@@ -107,7 +104,6 @@ export class GameOverOverlay {
         player2Name: string
     ): void {
         this._winnerText.text = this._texts.winner.replace('{winnerName}', winnerName);
-        this._winnerText.color = isWinnerPlayer1 ? '#7eb8ff' : '#ff7e7e';
 
         this._scoreText.text = `${player1Name}: ${player1Score} - ${player2Name}: ${player2Score}`;
 

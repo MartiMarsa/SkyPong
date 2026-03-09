@@ -312,6 +312,9 @@ export class AIGameRoom extends Room<MyGameState> {
       );
     }
 
+    // Partial reset: reaction timer resets, degradation partially carries over
+    this.aiController.partialReset();
+
     this.checkForWinner();
 
     // Don't reset ball immediately - let it fall naturally

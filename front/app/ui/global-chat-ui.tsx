@@ -26,6 +26,7 @@ export default function GlobalChatUI() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<number | null>(null);
+  const intentionalCloseRef = useRef<boolean>(false);
   const { t } = useTranslation();
 
   const wsUrl = useMemo(() => {
@@ -45,6 +46,7 @@ export default function GlobalChatUI() {
     let active = true;
 
     const connect = () => {
+      intentionalCloseRef.current = false;
       const socket = new WebSocket(wsUrl);
       socketRef.current = socket;
 
@@ -53,14 +55,29 @@ export default function GlobalChatUI() {
         setConnected(true);
       };
 
-      socket.onclose = () => {
+      socket.onclose = (event) => {
         if (!active) return;
         setConnected(false);
-        reconnectRef.current = window.setTimeout(connect, 2000);
+        
+        // Only reconnect if close wasn't intentional and code indicates we should retry
+        const shouldReconnect = !intentionalCloseRef.current && 
+                                event.code !== 1000 && 
+                                event.code !== 1001;
+        
+        if (shouldReconnect) {
+          reconnectRef.current = window.setTimeout(connect, 2000);
+        }
       };
 
       socket.onerror = () => {
-        socket.close();
+        // Mark as intentional close to prevent reconnection
+        if (!active) {
+          intentionalCloseRef.current = true;
+        }
+        // Close with proper code to avoid browser error messages
+        if (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING) {
+          socket.close(1000, 'Connection error');
+        }
       };
 
       socket.onmessage = (event) => {
@@ -78,12 +95,19 @@ export default function GlobalChatUI() {
 
     return () => {
       active = false;
+      intentionalCloseRef.current = true;
       setConnected(false);
       if (reconnectRef.current) {
         window.clearTimeout(reconnectRef.current);
       }
-      socketRef.current?.close();
-      socketRef.current = null;
+      // Close with proper code for normal closure
+      if (socketRef.current) {
+        if (socketRef.current.readyState === WebSocket.OPEN || 
+            socketRef.current.readyState === WebSocket.CONNECTING) {
+          socketRef.current.close(1000, 'Component unmounting');
+        }
+        socketRef.current = null;
+      }
       setMessages([]);
     };
   }, [authloading, user, wsUrl]);
