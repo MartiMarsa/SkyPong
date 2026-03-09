@@ -22,27 +22,17 @@ function parseDate(dateStr: string): Date {
 /*_____________________________ CHECKS ________________________________*/
 function isConnected(sessionexpiredat : string , isLogged : boolean) : boolean
 {
-    console.log({expires_at: sessionexpiredat, logged: isLogged, connecteded: null});
     if (!sessionexpiredat || !isLogged) return false;
     const connected = Date.now() < new Date(sessionexpiredat.replace(' ', 'T') + 'Z').getTime();
-    console.log({expires_at: sessionexpiredat, logged: isLogged, connecteded: connected});
     return (connected);
 }
 
 function isAbsent(lastLogin : string) : boolean {
-    console.info("Player last login at: ", lastLogin);
     if (!lastLogin) return false;
     const now = Date.now()
     const date = (now - new Date(lastLogin.replace(' ', 'T') + 'Z').getTime());
     const mins = date / 60000; //milliseconds 1s * 1000 = 1000 ms | 1min * 60 * 1000 = 60000 ms
     const isAbsent = mins >= ACTIVE_MINS;
-    console.log({
-        lastLogin: lastLogin,
-        now: now,
-        time: date,
-        mins: mins,
-        isAbsent: isAbsent,
-    });
     return (isAbsent);
 }
 
@@ -51,14 +41,9 @@ function isAbsent(lastLogin : string) : boolean {
 /*_____________________________ Exports ________________________________*/
 export function checkPlayerStatus(player : any ) : string
 {
-    console.info("Check player status on: ", player);
     const connected = isConnected(player.access_expires_at, player.logged);
     const absent = isAbsent(player.last_access_at);
-    console.log({
-        player: player.nickname,
-        connected: connected,
-        absent: absent,
-    });
+  
     if (player.blocked)
         return (PLAYER_STATUS.blocked);
     else if (!connected)

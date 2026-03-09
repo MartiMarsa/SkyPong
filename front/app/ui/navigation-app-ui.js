@@ -3,19 +3,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "../hooks/use-translation";
-import { useStyles } from "../hooks/use-styles";
 import { useAuth } from "../context/auth-context";
 import { Button } from "./base/Button";
 import { Avatar } from "./base/Avatar";
 import SkypongLogo from "./skypong-logo.js";
 
-const mobileStyles = {
-  nav: "navigation-app",
-};
-
-const desktopStyles = {
-  nav: "navigation-app",
-};
 
 export default function NavigationAppUI({
   home,
@@ -23,7 +15,6 @@ export default function NavigationAppUI({
   compactGuestActions = false,
 }) {
   const { t } = useTranslation();
-  const { styles } = useStyles(mobileStyles, desktopStyles);
   const { user, logout } = useAuth();
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -94,7 +85,7 @@ export default function NavigationAppUI({
   };
 
   return (
-    <nav className={`${styles.nav} ${isNavVisible ? 'nav-visible' : 'nav-hidden'}`}>
+    <nav className={`navigation-app ${isNavVisible ? 'nav-visible' : 'nav-hidden'}`}>
       {/* Left side: SKYPONG logo (hidden on homepage) */}
       <SkypongLogo />
 
@@ -104,7 +95,6 @@ export default function NavigationAppUI({
           // Guest users: Login/Sign Up buttons
           <>
             <Button href="/login" variant="secondary" size="md" font="display">
-            {console.info("Navigation: ", t.navigation)}
               {t?.navigation?.login}
             </Button>
             <Button href="/signup" variant="primary" size="md" font="display">
