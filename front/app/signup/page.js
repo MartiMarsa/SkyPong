@@ -55,7 +55,7 @@ export default function SignUpPage() {
         
             if (!contentType || !contentType.includes('application/json')) {
                 console.error('Response is not JSON:', await response.text());
-                setServerError(`Error del servidor. La ruta ${apiURL} no existe o está mal configurada.`);
+                setServerError(t.serverError.apiRouteError('/api/auth/signup'));
                 return;
             }
             if (!response.ok) {
