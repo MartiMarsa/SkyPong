@@ -96,20 +96,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-		const csrfToken = document.cookie
+/*		const csrfToken = document.cookie
         .split('; ')
         .find(row => row.startsWith('csrf_token='))
-        ?.split('=')[1];
+        ?.split('=')[1];*/
+
+		const getCSRF = () => document.cookie
+          .split('; ')
+          .find(row => row.startsWith('csrf_token='))
+          ?.split('=')[1];
+
+		let csrfToken = getCSRF();
+
 
       // 1. Obtener el CSRF token de las cookies (document.cookie)
       // Tu backend Fastify lo guarda en una cookie no httpOnly llamada 'csrf_token'
-    
+
       await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include',
-        headers: {
-          'x-csrf-token': csrfToken || '', // Requerido por tu middleware preHandler
-        },
         // body: JSON.stringify({ user: { id: user.id }}),
       });
     } catch (err) {

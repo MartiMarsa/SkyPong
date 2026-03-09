@@ -38,10 +38,8 @@ export default function ProfilePagePrivate() {
       setServerError('');
 
       try {
-        // Берём CSRF токен
         let csrfToken = getCsrfToken();
 
-        // Пробуем обновить access token заранее
         const refreshRes = await fetch('/api/auth/refresh', {
           method: 'POST',
           credentials: 'include',
@@ -49,11 +47,9 @@ export default function ProfilePagePrivate() {
         });
 
         if (refreshRes.ok) {
-          // после refresh читаем новый csrf token
           csrfToken = getCsrfToken();
         }
 
-        // Теперь запросим профиль
         const profileRes = await fetch('/api/profile/me', {
           method: 'GET',
           credentials: 'include',

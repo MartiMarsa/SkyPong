@@ -467,7 +467,7 @@ fastify.post('/auth/password', { preHandler: requireAuth }, async (req: any, rep
 });
 
 // --- LOGOUT --- 
-fastify.post('/auth/logout', { preHandler: requireAuth }, async (req: any, reply) => {
+fastify.post('/auth/logout', async (req: any, reply) => {
 
 	const controller = new AbortController();
 	setTimeout(() => controller.abort(), 5000);
