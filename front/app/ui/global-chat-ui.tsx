@@ -5,6 +5,11 @@ import { useAuth } from '../context/auth-context';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCommentDots } from "@fortawesome/free-solid-svg-icons";
 import { useTranslation } from '../hooks/use-translation';
+import { Button } from './base/Button';
+import { TextField } from './base/TextField';
+import { Badge } from './base/Badge';
+import { Card } from './base/Card';
+import { cn } from '../lib/utils';
 
 type ChatMessage = {
   sender: string;
@@ -18,6 +23,7 @@ export default function GlobalChatUI() {
   const [text, setText] = useState('');
   const [connected, setConnected] = useState(false);
   const [isMinimized, setIsMinimized] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef<number | null>(null);
   const intentionalCloseRef = useRef<boolean>(false);
@@ -28,6 +34,11 @@ export default function GlobalChatUI() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${protocol}//${window.location.host}/api/chat/ws`;
   }, []);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   useEffect(() => {
     if (authloading || !user || !wsUrl) return;
@@ -116,59 +127,119 @@ export default function GlobalChatUI() {
   };
 
   return (
-    <section style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 30 }}>
+    <section className="fixed right-4 bottom-4 z-30">
       {isMinimized ? (
-        <button className='chat-button'
+        <Button 
+          variant="primary"
+          size="md"
+          font="display"
           onClick={() => setIsMinimized(false)}
-          type="button"
-          style={{
-            borderRadius: 999,
-            fontWeight: 700,
-            padding: '10px 16px',
-            cursor: 'pointer',
-          }}
+          className={cn(
+            "shadow-lg hover:shadow-xl transition-all duration-300",
+            "gap-2"
+          )}
           aria-label="Open global chat"
         >
-        <FontAwesomeIcon icon={faCommentDots} />  Chat
-        </button>
+          <FontAwesomeIcon icon={faCommentDots} />
+          <span>Chat</span>
+        </Button>
       ) : (
-        <div className='chat-window' style={{ width: 'min(320px, calc(100vw - 32px))', borderRadius: 8, padding: 12, boxShadow: '0 12px 24px rgba(0, 0, 0, 0.4)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700, marginBottom: 8 }}>
-            <span><FontAwesomeIcon icon={faCommentDots} /> Global chat {connected ? '●' : '○'}</span>
-            <button
-            className='chat-minimize rounded-full'
+        <Card 
+          variant="elevated" 
+          padding="sm"
+          className="w-[min(320px,calc(100vw-2rem))] shadow-2xl animate-fade-in"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faCommentDots} className="text-primary" />
+              <span className="font-display font-bold text-gray-900">
+                {t?.chat?.title || 'Global Chat'}
+              </span>
+              <Badge 
+                variant={connected ? 'success' : 'neutral'} 
+                size="sm" 
+                shape="pill"
+                className="animate-pulse"
+              >
+                {connected ? '●' : '○'}
+              </Badge>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setIsMinimized(true)}
-              type="button"
+              className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full"
               aria-label="Minimize global chat"
-              style={{ padding: '2px 8px', cursor: 'pointer' }}
             >
-              −
-            </button>
+              <span className="text-xl leading-none">−</span>
+            </Button>
           </div>
-          <div className='chat-box' style={{ height: 220, overflowY: 'auto', borderRadius: 6, padding: 8, marginBottom: 8}}>
-            {messages.map((message, index) => (
-              <div key={`${message.timestamp || 'no-ts'}-${index}`} style={{ marginBottom: 6, wordBreak: 'break-word' }}>
-                <strong>{message.sender}: </strong>
-                <span>{message.text}</span>
+
+          {/* Messages Container */}
+          <div className="h-[220px] overflow-y-auto rounded-lg bg-gray-50 border border-gray-200 p-3 mb-3 scroll-smooth">
+            {messages.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-4">
+                {t?.chat?.noMessages || 'No messages yet. Start the conversation!'}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {messages.map((message, index) => (
+                  <div 
+                    key={`${message.timestamp || 'no-ts'}-${index}`} 
+                    className={cn(
+                      "pb-2 border-b border-gray-200 last:border-0",
+                      "break-words text-sm"
+                    )}
+                  >
+                    <span className="font-semibold text-primary">
+                      {message.sender}:
+                    </span>{' '}
+                    <span className="text-gray-700">
+                      {message.text}
+                    </span>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
               </div>
-            ))}
+            )}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <input
-            className='chat-input'
+
+          {/* Input Form */}
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              sendMessage();
+            }}
+            className="flex gap-2"
+          >
+            <TextField
               value={text}
-              onChange={(event) => setText(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') sendMessage();
-              }}
-              placeholder="Type message"
-              style={{ flex: 1, borderRadius: 6, padding: '8px 10px' }}
+              onChange={setText}
+              placeholder={t?.chat?.placeholder || 'Type message...'}
+              variant="outlined"
+              size="sm"
+              className="flex-1"
+              disabled={!connected}
             />
-            <button className='chat-sendbtn rounded-6' onClick={sendMessage} type="button" style={{ borderRadius: 6, padding: '8px 10px' }}>
-              {t?.form?.submit || 'Send'}
-            </button>
-          </div>
-        </div>
+            <Button 
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={!connected || !text.trim()}
+              className="shrink-0"
+            >
+              {t?.chat?.send || 'Send'}
+            </Button>
+          </form>
+
+          {/* Connection Status */}
+          {!connected && (
+            <p className="text-xs text-danger mt-2 text-center">
+              {t?.chat?.disconnected || 'Disconnected. Reconnecting...'}
+            </p>
+          )}
+        </Card>
       )}
     </section>
   );

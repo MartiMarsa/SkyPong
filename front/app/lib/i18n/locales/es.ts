@@ -434,6 +434,13 @@ const es = {
             noPlayers: "Aún no hay jugadores.",
         },
     },
+    chat: {
+        title: "Chat Global",
+        noMessages: "Aún no hay mensajes. ¡Inicia la conversación!",
+        placeholder: "Escribe un mensaje...",
+        disconnected: "Desconectado. Reconectando...",
+        send: "Enviar",
+    },
     uiTest: {
         title: "Página de Prueba de Componentes UI",
         sections: {

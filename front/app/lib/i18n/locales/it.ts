@@ -427,6 +427,13 @@ const it = {
             idle: "Inattivo",
         },
     },
+    chat: {
+        title: "Chat Globale",
+        noMessages: "Nessun messaggio ancora. Inizia la conversazione!",
+        placeholder: "Scrivi un messaggio...",
+        disconnected: "Disconnesso. Riconnessione...",
+        send: "Invia",
+    },
     uiTest: {
         title: "Pagina di Test Componenti UI",
         sections: {
