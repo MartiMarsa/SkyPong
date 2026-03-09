@@ -1,6 +1,6 @@
-const SERVICE_TOKEN = process.env.SERVICE_TOKEN // || "secret"; // INFO temporary
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN;
 const STATS_SERVICE_URL =
-  process.env.STATS_SERVICE_URL // ?? "http://statistics-service:6000"; // INFO temporary
+  process.env.STATS_SERVICE_URL;
 
 import axios from "axios";
 
@@ -18,7 +18,6 @@ interface GameResultPayload {
 }
 
 export class GameStats {
-  // private gameMode: string;
   private player1Id: string;
   private player2Id: string;
   private player1Name: string;
@@ -40,7 +39,6 @@ export class GameStats {
     player1Score: number,
     player2Score: number,
   ) {
-    // this.gameMode = gameMode,
     this.gameId = gameId;
     this.startAt = startAt;
     this.endAt = endAt;
@@ -108,9 +106,7 @@ export class GameStats {
 
   async send(): Promise<void> {
     const payload = this.toPayload();
-    // const url = `${process.env.STATS_SERVICE_URL}/internal/statistics/gameresult/`; // TODO use the ones in .env in the future
     const url = `${STATS_SERVICE_URL}/internal/statistics/gameresult/update`;
-    // const token = process.env.SERVICE_TOKEN; // TODO use the ones in .env in the future
     const token = SERVICE_TOKEN;
 
     try {
@@ -121,7 +117,6 @@ export class GameStats {
           Authorization: `Bearer ${token}`,
           "X-Service-Name": "game-service",
         },
-        //                body: JSON.stringify(payload)
       });
 
       if (res.status < 200 || res.status >= 300) {
