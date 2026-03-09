@@ -14,6 +14,19 @@ import { useMemo } from "react";
 import { useTranslation } from "../../context/language-context";
 import { ProgressBar, Badge } from "../base";
 import { cn } from "@/lib/utils";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { 
+  faGamepad, 
+  faCalendar, 
+  faMedal, 
+  faBolt, 
+  faFire, 
+  faCrown, 
+  faBullseye, 
+  faTrophy,
+  faStar,
+  faLock
+} from '@fortawesome/free-solid-svg-icons';
 
 // ─── Achievement unlock logic ────────────────────────────────────────────────
 function computeAchievements(stats: any, t: any) {
@@ -29,7 +42,7 @@ function computeAchievements(stats: any, t: any) {
     {
       id: "firstLogin",
       category: "log",
-      icon: "🎮",
+      icon: <FontAwesomeIcon icon={faGamepad} className="text-primary" />,
       title: t.achievements.logAchievements.firstLogin,
       description: t.achievements.logAchievements.firstLoginDesc,
       unlocked: true, // Always unlocked — if you're here, you logged in
@@ -37,7 +50,7 @@ function computeAchievements(stats: any, t: any) {
     {
       id: "login7Days",
       category: "log",
-      icon: "📅",
+      icon: <FontAwesomeIcon icon={faCalendar} className="text-primary" />,
       title: t.achievements.logAchievements.login7Days,
       description: t.achievements.logAchievements.login7DaysDesc,
       unlocked: false, // needs backend streak data — locked by default
@@ -46,7 +59,7 @@ function computeAchievements(stats: any, t: any) {
     {
       id: "login30Days",
       category: "log",
-      icon: "🏅",
+      icon: <FontAwesomeIcon icon={faMedal} className="text-primary" />,
       title: t.achievements.logAchievements.login30Days,
       description: t.achievements.logAchievements.login30DaysDesc,
       unlocked: false,
@@ -57,7 +70,7 @@ function computeAchievements(stats: any, t: any) {
     {
       id: "firstWin",
       category: "win",
-      icon: "⚡",
+      icon: <FontAwesomeIcon icon={faBolt} className="text-primary" />,
       title: t.achievements.winAchievements.firstWin,
       description: t.achievements.winAchievements.firstWinDesc,
       unlocked: wins >= 1,
@@ -65,7 +78,7 @@ function computeAchievements(stats: any, t: any) {
     {
       id: "win10Games",
       category: "win",
-      icon: "🔥",
+      icon: <FontAwesomeIcon icon={faFire} className="text-primary" />,
       title: t.achievements.winAchievements.win10Games,
       description: t.achievements.winAchievements.win10GamesDesc,
       unlocked: wins >= 10,
@@ -75,7 +88,7 @@ function computeAchievements(stats: any, t: any) {
     {
       id: "win100Games",
       category: "win",
-      icon: "👑",
+      icon: <FontAwesomeIcon icon={faCrown} className="text-primary" />,
       title: t.achievements.winAchievements.win100Games,
       description: t.achievements.winAchievements.win100GamesDesc,
       unlocked: wins >= 100,
@@ -87,7 +100,7 @@ function computeAchievements(stats: any, t: any) {
     {
       id: "firstGame",
       category: "games",
-      icon: "🕹️",
+      icon: <FontAwesomeIcon icon={faGamepad} className="text-primary" />,
       title: t.achievements.playGamesAchievements.firstgame,
       description: t.achievements.playGamesAchievements.firstgameDesc,
       unlocked: totalGames >= 1,
@@ -95,7 +108,7 @@ function computeAchievements(stats: any, t: any) {
     {
       id: "play5Games",
       category: "games",
-      icon: "🎯",
+      icon: <FontAwesomeIcon icon={faBullseye} className="text-primary" />,
       title: t.achievements.playGamesAchievements.play5Games,
       description: t.achievements.playGamesAchievements.play5GamesDesc,
       unlocked: totalGames >= 5,
@@ -105,7 +118,7 @@ function computeAchievements(stats: any, t: any) {
     {
       id: "play50Games",
       category: "games",
-      icon: "⚔️",
+      icon: <FontAwesomeIcon icon={faTrophy} className="text-primary" />,
       title: t.achievements.playGamesAchievements.play50Games,
       description: t.achievements.playGamesAchievements.play50GamesDesc,
       unlocked: totalGames >= 50,
@@ -115,7 +128,7 @@ function computeAchievements(stats: any, t: any) {
     {
       id: "play500Games",
       category: "games",
-      icon: "🌟",
+      icon: <FontAwesomeIcon icon={faStar} className="text-primary" />,
       title: t.achievements.playGamesAchievements.play500Games,
       description: t.achievements.playGamesAchievements.play500GamesDesc,
       unlocked: totalGames >= 500,
@@ -179,7 +192,7 @@ function AchievementCard({ achievement }: { achievement: any }) {
         {/* Lock indicator for locked achievements */}
         {!unlocked && !comingSoon && (
           <div className="absolute top-3 right-3 text-gray-400 text-sm">
-            🔒
+            <FontAwesomeIcon icon={faLock} className="text-primary" />
           </div>
         )}
       </div>
