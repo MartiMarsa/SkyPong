@@ -20,7 +20,7 @@ export default function GameModeSelection({ onSelectAI, onSelectMultiplayer, isL
         <button type="button" onClick={onSelectAI}>
           {t?.gameMode?.ai?.title ?? '1 vs AI'}
         </button>
-    { console.log("User is logged: ", isLogged)}
+    {/*{ console.log("User is logged: ", isLogged)}*/}
     { isLogged ? (
         <button type="button" onClick={onSelectMultiplayer}>
           {t?.gameMode?.multiplayer || 'Multiplayer'}

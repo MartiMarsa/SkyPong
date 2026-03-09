@@ -26,7 +26,7 @@ export default function SignUpPage() {
 
     const redirectHome = async () => {
         const hasCredentials = await checkAuth();
-        console.log("User already loggedin: ", user);
+        // console.log("User already loggedin: ", user);
         if (hasCredentials)
             router.push('/');
     };
@@ -38,7 +38,7 @@ export default function SignUpPage() {
 
     const onSubmit = async (data) => {
         try {
-            console.log("Datos validados:", data);
+            // console.log("Datos validados:", data);
             setIsLoading(true);
             setServerError(''); // Limpia errores anteriores
             
@@ -64,7 +64,7 @@ export default function SignUpPage() {
                         setServerError(result.message || t.form.errors.invalidPassword);
                     }
                     if (response.status === 409) {
-                        console.log("Error 409: ", t.form.errors.userAlreadyExists);
+                        // console.log("Error 409: ", t.form.errors.userAlreadyExists);
                         setServerError(t.form.errors.userAlreadyExists);
                     }
                     else {
@@ -151,7 +151,7 @@ export default function SignUpPage() {
                                 <div className="error-message-space">
                                     { serverError && (
                                         <p className="error-message">
-                                                { console.log("Error:", serverError)}
+                                                {/* { console.log("Error:", serverError)}*/}
                                                 {serverError}
                                             </p>
                                     )}

@@ -555,7 +555,7 @@ export default function UITestPage() {
                 { key: 'tab3', label: 'Settings' },
               ]}
               activeTab="tab1"
-              onChange={(key) => console.log('Tab changed:', key)}
+              // onChange={(key) => console.log('Tab changed:', key)}
             />
           </div>
 
@@ -569,7 +569,7 @@ export default function UITestPage() {
                 { key: 'tab3', label: 'Completed' },
               ]}
               activeTab="tab2"
-              onChange={(key) => console.log('Tab changed:', key)}
+              // onChange={(key) => console.log('Tab changed:', key)}
             />
           </div>
 
@@ -583,7 +583,7 @@ export default function UITestPage() {
                 { key: 'tab3', label: 'Monthly' },
               ]}
               activeTab="tab3"
-              onChange={(key) => console.log('Tab changed:', key)}
+              // onChange={(key) => console.log('Tab changed:', key)}
             />
           </div>
 
@@ -597,7 +597,7 @@ export default function UITestPage() {
                 { key: 'tab3', label: 'Achievements', icon: '🏆' },
               ]}
               activeTab="tab1"
-              onChange={(key) => console.log('Tab changed:', key)}
+              // onChange={(key) => console.log('Tab changed:', key)}
             />
           </div>
 
@@ -611,7 +611,7 @@ export default function UITestPage() {
                 { key: 'tab3', label: 'Archived', badge: '12' },
               ]}
               activeTab="tab1"
-              onChange={(key) => console.log('Tab changed:', key)}
+              // onChange={(key) => console.log('Tab changed:', key)}
             />
           </div>
 
@@ -625,7 +625,7 @@ export default function UITestPage() {
                 { key: 'tab3', label: 'Locked', disabled: true },
               ]}
               activeTab="tab1"
-              onChange={(key) => console.log('Tab changed:', key)}
+              // onChange={(key) => console.log('Tab changed:', key)}
             />
           </div>
 
