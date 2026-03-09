@@ -25,6 +25,7 @@ fastify.register(require('@fastify/cors'), {
   credentials: true
 });
 
+
 const PROFILE_SERVICE_URL = process.env.PROFILE_SERVICE_URL!;
 
 if (!process.env.PROFILE_SERVICE_URL) {
@@ -102,7 +103,6 @@ export async function authentificate(req: any, reply: any): Promise<any | null> 
     const refreshToken = req.cookies?.refresh_token;
     const csrfToken = req.cookies?.csrf_token;
 
-    // Do checking of access_token
     if (accessToken) {
         try {
             const payload: any = jwt.verify(accessToken, publicKey, {
@@ -130,61 +130,12 @@ export async function authentificate(req: any, reply: any): Promise<any | null> 
 
         } catch (err) {
             console.log("[auth] Access token expired or invalid");
-        }
-    }
-
-    // --- Do checking refresh_token if access_token not valid
-    if (!refreshToken) {
-		console.log("[auth] No refresh token");
-		return null;
-	}
-
-	console.log("[auth] Refresh token: ", refreshToken);
-
-    try {
-        const refreshPayload: any = await verifyRefreshToken(refreshToken);
-
-		if (!refreshPayload) {
-            console.log("[auth] Refresh token invalid or expired");
-            return null;
-        }
-
-		if (await isTokenRevoked(refreshPayload.tokenId)) {
-			console.log("[auth] Refresh token is revoked");
 			return null;
-		}
-
-        const user = await new Promise<any>((res, rej) => {
-            db.get(
-                `SELECT id, email, password_version, twofa_enabled, token_version, deleted_at 
-                 FROM users WHERE id = ?`,
-                [refreshPayload.userId],
-                (err, row) => (err ? rej(err) : res(row))
-            );
-        });
-
-        if (!user || user.deleted_at) return null;
-
-		console.log("[auth] Refresh token is valid. Issue of new access token." );
-
-        const newAccess = await generateToken({
-            id: user.id,
-            password_version: user.password_version,
-            token_version: user.token_version,
-        });
-
-        reply.setCookie('access_token', newAccess, { ...cookieOpts, maxAge: 3600 });
-
-        if (!csrfToken) {
-            const newCsrf = randomUUID();
-            reply.setCookie('csrf_token', newCsrf, csrfOpts);
         }
-
-        return user;
-    } catch (err) {
-        console.log('Refresh token invalid:');
-        return null;
-    }
+    } else { 
+		console.log("[auth] Access token expired or invalid");
+		return null; 
+	}
 }
 
 async function requireAuth(req: any, reply: any) {
@@ -230,7 +181,7 @@ fastify.get('/auth/verify', { preHandler: requireAuth }, async (req: any, reply)
 //        req.log.info({ user: req.user }, 'Resultado de usuario en verify');
         
         return reply.status(200).send({ id: user.id, email: user.email, username: profile?.nickname ?? 'Unknown', twofa_enabled: user.twofa_enabled });
-    });
+});
 
 // --- AUTH INTERNAL MIDDLEWARE ---
 async function requireServiceAuth(req: any, reply: any) {
@@ -380,6 +331,68 @@ fastify.post('/auth/login', { preHandler: requireGuest }, async (req: any, reply
         } catch (err: any) {
         reply.status(401).send({ error: { code: 'INVALID_CREDENTIALS', message: 'Invalid credentials' } });
     }
+});
+
+// --- REFRESH TOKEN CHECK ---
+fastify.post('/auth/refresh', async (req: any, reply) => {
+  const refreshToken = req.cookies?.refresh_token;
+  let csrfToken = req.cookies?.csrf_token;
+
+  if (!refreshToken) {
+    console.log('[auth] No refresh token');
+    return reply.status(401).send({ error: 'No refresh token' });
+  }
+
+  try {
+    const refreshPayload: any = await verifyRefreshToken(refreshToken);
+
+    if (!refreshPayload) {
+      return reply.status(401).send({ error: 'Invalid refresh token' });
+    }
+
+    if (await isTokenRevoked(refreshPayload.tokenId)) {
+      return reply.status(401).send({ error: 'Revoked refresh token' });
+    }
+
+    const db = getDB();
+
+    const user = await new Promise<any>((res, rej) => {
+      db.get(
+        `SELECT id, email, password_version, twofa_enabled, token_version, deleted_at 
+         FROM users WHERE id = ?`,
+        [refreshPayload.userId],
+        (err, row) => (err ? rej(err) : res(row))
+      );
+    });
+
+    if (!user || user.deleted_at) {
+      return reply.status(401).send({ error: 'User invalid' });
+    }
+
+    const newAccess = await generateToken({
+      id: user.id,
+      password_version: user.password_version,
+      token_version: user.token_version,
+    });
+
+    if (!csrfToken) {
+      csrfToken = randomUUID();
+    }
+
+    reply
+      .setCookie('access_token', newAccess, { ...cookieOpts, maxAge: 3600 })
+      .setCookie('csrf_token', csrfToken, csrfOpts);
+
+    return reply.status(200).send({
+      id: user.id,
+      email: user.email,
+      twofa_enabled: user.twofa_enabled
+    });
+
+  } catch (err) {
+    console.error('[auth] Refresh error:', err);
+    return reply.status(401).send({ error: 'Invalid credentials' });
+  }
 });
 
 // --- CHANGE USER PASSWORD ---

@@ -26,25 +26,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   setAuthloading(true);
 
   try {
-      const csrfToken = document.cookie
+      const getCSRF = () => document.cookie
         .split('; ')
         .find(row => row.startsWith('csrf_token='))
         ?.split('=')[1];
+
+	  let csrfToken = getCSRF();
 
       if (!csrfToken) {
         setUser(null);
         return false;
       }
 
-      const res = await fetch('/api/profile/me', {
+      let res = await fetch('/api/profile/me', {
           credentials: 'include',
           headers: { 'x-csrf-token': csrfToken || '' },
         });
-        
-      if (res.status === 401 || !res.ok) {
-        setUser(null);
-        return false;
-      }
+
+	  if (res.status === 401) {
+
+		  console.log("Access expired → trying refresh");
+
+		  const refresh = await fetch('/api/auth/refresh', {
+					method: 'POST',
+					credentials: 'include',
+					headers: { 'x-csrf-token': csrfToken || '' },
+			  		});
+
+		  if (!refresh.ok) {
+			  setUser(null);
+			  return false;
+		  }
+
+		  csrfToken = getCSRF();
+
+		  await new Promise(r => setTimeout(r, 100));
+
+		  // Repeat fetch to /me
+		  res = await fetch('/api/profile/me', {
+					credentials: 'include',
+					headers: { 'x-csrf-token': csrfToken }
+			  		});
+  	  }
+
+	  if (res.status === 401 || !res.ok) { 
+		  setUser(null); 
+		  return false; 
+	  }    
 
       const userData = await res.json();
       setUser(userData);
@@ -56,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return false;
     } finally {
       setAuthloading(false);
-      router.refresh();
+//      router.refresh();
     }
   }, []);
 
