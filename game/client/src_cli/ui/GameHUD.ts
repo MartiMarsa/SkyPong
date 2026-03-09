@@ -90,6 +90,7 @@ export class GameHUD {
         const tb = new TextBlock(`controlHint${i}`, line);
         tb.color = GUI_STYLES.TEXT.CONTROL_HINT.color;
         tb.fontSize = GUI_STYLES.TEXT.CONTROL_HINT.fontSize;
+        tb.fontFamily = GUI_STYLES.FONT_FAMILY;
         tb.shadowColor = GUI_STYLES.TEXT.CONTROL_HINT.shadowColor!;
         tb.shadowOffsetX = GUI_STYLES.TEXT.CONTROL_HINT.shadowOffsetX!;
         tb.shadowOffsetY = GUI_STYLES.TEXT.CONTROL_HINT.shadowOffsetY!;
