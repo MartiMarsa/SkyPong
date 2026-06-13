@@ -1292,4 +1292,127 @@
 /* ============================================================================
    CHAT - Now using design system components (Button, TextField, Card, Badge)
    ============================================================================ */
+
+/* ============================================================================
+   DEVTEAM PAGE
+   ============================================================================ */
+
+.devteam-orbit-stage {
+  position: relative;
+  width: 500px;
+  height: 500px;
+}
+
+.devteam-orbit-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 70px;
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid rgba(147, 51, 234, 0.3);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  will-change: transform;
+}
+
+.devteam-orbit-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.2);
+}
+
+.devteam-orbit-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+.devteam-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(6px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fade-in 0.25s ease-out;
+}
+
+.devteam-modal-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-height: 90vh;
+  animation: devteam-scale-in 0.25s ease-out;
+}
+
+@keyframes devteam-scale-in {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.devteam-modal-photo {
+  max-height: 70vh;
+  width: auto;
+  max-width: 90vw;
+  border-radius: 12px;
+  display: block;
+  object-fit: contain;
+}
+
+.devteam-modal-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.devteam-modal-close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  z-index: 201;
+}
+.devteam-modal-close:hover { background: rgba(255, 255, 255, 0.25); }
+
+.devteam-modal-links {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.devteam-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s, transform 0.15s;
+  background: var(--color-primary);
+  color: #ffffff;
+}
+.devteam-link-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+.devteam-link-btn--gh { background: #1f2937; }
    /* Custom chat styles removed - using base components from /ui/base/ */
