@@ -10,7 +10,7 @@
  */
 
 export const SERVER_CONNECTION = {
-    HOST: import.meta.env.VITE_SERVER_HOST || 'localhost',
+    HOST: import.meta.env.VITE_SERVER_HOST || (typeof window !== 'undefined' ? window.location.hostname : 'localhost'),
     PORT: import.meta.env.VITE_SERVER_PORT || 2567,
     PROTOCOL: import.meta.env.VITE_WS_PROTOCOL || 'ws',
     PATH: import.meta.env.VITE_SERVER_PATH || '/',
