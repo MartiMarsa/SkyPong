@@ -30,10 +30,13 @@ export class SceneLights {
       SceneLights._envTexture.dispose();
     }
 
+    const isMobile = navigator.maxTouchPoints > 1;
+    const envTexSize = isMobile ? 256 : RENDERING.ENVIRONMENT.TEXTURE_SIZE;
+
     const envTexture = new EXRCubeTexture(
       RENDERING.ENVIRONMENT.TEXTURE_PATH,
       scene,
-      RENDERING.ENVIRONMENT.TEXTURE_SIZE,
+      envTexSize,
       false,
       true,
       false,
@@ -87,8 +90,9 @@ export class SceneLights {
     dirLight.position = RENDERING.LIGHTS.DIRECTIONAL.POSITION;
     dirLight.intensity = RENDERING.LIGHTS.DIRECTIONAL.INTENSITY;
 
+    const shadowMapSize = isMobile ? 512 : RENDERING.SHADOWS.MAP_SIZE;
     const shadowGenerator = new ShadowGenerator(
-      RENDERING.SHADOWS.MAP_SIZE,
+      shadowMapSize,
       dirLight,
     );
     shadowGenerator.useBlurExponentialShadowMap = true;

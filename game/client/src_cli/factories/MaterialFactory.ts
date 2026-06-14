@@ -120,9 +120,10 @@ export class MaterialFactory {
             material.needDepthPrePass = false;
             material.separateCullingPass = true;
 
+            const rttSize = navigator.maxTouchPoints > 1 ? 256 : 512;
             const refractionTexture = new RenderTargetTexture(
                 `${matName}_refraction`,
-                512,
+                rttSize,
                 scene,
                 false,
                 true

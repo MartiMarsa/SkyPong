@@ -34,7 +34,14 @@ export class EngineSetup {
     }
 
     private createEngine(canvas: HTMLCanvasElement): Engine {
-        const engine = new Engine(canvas, true);
+        const isMobile = navigator.maxTouchPoints > 1;
+        const engine = new Engine(canvas, !isMobile);
+
+        // On mobile (iOS/Android), cap DPR to reduce framebuffer size.
+        // iPhone 15 Pro at 3× DPR + MSAA would require ~47 MB just for the framebuffer.
+        if (isMobile) {
+            engine.setHardwareScalingLevel(Math.max(1, window.devicePixelRatio / 1.5));
+        }
 
         this._resizeHandler = () => {
             this.handleResize();
