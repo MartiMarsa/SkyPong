@@ -11,7 +11,7 @@ import { SERVER_CONFIG, Logger } from "./config";
 const app = express();
 
 app.use(cors({
-    origin: '*', // Allow all origins for testing. Restrict for production!
+    origin: true,
     methods: ['GET', 'POST', 'OPTIONS'],
     credentials: true,
 }));
