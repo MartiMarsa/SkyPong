@@ -131,12 +131,7 @@ const Grainient = ({
     if (!containerRef.current) return;
     const container = containerRef.current;
 
-    const probe = document.createElement('canvas');
-    if (!probe.getContext('webgl2')) {
-      container.style.background = `linear-gradient(135deg, ${color1}, ${color3}, ${color2})`;
-      return;
-    }
-
+    const fallback = `linear-gradient(135deg, ${color1}, ${color3}, ${color2})`;
     let raf = 0;
     let ro = null;
     let canvas = null;
@@ -156,6 +151,14 @@ const Grainient = ({
       canvas.style.display = 'block';
 
       container.appendChild(canvas);
+
+      // When iOS steals the WebGL context for Babylon.js, stop the loop and fall back to CSS
+      canvas.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault();
+        cancelAnimationFrame(raf);
+        ro?.disconnect();
+        container.style.background = fallback;
+      }, false);
 
       const geometry = new Triangle(gl);
       const program = new Program(gl, {
@@ -219,7 +222,7 @@ const Grainient = ({
       raf = requestAnimationFrame(loop);
 
     } catch {
-      container.style.background = `linear-gradient(135deg, ${color1}, ${color3}, ${color2})`;
+      container.style.background = fallback;
     }
 
     return () => {
