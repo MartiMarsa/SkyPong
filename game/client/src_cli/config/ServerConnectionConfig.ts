@@ -11,8 +11,8 @@
 
 export const SERVER_CONNECTION = {
     HOST: import.meta.env.VITE_SERVER_HOST || (typeof window !== 'undefined' ? window.location.hostname : 'localhost'),
-    PORT: import.meta.env.VITE_SERVER_PORT || 2567,
-    PROTOCOL: import.meta.env.VITE_WS_PROTOCOL || 'ws',
+    PORT: import.meta.env.VITE_SERVER_PORT || (typeof window !== 'undefined' ? (window.location.port || (window.location.protocol === 'https:' ? '443' : '80')) : 2567),
+    PROTOCOL: import.meta.env.VITE_WS_PROTOCOL || (typeof window !== 'undefined' ? (window.location.protocol === 'https:' ? 'wss' : 'ws') : 'ws'),
     PATH: import.meta.env.VITE_SERVER_PATH || '/',
 
     get WS_URL() {
